@@ -7,12 +7,6 @@ app.use(express.json());
 let localidades = [];  //inicializar array localidades
 let idCounter = 1; //contador para ids localidad
 
-
-
-//app.get('/api/localidades', (req, res) => {
-   // res.send('Juan puto');
-//});
-
 app.get('/api/localidades', (req, res) => {
     res.json(localidades);
 }); //cuando yo llame a esto, me va a traer el array de localidades que esta en memoria temporal 

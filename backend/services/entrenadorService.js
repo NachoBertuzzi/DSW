@@ -18,24 +18,24 @@ exports.getById = (id) => {
   });
 };
 
-exports.create = ({ nombre, especialidad }) => {
+exports.create = ({ nombre, apellido, email, telefono, especialidad }) => {
   return new Promise((resolve, reject) => {
     db.query(
-      'INSERT INTO entrenador (nombre, especialidad) VALUES (?, ?)',
-      [nombre, especialidad],
+      'INSERT INTO entrenador (nombre, apellido, email, telefono, especialidad) VALUES (?, ?, ?, ?, ?)',
+      [nombre, apellido, email, telefono, especialidad],
       (err, result) => {
         if (err) return reject(err);
-        resolve({ id: result.insertId, nombre, especialidad });
+        resolve({ id: result.insertId, nombre, apellido, email, telefono, especialidad });
       }
     );
   });
 };
 
-exports.update = (id, { nombre, especialidad }) => {
+exports.update = (id, { nombre, apellido, email, telefono, especialidad }) => {
   return new Promise((resolve, reject) => {
     db.query(
-      'UPDATE entrenador SET nombre = ?, especialidad = ? WHERE id = ?',
-      [nombre, especialidad, id],
+      'UPDATE entrenador SET nombre = ?, apellido = ?, email = ?, telefono = ?, especialidad = ? WHERE id = ?',
+      [nombre, apellido, email, telefono, especialidad, id],
       (err, result) => {
         if (err) return reject(err);
         resolve(result.affectedRows > 0);

@@ -50,7 +50,7 @@ exports.update = async (req, res) => {
 
 exports.delete = async (req, res) => {
   try {
-    const eliminado = await service.remove(req.params.id);
+    const eliminado = await service.delete(req.params.id);
     if (eliminado) {
       res.json({ mensaje: 'Entrenador eliminado correctamente' });
     } else {

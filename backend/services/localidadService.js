@@ -2,7 +2,7 @@ const db = require('../db');
 
 exports.getAll = () => {
   return new Promise((resolve, reject) => {
-    db.query('SELECT * FROM entrenadores', (err, results) => {
+    db.query('SELECT * FROM localidad', (err, results) => {
       if (err) return reject(err);
       resolve(results);
     });
@@ -11,31 +11,31 @@ exports.getAll = () => {
 
 exports.getById = (id) => {
   return new Promise((resolve, reject) => {
-    db.query('SELECT * FROM entrenadores WHERE id = ?', [id], (err, results) => {
+    db.query('SELECT * FROM localidad WHERE id = ?', [id], (err, results) => {
       if (err) return reject(err);
       resolve(results[0]);
     });
   });
 };
 
-exports.create = ({ nombre, especialidad }) => {
+exports.create = ({ nombre, provincia_id }) => {
   return new Promise((resolve, reject) => {
     db.query(
-      'INSERT INTO entrenadores (nombre, especialidad) VALUES (?, ?)',
-      [nombre, especialidad],
+      'INSERT INTO localidad (nombre, provincia_id) VALUES (?, ?)',
+      [nombre, provincia_id],
       (err, result) => {
         if (err) return reject(err);
-        resolve({ id: result.insertId, nombre, especialidad });
+        resolve({ id: result.insertId, nombre, provincia_id });
       }
     );
   });
 };
 
-exports.update = (id, { nombre, especialidad }) => {
+exports.update = (id, { nombre, provincia_id }) => {
   return new Promise((resolve, reject) => {
     db.query(
-      'UPDATE entrenadores SET nombre = ?, especialidad = ? WHERE id = ?',
-      [nombre, especialidad, id],
+      'UPDATE localidad SET nombre = ?, provincia_id = ? WHERE id = ?',
+      [nombre, provincia_id, id],
       (err, result) => {
         if (err) return reject(err);
         resolve(result.affectedRows > 0);
@@ -44,9 +44,9 @@ exports.update = (id, { nombre, especialidad }) => {
   });
 };
 
-exports.remove = (id) => {
+exports.delete = (id) => {
   return new Promise((resolve, reject) => {
-    db.query('DELETE FROM entrenadores WHERE id = ?', [id], (err, result) => {
+    db.query('DELETE FROM localidad WHERE id = ?', [id], (err, result) => {
       if (err) return reject(err);
       resolve(result.affectedRows > 0);
     });

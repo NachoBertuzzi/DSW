@@ -1,44 +1,63 @@
 const service = require('../services/entrenadorService');
 
-function getAll(req, res) {
-    service.getAll((err, data) => {
-        if (err) return res.status(500).json({ mensaje: 'Error al obtener entrenadores' });
-        res.json(data);
-    });
-}
+exports.getAll = async (req, res) => {
+  try {
+    const entrenadores = await service.getAll();
+    res.json(entrenadores);
+  } catch (err) {
+    console.error('Error al obtener entrenadores:', err);
+    res.status(500).json({ error: 'Error al obtener entrenadores' });
+  }
+};
 
-function getById(req, res) {
-    const id = parseInt(req.params.id);
-    service.getById(id, (err, entrenador) => {
-        if (err) return res.status(500).json({ mensaje: 'Error al obtener el entrenador' });
-        if (entrenador) res.json(entrenador);
-        else res.status(404).json({ mensaje: 'Entrenador no encontrado' });
-    });
-}
+exports.getById = async (req, res) => {
+  try {
+    const entrenador = await service.getById(req.params.id);
+    if (entrenador) {
+      res.json(entrenador);
+    } else {
+      res.status(404).json({ error: 'Entrenador no encontrado' });
+    }
+  } catch (err) {
+    console.error('Error al obtener entrenador por ID:', err);
+    res.status(500).json({ error: 'Error al obtener entrenador' });
+  }
+};
 
-function create(req, res) {
-    service.create(req.body, (err, nuevo) => {
-        if (err) return res.status(500).json({ mensaje: 'Error al crear el entrenador' });
-        res.status(201).json(nuevo);
-    });
-}
+exports.create = async (req, res) => {
+  try {
+    const nuevo = await service.create(req.body);
+    res.status(201).json(nuevo);
+  } catch (err) {
+    console.error('Error al crear entrenador:', err);
+    res.status(500).json({ error: 'Error al crear entrenador' });
+  }
+};
 
-function update(req, res) {
-    const id = parseInt(req.params.id);
-    service.update(id, req.body, (err, actualizado) => {
-        if (err) return res.status(500).json({ mensaje: 'Error al actualizar' });
-        if (actualizado) res.json(actualizado);
-        else res.status(404).json({ mensaje: 'Entrenador no encontrado' });
-    });
-}
+exports.update = async (req, res) => {
+  try {
+    const actualizado = await service.update(req.params.id, req.body);
+    if (actualizado) {
+      res.json({ mensaje: 'Entrenador actualizado correctamente' });
+    } else {
+      res.status(404).json({ error: 'Entrenador no encontrado' });
+    }
+  } catch (err) {
+    console.error('Error al actualizar entrenador:', err);
+    res.status(500).json({ error: 'Error al actualizar entrenador' });
+  }
+};
 
-function remove(req, res) {
-    const id = parseInt(req.params.id);
-    service.remove(id, (err, eliminado) => {
-        if (err) return res.status(500).json({ mensaje: 'Error al eliminar' });
-        if (eliminado) res.status(204).send();
-        else res.status(404).json({ mensaje: 'Entrenador no encontrado' });
-    });
-}
-
-module.exports = { getAll, getById, create, update, remove };
+exports.delete = async (req, res) => {
+  try {
+    const eliminado = await service.remove(req.params.id);
+    if (eliminado) {
+      res.json({ mensaje: 'Entrenador eliminado correctamente' });
+    } else {
+      res.status(404).json({ error: 'Entrenador no encontrado' });
+    }
+  } catch (err) {
+    console.error('Error al eliminar entrenador:', err);
+    res.status(500).json({ error: 'Error al eliminar entrenador' });
+  }
+};

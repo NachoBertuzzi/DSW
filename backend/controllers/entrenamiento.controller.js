@@ -1,27 +1,49 @@
-const model = require('../models/entrenamiento.model');
+const service = require('../services/entrenamientoService');
 
-exports.getAll = (req, res) => res.json(model.getAll());
-
-exports.getById = (req, res) => {
-  const found = model.getById(parseInt(req.params.id));
-  if (found) res.json(found);
-  else res.status(404).json({ mensaje: 'Entrenamiento no encontrado' });
+exports.getAll = async (req, res) => {
+  try {
+    const data = await service.getAll();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al obtener entrenamientos' });
+  }
 };
 
-exports.create = (req, res) => {
-  const nuevo = model.create(req.body);
-  res.status(201).json(nuevo);
+exports.getById = async (req, res) => {
+  try {
+    const data = await service.getById(req.params.id);
+    if (!data) return res.status(404).json({ error: 'No encontrado' });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al obtener entrenamiento' });
+  }
 };
 
-exports.update = (req, res) => {
-  const actualizado = model.update(parseInt(req.params.id), req.body);
-  if (actualizado) res.json(actualizado);
-  else res.status(404).json({ mensaje: 'Entrenamiento no encontrado' });
+exports.create = async (req, res) => {
+  try {
+    const nuevo = await service.create(req.body);
+    res.status(201).json(nuevo);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al crear entrenamiento' });
+  }
 };
 
-exports.delete = (req, res) => {
-  const eliminado = model.delete(parseInt(req.params.id));
-  if (eliminado) res.status(204).send();
-  else res.status(404).json({ mensaje: 'Entrenamiento no encontrado' });
+exports.update = async (req, res) => {
+  try {
+    const updated = await service.update(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ error: 'No encontrado' });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al actualizar' });
+  }
 };
-// Este controlador maneja las operaciones CRUD para los entrenamientos.
+
+exports.delete = async (req, res) => {
+  try {
+    const deleted = await service.delete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'No encontrado' });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al eliminar' });
+  }
+};

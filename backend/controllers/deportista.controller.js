@@ -1,26 +1,49 @@
-const model = require('../models/deportista.model');
+const service = require('../services/deportistaService');
 
-exports.getAll = (req, res) => res.json(model.getAll());
-
-exports.getById = (req, res) => {
-  const found = model.getById(parseInt(req.params.id));
-  if (found) res.json(found);
-  else res.status(404).json({ mensaje: 'No encontrado' });
+exports.getAll = async (req, res) => {
+  try {
+    const data = await service.getAll();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al obtener deportistas' });
+  }
 };
 
-exports.create = (req, res) => {
-  const nuevo = model.create(req.body);
-  res.status(201).json(nuevo);
+exports.getById = async (req, res) => {
+  try {
+    const data = await service.getById(req.params.id);
+    if (!data) return res.status(404).json({ error: 'No encontrado' });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al obtener el deportista' });
+  }
 };
 
-exports.update = (req, res) => {
-  const actualizado = model.update(parseInt(req.params.id), req.body);
-  if (actualizado) res.json(actualizado);
-  else res.status(404).json({ mensaje: 'No encontrado' });
+exports.create = async (req, res) => {
+  try {
+    const nuevo = await service.create(req.body);
+    res.status(201).json(nuevo);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al crear el deportista' });
+  }
 };
 
-exports.delete = (req, res) => {
-  const eliminado = model.delete(parseInt(req.params.id));
-  if (eliminado) res.status(204).send();
-  else res.status(404).json({ mensaje: 'No encontrado' });
+exports.update = async (req, res) => {
+  try {
+    const updated = await service.update(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ error: 'No encontrado' });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al actualizar' });
+  }
+};
+
+exports.delete = async (req, res) => {
+  try {
+    const deleted = await service.delete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'No encontrado' });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al eliminar' });
+  }
 };

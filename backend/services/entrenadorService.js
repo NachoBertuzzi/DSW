@@ -1,37 +1,50 @@
-// services/entrenadorService.js
-const { entrenadores, getNextId } = require('../models/entrenador.model');
+const db = require('../db');
 
-function getAll() {
-    return entrenadores;
+function getAll(callback) {
+    db.query('SELECT * FROM entrenadores', (err, results) => {
+        if (err) return callback(err);
+        callback(null, results);
+    });
 }
 
-function getById(id) {
-    return entrenadores.find(e => e.id === id);
+function getById(id, callback) {
+    db.query('SELECT * FROM entrenadores WHERE id = ?', [id], (err, results) => {
+        if (err) return callback(err);
+        callback(null, results[0]);
+    });
 }
 
-function create(data) {
-    const nuevo = { id: getNextId(), ...data };
-    entrenadores.push(nuevo);
-    return nuevo;
+function create(data, callback) {
+    const { nombre, especialidad } = data;
+    db.query(
+        'INSERT INTO entrenadores (nombre, especialidad) VALUES (?, ?)',
+        [nombre, especialidad],
+        (err, result) => {
+            if (err) return callback(err);
+            const nuevo = { id: result.insertId, nombre, especialidad };
+            callback(null, nuevo);
+        }
+    );
 }
 
-function update(id, data) {
-    const index = entrenadores.findIndex(e => e.id === id);
-    if (index !== -1) {
-        entrenadores[index] = { ...entrenadores[index], ...data };
-        return entrenadores[index];
-    }
-    return null;
+function update(id, data, callback) {
+    const { nombre, especialidad } = data;
+    db.query(
+        'UPDATE entrenadores SET nombre = ?, especialidad = ? WHERE id = ?',
+        [nombre, especialidad, id],
+        (err, result) => {
+            if (err) return callback(err);
+            if (result.affectedRows === 0) return callback(null, null);
+            callback(null, { id, nombre, especialidad });
+        }
+    );
 }
 
-function remove(id) {
-    const index = entrenadores.findIndex(e => e.id === id);
-    if (index !== -1) {
-        entrenadores.splice(index, 1);
-        return true;
-    }
-    return false;
+function remove(id, callback) {
+    db.query('DELETE FROM entrenadores WHERE id = ?', [id], (err, result) => {
+        if (err) return callback(err);
+        callback(null, result.affectedRows > 0);
+    });
 }
 
 module.exports = { getAll, getById, create, update, remove };
-// Este servicio maneja las operaciones CRUD para los entrenadores, interactuando con el modelo de datos de entrenadores.

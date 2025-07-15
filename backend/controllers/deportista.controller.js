@@ -38,9 +38,9 @@ exports.create = async (req, res) => {
   if (!usuario || typeof usuario !== 'string' || usuario.trim() === '' || usuario.length > 20) {
     return res.status(400).json({ mensaje: 'Usuario inválido' });
   }
-  if (!contraseña || typeof contraseña !== 'string' || contraseña.length < 8) {
-    return res.status(400).json({ mensaje: 'Contraseña inválida (mínimo 8 caracteres)' });
-  }
+  if (!contraseña || typeof contraseña !== 'string' || contraseña.trim().length < 8) {
+  return res.status(400).json({ mensaje: 'Contraseña inválida (mínimo 8 caracteres y no solo espacios)' });
+}
   if (altura === undefined || altura === null || typeof altura !== 'number' || altura < 10 || altura > 250) {
     return res.status(400).json({ mensaje: 'Altura inválida (debe ser entre 10 y 250)' });
   }
@@ -71,9 +71,9 @@ exports.update = async (req, res) => {
   if (!usuario || typeof usuario !== 'string' || usuario.trim() === '' || usuario.length > 20) {
     return res.status(400).json({ mensaje: 'Usuario inválido' });
   }
-  if (!contraseña || typeof contraseña !== 'string' || contraseña.length < 8) {
-    return res.status(400).json({ mensaje: 'Contraseña inválida (mínimo 8 caracteres)' });
-  }
+  if (!contraseña || typeof contraseña !== 'string' || contraseña.trim().length < 8) {
+  return res.status(400).json({ mensaje: 'Contraseña inválida (mínimo 8 caracteres y no solo espacios)' });
+}
   if (altura === undefined || altura === null || typeof altura !== 'number' || altura < 10 || altura > 250) {
     return res.status(400).json({ mensaje: 'Altura inválida (debe ser entre 10 y 250)' });
   }

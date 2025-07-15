@@ -18,24 +18,24 @@ exports.getById = (id) => {
   });
 };
 
-exports.create = ({ nombre, apellido, email, telefono, especialidad }) => {
+exports.create = ({ dni, nombre, apellido, usuario, contraseña, especialidad, email, telefono }) => {
   return new Promise((resolve, reject) => {
     db.query(
-      'INSERT INTO entrenador (nombre, apellido, email, telefono, especialidad) VALUES (?, ?, ?, ?, ?)',
-      [nombre, apellido, email, telefono, especialidad],
+      'INSERT INTO entrenador (dni, nombre, apellido, usuario, contraseña, especialidad, email, telefono) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [dni, nombre, apellido, usuario, contraseña, especialidad, email, telefono],
       (err, result) => {
         if (err) return reject(err);
-        resolve({ id: result.insertId, nombre, apellido, email, telefono, especialidad });
+        resolve({ id: result.insertId, dni, nombre, apellido, usuario, especialidad, email, telefono });
       }
     );
   });
 };
 
-exports.update = (id, { nombre, apellido, email, telefono, especialidad }) => {
+exports.update = (id, { dni, nombre, apellido, usuario, contraseña, especialidad, email, telefono }) => {
   return new Promise((resolve, reject) => {
     db.query(
-      'UPDATE entrenador SET nombre = ?, apellido = ?, email = ?, telefono = ?, especialidad = ? WHERE id = ?',
-      [nombre, apellido, email, telefono, especialidad, id],
+      'UPDATE entrenador SET dni = ?, nombre = ?, apellido = ?, usuario = ?, contraseña = ?, especialidad = ?, email = ?, telefono = ? WHERE id = ?',
+      [dni, nombre, apellido, usuario, contraseña, especialidad, email, telefono, id],
       (err, result) => {
         if (err) return reject(err);
         resolve(result.affectedRows > 0);

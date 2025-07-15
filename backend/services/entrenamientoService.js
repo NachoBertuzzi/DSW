@@ -19,10 +19,13 @@ exports.getById = (id) => {
 };
 
 exports.create = ({ fecha, duracion, deportista_id, entrenador_id }) => {
+  const fechaDate = new Date(fecha); // 👈 convierte el string a tipo Date
   return new Promise((resolve, reject) => {
-    db.query(
+   
+   console.log("VALORES PARA INSERT:", fecha, duracion, deportista_id, entrenador_id);
+   db.query(
       'INSERT INTO entrenamiento (fecha, duracion, deportista_id, entrenador_id) VALUES (?, ?, ?, ?)',
-      [fecha, duracion, deportista_id, entrenador_id],
+      [fechaDate, duracion, deportista_id, entrenador_id],
       (err, result) => {
         if (err) return reject(err);
         resolve({ id: result.insertId, fecha, duracion, deportista_id, entrenador_id });
@@ -30,6 +33,7 @@ exports.create = ({ fecha, duracion, deportista_id, entrenador_id }) => {
     );
   });
 };
+
 
 exports.update = (id, { fecha, duracion, deportista_id, entrenador_id }) => {
   return new Promise((resolve, reject) => {

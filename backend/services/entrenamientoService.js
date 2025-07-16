@@ -18,6 +18,16 @@ exports.getById = (id) => {
   });
 };
 
+
+exports.getByDeportistaId = (deportistaId) => {
+  return new Promise((resolve, reject) => {
+    db.query('SELECT * FROM entrenamiento WHERE deportista_id = ?', [deportistaId], (err, results) => {
+      if (err) return reject(err);
+      resolve(results);
+    });
+  });
+};
+
 exports.create = ({ fecha, duracion, deportista_id, entrenador_id }) => {
   const fechaDate = new Date(fecha); // 👈 convierte el string a tipo Date
   return new Promise((resolve, reject) => {

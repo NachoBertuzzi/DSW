@@ -54,6 +54,24 @@ exports.getById = async (req, res) => {
   }
 };
 
+exports.getByDeportistaId = async (req, res) => {
+  const { id } = req.params;
+
+  if (!id || isNaN(Number(id))) {
+    return res.status(400).json({ mensaje: 'ID de deportista inválido' });
+  }
+
+  try {
+    const entrenamientos = await service.getByDeportistaId(Number(id));
+    if (!entrenamientos || entrenamientos.length === 0) {
+      return res.status(404).json({ mensaje: 'No se encontraron entrenamientos para este deportista' });
+    }
+    res.json(entrenamientos);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al obtener entrenamientos del deportista' });
+  }
+};
+
 exports.create = async (req, res) => {
   const validacion = validarEntrenamiento(req.body);
   if (!validacion.ok) {

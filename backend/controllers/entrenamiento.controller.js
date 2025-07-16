@@ -1,7 +1,7 @@
 const service = require('../services/entrenamientoService');
 
 function validarEntrenamiento(data) {
-  const { fechaentrenamiento, horaentrenamiento } = data;
+  const { fechaentrenamiento, horaentrenamiento, duracion, deportista_id } = data;
 
   // Validación de fecha
   if (!fechaentrenamiento || typeof fechaentrenamiento !== 'string') {
@@ -10,6 +10,16 @@ function validarEntrenamiento(data) {
   const fecha = new Date(fechaentrenamiento);
   if (isNaN(fecha.getTime())) {
     return { ok: false, mensaje: 'Fecha de entrenamiento no es una fecha válida' };
+  }
+
+  // Validación de duración
+  if (duracion === undefined || typeof duracion !== 'number' || duracion <= 0) {
+    return { ok: false, mensaje: 'Duración inválida (debe ser un número positivo)' };
+  }
+
+  // Validación de deportista
+  if (deportista_id === undefined || typeof deportista_id !== 'number') {
+    return { ok: false, mensaje: 'deportista_id es obligatorio y debe ser un número' };
   }
 
   // Validación opcional de hora

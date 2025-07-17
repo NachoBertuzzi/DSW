@@ -6,6 +6,7 @@ router.post('/login', controller.login);
 router.get('/', controller.getAll);
 router.get('/:id', controller.getById);
 router.post('/', controller.create);
+router.post('/login', controller.login);
 router.put('/:id', controller.update);
 router.delete('/:id', controller.delete);
 

@@ -55,11 +55,18 @@ exports.create = ({ dni, nombre, apellido, usuario, contraseña, altura, peso })
   };
 
   //login 
-  exports.getByUsuario = (usuario) => {
-    return new Promise((resolve, reject) => {
-      db.query('SELECT * FROM entrenador WHERE usuario = ? LIMIT 1', [usuario], (err, results) => {
-        if (err) return reject(err);
-        resolve(results[0] || null);
-      });
-    });
-  };
+exports.getByUsuario = async (usuario) => {
+  return new Promise((resolve, reject) => {
+    db.query(
+      'SELECT * FROM entrenador WHERE usuario = ? OR email = ?',
+      [usuario, usuario],
+      (err, results) => {
+        if (err) {
+          console.error('❌ Error en getByUsuario:', err);
+          return reject(err);
+        }
+        resolve(results[0]);
+      }
+    );
+  });
+};

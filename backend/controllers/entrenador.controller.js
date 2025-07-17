@@ -124,20 +124,18 @@ exports.login = async (req, res) => {
 
   try {
     const entrenador = await service.getByUsuario(usuario.trim());
+
     if (!entrenador) {
       return res.status(401).json({ mensaje: 'Usuario o contraseña incorrectos' });
     }
 
-    // Para prueba sin hash
     if (entrenador.contraseña !== contraseña) {
       return res.status(401).json({ mensaje: 'Usuario o contraseña incorrectos' });
     }
 
-    // Si usás JWT o sesiones acá generar token (opcional)
-
     res.json({ mensaje: 'Login exitoso', entrenador });
   } catch (err) {
-    console.error('Error en login entrenador:', err);
-    res.status(500).json({ mensaje: 'Error interno' });
+    console.error('❌ Error en login entrenador:', err);
+    res.status(500).json({ mensaje: 'Error interno del servidor', error: err.message });
   }
 };

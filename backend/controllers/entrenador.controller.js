@@ -110,9 +110,9 @@ exports.delete = async (req, res) => {
   }
 };
 
-//inicio de sesion 
+// inicio de sesion
 
- exports.login = async (req, res) => {
+exports.login = async (req, res) => {
   const { usuario, contraseña } = req.body;
 
   if (!usuario || typeof usuario !== 'string' || usuario.trim() === '') {
@@ -141,4 +141,3 @@ exports.delete = async (req, res) => {
     res.status(500).json({ mensaje: 'Error interno' });
   }
 };
-

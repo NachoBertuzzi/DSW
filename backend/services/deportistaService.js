@@ -18,18 +18,51 @@ exports.getById = (id) => {
   });
 };
 
-exports.create = ({ nombre, apellido, fecha_nacimiento, localidad_id }) => {
+// cambios recientes
+
+
+exports.create = ({
+  dni,
+  nombre,
+  apellido,
+  usuario,
+  email,
+  contraseña,
+  fecha_nacimiento,
+  altura,
+  peso,
+  localidad_id,
+}) => {
   return new Promise((resolve, reject) => {
+    const sql = `
+      INSERT INTO deportista 
+      (dni, nombre, apellido, usuario, email, contraseña, fecha_nacimiento, altura, peso, localidad_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
     db.query(
-      'INSERT INTO deportista (nombre, apellido, fecha_nacimiento, localidad_id) VALUES (?, ?, ?, ?)',
-      [nombre, apellido, fecha_nacimiento, localidad_id],
+      sql,
+      [dni, nombre, apellido, usuario, email, contraseña, fecha_nacimiento, altura, peso, localidad_id],
       (err, result) => {
         if (err) return reject(err);
-        resolve({ id: result.insertId, nombre, apellido, fecha_nacimiento, localidad_id });
+        resolve({
+          id: result.insertId,
+          dni,
+          nombre,
+          apellido,
+          usuario,
+          email,
+          fecha_nacimiento,
+          altura,
+          peso,
+          localidad_id,
+        });
       }
     );
   });
 };
+
+
 
 exports.update = (id, { nombre, apellido, fecha_nacimiento, localidad_id }) => {
   return new Promise((resolve, reject) => {

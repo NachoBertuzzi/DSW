@@ -18,6 +18,21 @@ exports.getById = (id) => {
   });
 };
 
+exports.getIdByName = (nombre) => {
+  return new Promise((resolve, reject) => {
+    db.query(
+      'SELECT id FROM localidad WHERE nombre = ?',
+      [nombre],
+      (err, results) => {
+        if (err) return reject(err);
+        if (results.length === 0) return resolve(null);
+        resolve(results[0].id);
+      }
+    );
+  });
+};
+
+
 exports.create = ({ nombre, provincia_id }) => {
   return new Promise((resolve, reject) => {
     db.query(

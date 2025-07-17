@@ -18,14 +18,14 @@
     });
   };
 
-exports.create = ({ dni, nombre, apellido, usuario, contraseña, altura, peso }) => {
+exports.create = ({ dni, nombre, apellido, usuario, contraseña, especialidad, email }) => {
   return new Promise((resolve, reject) => {
     db.query(
-      'INSERT INTO deportista (dni, nombre, apellido, usuario, contraseña, altura, peso) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [dni, nombre, apellido, usuario, contraseña, altura, peso],
+      'INSERT INTO entrenador (dni, nombre, apellido, usuario, contraseña, especialidad, email) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [dni, nombre, apellido, usuario, contraseña, especialidad, email],
       (err, result) => {
         if (err) return reject(err);
-        resolve({ id: result.insertId, dni, nombre, apellido, usuario, altura, peso });
+        resolve({ id: result.insertId, dni, nombre, apellido, usuario, especialidad, email });
       }
     );
   });

@@ -25,24 +25,29 @@ const RegistroPage = ({ onVolver }) => {
         ? `${urlBase}/deportistas`
         : `${urlBase}/entrenadores`;
 
-    const payload = {
-      dni: Number(regDni),
-      nombre: regNombre,
-      apellido: regApellido,
-      usuario: regUsuario,
-      email: regEmail,
-      contraseña: regPassword,
-      fecha_nacimiento: regFechaNacimiento,
-      ...(regTipo === 'deportista'
+    const payload =
+      regTipo === 'deportista'
         ? {
+            dni: Number(regDni),
+            nombre: regNombre,
+            apellido: regApellido,
+            usuario: regUsuario,
+            email: regEmail,
+            contraseña: regPassword,
+            fecha_nacimiento: regFechaNacimiento,
             altura: Number(regAltura),
             peso: Number(regPeso),
             localidad_nombre: regLocalidad.trim(),
           }
         : {
+            dni: Number(regDni),
+            nombre: regNombre,
+            apellido: regApellido,
+            usuario: regUsuario,
+            email: regEmail,
+            contraseña: regPassword,
             especialidad: regEspecialidad,
-          }),
-    };
+          };
 
     try {
       const response = await fetch(urlRegistro, {

@@ -103,3 +103,30 @@ exports.delete = async (req, res) => {
     res.status(500).json({ error: 'Error al eliminar' });
   }
 }
+
+exports.login = async (req, res) => {
+  const { usuario, contraseña } = req.body;
+
+  if (!usuario || typeof usuario !== 'string' || usuario.trim() === '') {
+    return res.status(400).json({ mensaje: 'Usuario es requerido' });
+  }
+  if (!contraseña || typeof contraseña !== 'string' || contraseña.length < 8) {
+    return res.status(400).json({ mensaje: 'Contraseña inválida (mínimo 8 caracteres)' });
+  }
+
+  try {
+    const deportista = await service.getByUsuario(usuario.trim());
+    if (!deportista) {
+      return res.status(401).json({ mensaje: 'Usuario o contraseña incorrectos' });
+    }
+
+    if (deportista.contraseña !== contraseña) {
+      return res.status(401).json({ mensaje: 'Usuario o contraseña incorrectos' });
+    }
+
+    res.json({ mensaje: 'Login exitoso', deportista });
+  } catch (err) {
+    console.error('Error en login deportista:', err);
+    res.status(500).json({ mensaje: 'Error interno' });
+  }
+};

@@ -109,3 +109,36 @@ exports.delete = async (req, res) => {
     res.status(500).json({ error: 'Error al eliminar entrenador' });
   }
 };
+
+//inicio de sesion 
+
+ exports.login = async (req, res) => {
+  const { usuario, contraseña } = req.body;
+
+  if (!usuario || typeof usuario !== 'string' || usuario.trim() === '') {
+    return res.status(400).json({ mensaje: 'Usuario es requerido' });
+  }
+  if (!contraseña || typeof contraseña !== 'string' || contraseña.length < 8) {
+    return res.status(400).json({ mensaje: 'Contraseña inválida (mínimo 8 caracteres)' });
+  }
+
+  try {
+    const entrenador = await service.getByUsuario(usuario.trim());
+    if (!entrenador) {
+      return res.status(401).json({ mensaje: 'Usuario o contraseña incorrectos' });
+    }
+
+    // Para prueba sin hash
+    if (entrenador.contraseña !== contraseña) {
+      return res.status(401).json({ mensaje: 'Usuario o contraseña incorrectos' });
+    }
+
+    // Si usás JWT o sesiones acá generar token (opcional)
+
+    res.json({ mensaje: 'Login exitoso', entrenador });
+  } catch (err) {
+    console.error('Error en login entrenador:', err);
+    res.status(500).json({ mensaje: 'Error interno' });
+  }
+};
+

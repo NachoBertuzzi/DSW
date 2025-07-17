@@ -1,6 +1,15 @@
 const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
+//para el front 
+
+const cors = require('cors');
+app.use(cors({
+  origin: 'http://localhost:3001',
+  credentials: true,
+}));
+
+
 
 app.use(express.json());
 

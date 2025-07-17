@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/deportista.controller');
 
+router.post('/login', controller.login);
 router.get('/', controller.getAll);
 router.get('/:id', controller.getById);
 router.post('/', controller.create);

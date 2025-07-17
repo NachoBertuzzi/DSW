@@ -52,3 +52,13 @@ exports.delete = (id) => {
     });
   });
 };
+
+//login 
+exports.getByUsuario = (usuario) => {
+  return new Promise((resolve, reject) => {
+    db.query('SELECT * FROM deportista WHERE usuario = ? LIMIT 1', [usuario], (err, results) => {
+      if (err) return reject(err);
+      resolve(results[0] || null);
+    });
+  });
+};

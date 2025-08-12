@@ -1,68 +1,45 @@
-const db = require('../db/db');
+const { RequestContext } = require('@mikro-orm/core');
+const { Entrenamiento } = require('../entities/entrenamiento.entity');
 
-exports.getAll = () => {
-  return new Promise((resolve, reject) => {
-    db.query('SELECT * FROM entrenamiento', (err, results) => {
-      if (err) return reject(err);
-      resolve(results);
-    });
-  });
-};
+function em() {
+  const _em = RequestContext.getEntityManager();
+  if (!_em) throw new Error('No hay RequestContext activo');
+  return _em;
+}
 
-exports.getById = (id) => {
-  return new Promise((resolve, reject) => {
-    db.query('SELECT * FROM entrenamiento WHERE id = ?', [id], (err, results) => {
-      if (err) return reject(err);
-      resolve(results[0]);
-    });
-  });
-};
+module.exports = {
+  async getAll() {
+    return em().find(Entrenamiento, {});
+  },
 
+  async getById({ id }) {
+    const numId = Number.parseInt(id, 10);
+    return em().findOne(Entrenamiento, { id: numId });
+  },
 
-exports.getByDeportistaId = (deportistaId) => {
-  return new Promise((resolve, reject) => {
-    db.query('SELECT * FROM entrenamiento WHERE deportista_id = ?', [deportistaId], (err, results) => {
-      if (err) return reject(err);
-      resolve(results);
-    });
-  });
-};
+  async create(data) {
+    const _em = em();
+    const ent = _em.create(Entrenamiento, data);
+    await _em.persistAndFlush(ent);
+    return ent;
+  },
 
-exports.create = ({ fecha, duracion, deportista_id, entrenador_id }) => {
-  const fechaDate = new Date(fecha); // 👈 convierte el string a tipo Date
-  return new Promise((resolve, reject) => {
-   
-   console.log("VALORES PARA INSERT:", fecha, duracion, deportista_id, entrenador_id);
-   db.query(
-      'INSERT INTO entrenamiento (fecha, duracion, deportista_id, entrenador_id) VALUES (?, ?, ?, ?)',
-      [fechaDate, duracion, deportista_id, entrenador_id],
-      (err, result) => {
-        if (err) return reject(err);
-        resolve({ id: result.insertId, fecha, duracion, deportista_id, entrenador_id });
-      }
-    );
-  });
-};
+  async update(id, data) {
+    const _em = em();
+    const numId = Number.parseInt(id, 10);
+    const ent = await _em.findOne(Entrenamiento, { id: numId });
+    if (!ent) return undefined;
+    _em.assign(ent, data);
+    await _em.persistAndFlush(ent);
+    return ent;
+  },
 
-
-exports.update = (id, { fecha, duracion, deportista_id, entrenador_id }) => {
-  return new Promise((resolve, reject) => {
-    db.query(
-      'UPDATE entrenamiento SET fecha = ?, duracion = ?, deportista_id = ?, entrenador_id = ? WHERE id = ?',
-      [fecha, duracion, deportista_id, entrenador_id, id],
-      (err, result) => {
-        if (err) return reject(err);
-        resolve(result.affectedRows > 0);
-      }
-    );
-  });
-};
-
-exports.delete = (id) => {
-  return new Promise((resolve, reject) => {
-    db.query('DELETE FROM entrenamiento WHERE id = ?', [id], (err, result) => {
-      if (err) return reject(err);
-      resolve(result.affectedRows > 0);
-    });
-  });
+  async remove({ id }) {
+    const _em = em();
+    const numId = Number.parseInt(id, 10);
+    const ent = await _em.findOne(Entrenamiento, { id: numId });
+    if (!ent) return undefined;
+    await _em.removeAndFlush(ent);
+    return ent;
+  },
 };

@@ -1,178 +1,69 @@
-const service = require('../services/deportistaService');
-const localidadService = require('../services/localidadService.js');
+const service = require('../services/deportistaService.js');
 
-exports.getAll = async (req, res) => {
-  try {
-    const data = await service.getAll();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: 'Error al obtener deportistas' });
-  }
-};
-
-exports.getById = async (req, res) => {
-  const { id } = req.params;
-  if (!id || typeof id !== 'string' || id.trim() === '') {
-    return res.status(400).json({ mensaje: 'ID inválido o vacío' });
-  }
-  try {
-    const data = await service.getById(id);
-    if (!data) return res.status(404).json({ error: 'No encontrado' });
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: 'Error al obtener el deportista' });
-  }
-};
-
-exports.create = async (req, res) => {
-  let {
+// Middleware tipo “sanitize” como el profe
+function sanitizeDeportistaInput(req, _res, next) {
+  const {
     dni,
     nombre,
     apellido,
     usuario,
     email,
-    contraseña,
-    fecha_nacimiento,
+    contrasena, // usá "contrasena" (sin ñ) en tus entidades/tablas para evitar quilombos
     altura,
     peso,
-    localidad_nombre,
+    telefono,
   } = req.body;
 
-  // Validaciones básicas
-  if (!localidad_nombre || typeof localidad_nombre !== 'string' || localidad_nombre.trim() === '') {
-    return res.status(400).json({ mensaje: 'Localidad inválida' });
-  }
+  req.body.sanitizedInput = {
+    dni,
+    nombre,
+    apellido,
+    usuario,
+    email,
+    contrasena,
+    altura,
+    peso,
+    telefono,
+  };
 
-  dni = Number(dni);
-  altura = Number(altura);
-  peso = Number(peso);
+  // borrar undefined
+  Object.keys(req.body.sanitizedInput).forEach((k) => {
+    if (req.body.sanitizedInput[k] === undefined) delete req.body.sanitizedInput[k];
+  });
 
-  if (!Number.isInteger(dni) || dni <= 0) {
-    return res.status(400).json({ mensaje: 'DNI inválido' });
-  }
-  if (!nombre || typeof nombre !== 'string' || nombre.trim() === '' || nombre.length > 50) {
-    return res.status(400).json({ mensaje: 'Nombre inválido' });
-  }
-  if (!apellido || typeof apellido !== 'string' || apellido.trim() === '' || apellido.length > 50) {
-    return res.status(400).json({ mensaje: 'Apellido inválido' });
-  }
-  if (!usuario || typeof usuario !== 'string' || usuario.trim() === '' || usuario.length > 20) {
-    return res.status(400).json({ mensaje: 'Usuario inválido' });
-  }
-  if (!email || typeof email !== 'string' || email.trim() === '') {
-    return res.status(400).json({ mensaje: 'Email inválido' });
-  }
-  if (!contraseña || typeof contraseña !== 'string' || contraseña.trim().length < 8) {
-    return res.status(400).json({ mensaje: 'Contraseña inválida (mínimo 8 caracteres y no solo espacios)' });
-  }
-  if (!fecha_nacimiento || typeof fecha_nacimiento !== 'string' || fecha_nacimiento.trim() === '') {
-    return res.status(400).json({ mensaje: 'Fecha de nacimiento inválida' });
-  }
-  if (isNaN(altura) || altura < 10 || altura > 250) {
-    return res.status(400).json({ mensaje: 'Altura inválida (debe ser entre 10 y 250)' });
-  }
-  if (isNaN(peso) || peso <= 0) {
-    return res.status(400).json({ mensaje: 'Peso inválido' });
-  }
+  next();
+}
 
-  try {
-    // Buscar id localidad por nombre
-    const localidadId = await localidadService.getIdByName(localidad_nombre.trim());
-    if (!localidadId) {
-      return res.status(400).json({ mensaje: 'Localidad no encontrada' });
-    }
+async function findAll(_req, res) {
+  const data = await service.getAll();
+  res.json({ data });
+}
 
-    const nuevo = await service.create({
-      dni,
-      nombre,
-      apellido,
-      usuario,
-      email,
-      contraseña,
-      fecha_nacimiento,
-      altura,
-      peso,
-      localidad_id: localidadId,
-    });
+async function findOne(req, res) {
+  const dni = req.params.dni;
+  const item = await service.getById({ dni });
+  if (!item) return res.status(404).send({ message: 'Deportista no encontrado' });
+  res.json({ data: item });
+}
 
-    res.status(201).json(nuevo);
-  } catch (err) {
-    console.error('Error al crear deportista:', err);
-    res.status(500).json({ error: 'Error al crear el deportista' });
-  }
-};
+async function add(req, res) {
+  // dni puede venir en body (recomendado)
+  const created = await service.create(req.body.sanitizedInput);
+  return res.status(201).send({ message: 'Deportista creado', data: created });
+}
 
-exports.update = async (req, res) => {
-  const { dni, nombre, apellido, usuario, contraseña, altura, peso } = req.body;
+async function update(req, res) {
+  const dni = req.params.dni;
+  const updated = await service.update(dni, req.body.sanitizedInput);
+  if (!updated) return res.status(404).send({ message: 'Deportista no encontrado' });
+  return res.status(200).send({ message: 'Deportista actualizado', data: updated });
+}
 
-  if (dni === undefined || dni === null || typeof dni !== 'number') {
-    return res.status(400).json({ mensaje: 'DNI inválido' });
-  }
-  if (!nombre || typeof nombre !== 'string' || nombre.trim() === '' || nombre.length > 50) {
-    return res.status(400).json({ mensaje: 'Nombre inválido' });
-  }
-  if (!apellido || typeof apellido !== 'string' || apellido.trim() === '' || apellido.length > 50) {
-    return res.status(400).json({ mensaje: 'Apellido inválido' });
-  }
-  if (!usuario || typeof usuario !== 'string' || usuario.trim() === '' || usuario.length > 20) {
-    return res.status(400).json({ mensaje: 'Usuario inválido' });
-  }
-  if (!contraseña || typeof contraseña !== 'string' || contraseña.trim().length < 8) {
-    return res.status(400).json({ mensaje: 'Contraseña inválida (mínimo 8 caracteres y no solo espacios)' });
-  }
-  if (altura === undefined || altura === null || typeof altura !== 'number' || altura < 10 || altura > 250) {
-    return res.status(400).json({ mensaje: 'Altura inválida (debe ser entre 10 y 250)' });
-  }
-  if (peso === undefined || peso === null || typeof peso !== 'number' || peso <= 0) {
-    return res.status(400).json({ mensaje: 'Peso inválido' });
-  }
+async function remove(req, res) {
+  const dni = req.params.dni;
+  const deleted = await service.remove({ dni });
+  if (!deleted) return res.status(404).send({ message: 'Deportista no encontrado' });
+  res.status(200).send({ message: 'Deportista eliminado' });
+}
 
-  try {
-    const updated = await service.update(req.params.id, req.body);
-    if (!updated) return res.status(404).json({ error: 'No encontrado' });
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Error al actualizar' });
-  }
-};
-
-exports.delete = async (req, res) => {
-  const { id } = req.params;
-  if (!id || typeof id !== 'string' || id.trim() === '') {
-    return res.status(400).json({ mensaje: 'ID inválido o vacío' });
-  }
-  try {
-    const deleted = await service.delete(id);
-    if (!deleted) return res.status(404).json({ error: 'No encontrado' });
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Error al eliminar' });
-  }
-};
-
-exports.login = async (req, res) => {
-  const { usuario, contraseña } = req.body;
-
-  if (!usuario || typeof usuario !== 'string' || usuario.trim() === '') {
-    return res.status(400).json({ mensaje: 'Usuario es requerido' });
-  }
-  if (!contraseña || typeof contraseña !== 'string' || contraseña.length < 8) {
-    return res.status(400).json({ mensaje: 'Contraseña inválida (mínimo 8 caracteres)' });
-  }
-
-  try {
-    const deportista = await service.getByUsuario(usuario.trim());
-    if (!deportista) {
-      return res.status(401).json({ mensaje: 'Usuario o contraseña incorrectos' });
-    }
-
-    if (deportista.contraseña !== contraseña) {
-      return res.status(401).json({ mensaje: 'Usuario o contraseña incorrectos' });
-    }
-
-    res.json({ mensaje: 'Login exitoso', deportista });
-  } catch (err) {
-    console.error('Error en login deportista:', err);
-    res.status(500).json({ mensaje: 'Error interno' });
-  }
-};
+module.exports = { sanitizeDeportistaInput, findAll, findOne, add, update, remove };

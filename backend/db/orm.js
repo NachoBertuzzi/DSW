@@ -1,13 +1,13 @@
-import {mikroORM} from "@mikro-orm/core";
-import {SqlHighLighter} from "@mikro-orm/sql-highlighter";
-const { deportista } = require('../entities/deportista.entity.js');
+import 'reflect-metadata'; 
+import {MikroORM} from "@mikro-orm/mysql";
+import { SqlHighlighter } from '@mikro-orm/sql-highlighter';
 
 export const orm = await MikroORM.init({
-    entities: ['backend/entity/*.js'],
+    // PRUEBA 1: solo deportista
+    entities: ['./entities/*.js'],
     dbName: 'entrenamiento_db',
-    type: 'mysql',
     clientUrl: 'mysql://root:valen2005@127.0.0.1:3306/entrenamiento_db',
-    highlighter: new SqlHighLighter(),
+    highlighter: new SqlHighlighter(),
     debug: true,
     schemaGenerator: {  //never in production, solo para desarrollo
         disableForeignKeys: true,
@@ -19,7 +19,9 @@ export const orm = await MikroORM.init({
 export const syncSchema = async () => {
     const generator = orm.getSchemaGenerator();
     await generator.updateSchema();
-    // await generator.dropSquema();
-    //await generator.createSchema();
+    console.log('✅ Esquema sincronizado con la base de datos');
+    await generator.dropSchema();
+    await generator.createSchema();
 }//esta funcion va a generar la base de datos si no existe y anlaliza si existe 
 // si necesita cambios contra el esquema.
+

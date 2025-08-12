@@ -1,0 +1,25 @@
+### listar
+GET http://localhost:3000/api/entrenamientos
+
+### obtener uno
+GET http://localhost:3000/api/entrenamientos/1
+
+### crear
+POST http://localhost:3000/api/entrenamientos
+Content-Type: application/json
+
+{
+  "fechaEntrenamiento": "2025-08-12",
+  "horaEntrenamiento": "18:30"
+}
+
+### actualizar
+PUT http://localhost:3000/api/entrenamientos/1
+Content-Type: application/json
+
+{
+  "horaEntrenamiento": "19:00"
+}
+
+### borrar
+DELETE http://localhost:3000/api/entrenamientos/1

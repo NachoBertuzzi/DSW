@@ -1,35 +1,48 @@
-// JavaScript (cómo se vería conceptualmente)
-class DeportistaRepository {
-    constructor() {
-         
-    }
+class Repository {
+  /**
+   * Devuelve todos los registros.
+   * @returns {Promise<Array|undefined>}
+   */
+  async findAll() {
+    throw new Error("El método findAll() debe ser implementado en la subclase");
+  }
 
-    findAll() {
-        // Aquí iría tu lógica para encontrar todos los caracteres
-        return Promise.resolve(/* array de caracteres o undefined */);
-    }
+  /**
+   * Devuelve un registro por su id.
+   * @param {{ id: string }} item
+   * @returns {Promise<Object|undefined>}
+   */
+  async findOne(item) {
+    throw new Error("El método findOne() debe ser implementado en la subclase");
+  }
 
-    findOne(item) {
-        // Aquí iría tu lógica para encontrar un caracter por ID
-        return Promise.resolve(/* caracter o undefined */);
-    }
+  /**
+   * Agrega un nuevo registro.
+   * @param {Object} item
+   * @returns {Promise<Object|undefined>}
+   */
+  async add(item) {
+    throw new Error("El método add() debe ser implementado en la subclase");
+  }
 
-    add(item) {
-        // Aquí iría tu lógica para añadir un deportista
-        return Promise.resolve(/* caracter añadido o undefined */);
-    }
+  /**
+   * Actualiza un registro por id.
+   * @param {string} id
+   * @param {Object} item
+   * @returns {Promise<Object|undefined>}
+   */
+  async update(id, item) {
+    throw new Error("El método update() debe ser implementado en la subclase");
+  }
 
-    update(id, item) {
-        // Aquí iría tu lógica para actualizar un caracter
-        return Promise.resolve(/* caracter actualizado o undefined */);
-    }
-
-    delete(item) {
-        // Aquí iría tu lógica para eliminar un caracter
-        return Promise.resolve(/* caracter eliminado o undefined */);
-    }
+  /**
+   * Elimina un registro.
+   * @param {{ id: string }} item
+   * @returns {Promise<Object|undefined>}
+   */
+  async delete(item) {
+    throw new Error("El método delete() debe ser implementado en la subclase");
+  }
 }
 
-// Para usarla:
-// module.exports = CharacterRepository; // Si usas CommonJS
-// export default CharacterRepository; // Si usas ES Modules
+module.exports = Repository;

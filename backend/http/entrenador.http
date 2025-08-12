@@ -1,0 +1,32 @@
+### listar
+GET http://localhost:3000/api/entrenadores
+
+### obtener uno
+GET http://localhost:3000/api/entrenadores/123
+
+### crear
+POST http://localhost:3000/api/entrenadores
+Content-Type: application/json
+
+{
+  "dni": "123",
+  "nombre": "Sofi",
+  "apellido": "Luna",
+  "usuario": "sluna",
+  "contrasena": "secreta",
+  "especialidad": "Fuerza",
+  "mail": "sofi@example.com",
+  "tel": "112233"
+}
+
+### actualizar
+PUT http://localhost:3000/api/entrenadores/123
+Content-Type: application/json
+
+{
+  "mail": "nuevo@example.com",
+  "tel": "119988"
+}
+
+### borrar
+DELETE http://localhost:3000/api/entrenadores/123

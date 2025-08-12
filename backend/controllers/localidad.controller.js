@@ -1,86 +1,41 @@
-const localidadService = require('../services/localidadService');
+const service = require('../services/localidadService.js');
 
-function validarLocalidad(data) {
-  const { nombre, provincia_id } = data;
+function sanitizeLocalidadInput(req, _res, next) {
+  const { codPostal, nombre, provincia } = req.body;
 
-  if (
-    typeof nombre !== 'string' ||
-    nombre.trim() === '' ||
-    nombre.length > 100
-  ) {
-    return { ok: false, mensaje: 'Nombre de localidad inválido (vacío o muy largo)' };
-  }
-
-  if (
-    typeof provincia_id !== 'number' ||
-    !Number.isInteger(provincia_id)
-  ) {
-    return { ok: false, mensaje: 'ID de provincia inválido (debe ser un número entero)' };
-  }
-
-  return { ok: true };
+  req.body.sanitizedInput = { codPostal, nombre, provincia };
+  Object.keys(req.body.sanitizedInput).forEach((k) => {
+    if (req.body.sanitizedInput[k] === undefined) delete req.body.sanitizedInput[k];
+  });
+  next();
 }
 
-exports.getAll = async (req, res) => {
-  try {
-    const localidades = await localidadService.getAll();
-    res.json(localidades);
-  } catch (error) {
-    res.status(500).json({ error: 'Error al obtener las localidades' });
-  }
-};
+async function findAll(_req, res) {
+  res.json({ data: await service.getAll() });
+}
 
-exports.getById = async (req, res) => {
-  try {
-    const localidad = await localidadService.getById(req.params.id);
-    if (!localidad) {
-      return res.status(404).json({ error: 'Localidad no encontrada' });
-    }
-    res.json(localidad);
-  } catch (error) {
-    res.status(500).json({ error: 'Error al obtener la localidad' });
-  }
-};
+async function findOne(req, res) {
+  const codPostal = req.params.codPostal;
+  const item = await service.getById({ codPostal });
+  if (!item) return res.status(404).send({ message: 'Localidad no encontrada' });
+  res.json({ data: item });
+}
 
-exports.create = async (req, res) => {
-  const validacion = validarLocalidad(req.body);
-  if (!validacion.ok) {
-    return res.status(400).json({ error: validacion.mensaje });
-  }
+async function add(req, res) {
+  const created = await service.create(req.body.sanitizedInput);
+  res.status(201).send({ message: 'Localidad creada', data: created });
+}
 
-  try {
-    const newLocalidad = await localidadService.create(req.body);
-    res.status(201).json(newLocalidad);
-  } catch (error) {
-    res.status(500).json({ error: 'Error al crear la localidad' });
-  }
-};
+async function update(req, res) {
+  const updated = await service.update(req.params.codPostal, req.body.sanitizedInput);
+  if (!updated) return res.status(404).send({ message: 'Localidad no encontrada' });
+  res.status(200).send({ message: 'Localidad actualizada', data: updated });
+}
 
-exports.update = async (req, res) => {
-  const validacion = validarLocalidad(req.body);
-  if (!validacion.ok) {
-    return res.status(400).json({ error: validacion.mensaje });
-  }
+async function remove(req, res) {
+  const deleted = await service.remove({ codPostal: req.params.codPostal });
+  if (!deleted) return res.status(404).send({ message: 'Localidad no encontrada' });
+  res.status(200).send({ message: 'Localidad eliminada' });
+}
 
-  try {
-    const updated = await localidadService.update(req.params.id, req.body);
-    if (!updated) {
-      return res.status(404).json({ error: 'Localidad no encontrada' });
-    }
-    res.json({ mensaje: 'Localidad actualizada correctamente' });
-  } catch (error) {
-    res.status(500).json({ error: 'Error al actualizar la localidad' });
-  }
-};
-
-exports.delete = async (req, res) => {
-  try {
-    const deleted = await localidadService.delete(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ error: 'Localidad no encontrada' });
-    }
-    res.json({ mensaje: 'Localidad eliminada correctamente' });
-  } catch (error) {
-    res.status(500).json({ error: 'Error al eliminar la localidad' });
-  }
-};
+module.exports = { sanitizeLocalidadInput, findAll, findOne, add, update, remove };

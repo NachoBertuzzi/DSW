@@ -1,14 +1,14 @@
-// routes/entrenadorRoutes.js
-const express = require('express');
-const router = express.Router();
-const controller = require('../controllers/entrenador.controller');
+const { Router } = require('express');
+const ctrl = require('../controllers/entrenador.controller');
 
-router.post('/login', controller.login);
-router.get('/', controller.getAll);
-router.get('/:id', controller.getById);
-router.post('/', controller.create);
-router.put('/:id', controller.update);
-router.delete('/:id', controller.delete);
+const router = Router();
+
+// PK = dni
+router.get('/', ctrl.findAll);
+router.get('/:dni', ctrl.findOne);
+router.post('/', ctrl.sanitizeEntrenadorInput, ctrl.add);
+router.put('/:dni', ctrl.sanitizeEntrenadorInput, ctrl.update);
+router.patch('/:dni', ctrl.sanitizeEntrenadorInput, ctrl.update);
+router.delete('/:dni', ctrl.remove);
 
 module.exports = router;
-// Este archivo define las rutas para las operaciones CRUD de entrenadores.

@@ -10,8 +10,12 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@mikro-orm/core": "^6.4.16",
+    "@mikro-orm/mysql": "^6.4.16",
+    "@mikro-orm/sql-highlighter": "^1.0.1",
     "cors": "^2.8.5",
     "express": "^5.1.0",
-    "mysql2": "^3.14.2"
+    "mysql2": "^3.14.2",
+    "reflect-metadata": "^0.2.2"
   }
 }

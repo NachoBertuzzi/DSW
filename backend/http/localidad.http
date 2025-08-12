@@ -1,0 +1,26 @@
+### listar
+GET http://localhost:3000/api/localidades
+
+### obtener una
+GET http://localhost:3000/api/localidades/5000
+
+### crear
+POST http://localhost:3000/api/localidades
+Content-Type: application/json
+
+{
+  "codPostal": "5000",
+  "nombre": "Córdoba",
+  "provincia": "Córdoba"
+}
+
+### actualizar
+PUT http://localhost:3000/api/localidades/5000
+Content-Type: application/json
+
+{
+  "nombre": "Córdoba Capital"
+}
+
+### borrar
+DELETE http://localhost:3000/api/localidades/5000

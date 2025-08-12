@@ -1,97 +1,46 @@
-const db = require('../db');
+const { RequestContext } = require('@mikro-orm/core');
+const { Deportista } = require('../entities/deportista.entity'); // EntitySchema { Deportista }
 
-exports.getAll = () => {
-  return new Promise((resolve, reject) => {
-    db.query('SELECT * FROM deportista', (err, results) => {
-      if (err) return reject(err);
-      resolve(results);
-    });
-  });
-};
+function em() {
+  const _em = RequestContext.getEntityManager();
+  if (!_em) throw new Error('No hay RequestContext activo');
+  return _em;
+}
 
-exports.getById = (id) => {
-  return new Promise((resolve, reject) => {
-    db.query('SELECT * FROM deportista WHERE id = ?', [id], (err, results) => {
-      if (err) return reject(err);
-      resolve(results[0]);
-    });
-  });
-};
+module.exports = {
+  async getAll() {
+    return em().find(Deportista, {});
+  },
 
-// cambios recientes
+  async getById({ dni }) {
+    // PK = dni
+    return em().findOne(Deportista, { dni });
+  },
 
+  async create(data) {
+    const _em = em();
+    const exists = await _em.findOne(Deportista, { dni: data.dni });
+    if (exists) return exists; // o tirá 409 si querés única estricta
 
-exports.create = ({
-  dni,
-  nombre,
-  apellido,
-  usuario,
-  email,
-  contraseña,
-  fecha_nacimiento,
-  altura,
-  peso,
-  localidad_id,
-}) => {
-  return new Promise((resolve, reject) => {
-    const sql = `
-      INSERT INTO deportista 
-      (dni, nombre, apellido, usuario, email, contraseña, fecha_nacimiento, altura, peso, localidad_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+    const d = _em.create(Deportista, data);
+    await _em.persistAndFlush(d);
+    return d;
+  },
 
-    db.query(
-      sql,
-      [dni, nombre, apellido, usuario, email, contraseña, fecha_nacimiento, altura, peso, localidad_id],
-      (err, result) => {
-        if (err) return reject(err);
-        resolve({
-          id: result.insertId,
-          dni,
-          nombre,
-          apellido,
-          usuario,
-          email,
-          fecha_nacimiento,
-          altura,
-          peso,
-          localidad_id,
-        });
-      }
-    );
-  });
-};
+  async update(dni, data) {
+    const _em = em();
+    const d = await _em.findOne(Deportista, { dni });
+    if (!d) return undefined;
+    _em.assign(d, data);
+    await _em.persistAndFlush(d);
+    return d;
+  },
 
-
-
-exports.update = (id, { nombre, apellido, fecha_nacimiento, localidad_id }) => {
-  return new Promise((resolve, reject) => {
-    db.query(
-      'UPDATE deportista SET nombre = ?, apellido = ?, fecha_nacimiento = ?, localidad_id = ? WHERE id = ?',
-      [nombre, apellido, fecha_nacimiento, localidad_id, id],
-      (err, result) => {
-        if (err) return reject(err);
-        resolve(result.affectedRows > 0);
-      }
-    );
-  });
-};
-
-exports.delete = (id) => {
-  return new Promise((resolve, reject) => {
-    db.query('DELETE FROM deportista WHERE id = ?', [id], (err, result) => {
-      if (err) return reject(err);
-      resolve(result.affectedRows > 0);
-    });
-  });
-};
-
-//login 
-exports.getByUsuario = (usuario) => {
-  return new Promise((resolve, reject) => {
-    db.query('SELECT * FROM deportista WHERE usuario = ? LIMIT 1', [usuario], (err, results) => {
-      if (err) return reject(err);
-      resolve(results[0] || null);
-    });
-  });
+  async remove({ dni }) {
+    const _em = em();
+    const d = await _em.findOne(Deportista, { dni });
+    if (!d) return undefined;
+    await _em.removeAndFlush(d);
+    return d;
+  },
 };

@@ -1,0 +1,33 @@
+### listar
+GET http://localhost:3000/api/deportistas
+
+### obtener uno
+GET http://localhost:3000/api/deportistas/123
+
+### crear
+POST http://localhost:3000/api/deportistas
+Content-Type: application/json
+
+{
+  "dni": "123",
+  "nombre": "Valen",
+  "apellido": "Prueba",
+  "usuario": "valenp",
+  "email": "v@test.com",
+  "contrasena": "secreta",
+  "altura": 1.62,
+  "peso": 54,
+  "telefono": "112233"
+}
+
+### actualizar (PUT)
+PUT http://localhost:3000/api/deportistas/123
+Content-Type: application/json
+
+{
+  "telefono": "119988",
+  "email": "nuevo@test.com"
+}
+
+### borrar
+DELETE http://localhost:3000/api/deportistas/123

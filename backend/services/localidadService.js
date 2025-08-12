@@ -1,4 +1,4 @@
-const db = require('../db/db');
+const db = require('../db');
 
 exports.getAll = () => {
   return new Promise((resolve, reject) => {

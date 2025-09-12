@@ -1,6 +1,6 @@
 const service = require('../services/deportistaService.js');
 
-// Middleware tipo “sanitize” como el profe
+
 function sanitizeDeportistaInput(req, _res, next) {
   const {
     dni,
@@ -8,7 +8,7 @@ function sanitizeDeportistaInput(req, _res, next) {
     apellido,
     usuario,
     email,
-    contrasena, // usá "contrasena" (sin ñ) en tus entidades/tablas para evitar quilombos
+    contrasena, 
     altura,
     peso,
     telefono,
@@ -26,7 +26,7 @@ function sanitizeDeportistaInput(req, _res, next) {
     telefono,
   };
 
-  // borrar undefined
+ 
   Object.keys(req.body.sanitizedInput).forEach((k) => {
     if (req.body.sanitizedInput[k] === undefined) delete req.body.sanitizedInput[k];
   });
@@ -47,7 +47,7 @@ async function findOne(req, res) {
 }
 
 async function add(req, res) {
-  // dni puede venir en body (recomendado)
+  
   const created = await service.create(req.body.sanitizedInput);
   return res.status(201).send({ message: 'Deportista creado', data: created });
 }

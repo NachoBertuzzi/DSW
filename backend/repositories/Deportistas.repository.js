@@ -98,5 +98,5 @@ class DeportistaRepository extends Repository {
 }
 
 module.exports = DeportistaRepository;
-// Si preferís exportar una instancia directamente:
+// Si queremos exportar una instancia directamente:
 // module.exports = new DeportistaRepository();

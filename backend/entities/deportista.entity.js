@@ -1,4 +1,4 @@
-// entities/deportista.entity.js
+
 const { EntitySchema } = require('@mikro-orm/core');
 
 const Deportista = new EntitySchema({
@@ -10,7 +10,7 @@ const Deportista = new EntitySchema({
     apellido: { type: 'string' },
     usuario: { type: 'string' },
     email: { type: 'string' },
-    contrasena: { type: 'string' }, // sin ñ para evitar líos
+    contrasena: { type: 'string' }, 
     altura: { type: 'number', nullable: true },
     peso: { type: 'number', nullable: true },
     telefono: { type: 'string', nullable: true },

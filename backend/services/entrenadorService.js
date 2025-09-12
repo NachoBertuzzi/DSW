@@ -9,7 +9,10 @@ function em() {
 
 module.exports = {
   async getAll() {
-    return em().find(Entrenador, {});
+    return em().find(Entrenador, {}, {
+      fields: ['dni', 'nombre', 'apellido', 'usuario', 'email', 'contrasena', 'tel', 'especialidad'],
+      orderBy: { dni: 'asc' },
+    });
   },
 
   async getById({ dni }) {

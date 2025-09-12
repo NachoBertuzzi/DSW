@@ -1,5 +1,6 @@
 const { RequestContext } = require('@mikro-orm/core');
-const { Deportista } = require('../entities/deportista.entity'); // EntitySchema { Deportista }
+const { Deportista } = require('../entities/deportista.entity');
+const { Localidad } = require('../entities/localidad.entity'); // 👈
 
 function em() {
   const _em = RequestContext.getEntityManager();
@@ -13,14 +14,19 @@ module.exports = {
   },
 
   async getById({ dni }) {
-    // PK = dni
     return em().findOne(Deportista, { dni });
   },
 
   async create(data) {
     const _em = em();
+
+    // 🔑 convierte string a referencia de Localidad
+    if (data.localidad && typeof data.localidad === 'string') {
+      data.localidad = _em.getReference(Localidad, data.localidad);
+    }
+
     const exists = await _em.findOne(Deportista, { dni: data.dni });
-    if (exists) return exists; // o tirá 409 si querés única estricta
+    if (exists) return exists;
 
     const d = _em.create(Deportista, data);
     await _em.persistAndFlush(d);
@@ -31,6 +37,12 @@ module.exports = {
     const _em = em();
     const d = await _em.findOne(Deportista, { dni });
     if (!d) return undefined;
+
+    // 🔑 idem en update
+    if (data.localidad && typeof data.localidad === 'string') {
+      data.localidad = _em.getReference(Localidad, data.localidad);
+    }
+
     _em.assign(d, data);
     await _em.persistAndFlush(d);
     return d;

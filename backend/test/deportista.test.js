@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
-import app from '../server.js'; // importa tu servidor Express
+import app from '../server.js'; // importa servidor Express
 
 describe('CRUD Deportistas', () => {
 
@@ -29,7 +29,7 @@ describe('CRUD Deportistas', () => {
     const res = await request(app).post('/deportistas').send(nuevo);
     expect(res.status).toBe(201);
     expect(res.body).toHaveProperty('dni', nuevo.dni);
-    nuevoId = res.body.id; // guardamos el ID para los siguientes tests
+    nuevoId = res.body.id; 
   });
 
   it('GET /deportistas/:id debe devolver el deportista creado', async () => {

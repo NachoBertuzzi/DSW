@@ -1,4 +1,4 @@
-// entities/entrenador.entity.js
+
 const { EntitySchema } = require('@mikro-orm/core');
 
 const Entrenador = new EntitySchema({

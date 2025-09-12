@@ -1,69 +1,47 @@
-const db = require('../db');
+const { RequestContext } = require('@mikro-orm/core');
+const { Localidad } = require('../entities/localidad.entity');
 
-exports.getAll = () => {
-  return new Promise((resolve, reject) => {
-    db.query('SELECT * FROM localidad', (err, results) => {
-      if (err) return reject(err);
-      resolve(results);
+function em() {
+  const _em = RequestContext.getEntityManager();
+  if (!_em) throw new Error('No hay RequestContext activo');
+  return _em;
+}
+
+module.exports = {
+  async getAll() {
+    return em().find(Localidad, {}, {
+      fields: ['codPostal', 'nombre', 'provincia'],
+      orderBy: { codPostal: 'asc' },
     });
-  });
-};
+  },
 
-exports.getById = (id) => {
-  return new Promise((resolve, reject) => {
-    db.query('SELECT * FROM localidad WHERE id = ?', [id], (err, results) => {
-      if (err) return reject(err);
-      resolve(results[0]);
-    });
-  });
-};
+  async getById({ codPostal }) {
+    return em().findOne(Localidad, { codPostal });
+  },
 
-exports.getIdByName = (nombre) => {
-  return new Promise((resolve, reject) => {
-    db.query(
-      'SELECT id FROM localidad WHERE nombre = ?',
-      [nombre],
-      (err, results) => {
-        if (err) return reject(err);
-        if (results.length === 0) return resolve(null);
-        resolve(results[0].id);
-      }
-    );
-  });
-};
+  async create(data) {
+    const _em = em();
+    const exists = await _em.findOne(Localidad, { codPostal: data.codPostal });
+    if (exists) return exists;
+    const loc = _em.create(Localidad, data);
+    await _em.persistAndFlush(loc);
+    return loc;
+  },
 
+  async update(codPostal, data) {
+    const _em = em();
+    const loc = await _em.findOne(Localidad, { codPostal });
+    if (!loc) return undefined;
+    _em.assign(loc, data);
+    await _em.persistAndFlush(loc);
+    return loc;
+  },
 
-exports.create = ({ nombre, provincia_id }) => {
-  return new Promise((resolve, reject) => {
-    db.query(
-      'INSERT INTO localidad (nombre, provincia_id) VALUES (?, ?)',
-      [nombre, provincia_id],
-      (err, result) => {
-        if (err) return reject(err);
-        resolve({ id: result.insertId, nombre, provincia_id });
-      }
-    );
-  });
-};
-
-exports.update = (id, { nombre, provincia_id }) => {
-  return new Promise((resolve, reject) => {
-    db.query(
-      'UPDATE localidad SET nombre = ?, provincia_id = ? WHERE id = ?',
-      [nombre, provincia_id, id],
-      (err, result) => {
-        if (err) return reject(err);
-        resolve(result.affectedRows > 0);
-      }
-    );
-  });
-};
-
-exports.delete = (id) => {
-  return new Promise((resolve, reject) => {
-    db.query('DELETE FROM localidad WHERE id = ?', [id], (err, result) => {
-      if (err) return reject(err);
-      resolve(result.affectedRows > 0);
-    });
-  });
+  async remove({ codPostal }) {
+    const _em = em();
+    const loc = await _em.findOne(Localidad, { codPostal });
+    if (!loc) return undefined;
+    await _em.removeAndFlush(loc);
+    return loc;
+  },
 };

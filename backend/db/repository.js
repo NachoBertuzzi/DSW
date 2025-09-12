@@ -2,12 +2,8 @@ class Repository {
   /**
    * Devuelve todos los registros.
    * @returns {Promise<Array|undefined>}
-   */
-  async findAll() {
-    throw new Error("El método findAll() debe ser implementado en la subclase");
-  }
-
-  /**
+   
+ 
    * Devuelve un registro por su id.
    * @param {{ id: string }} item
    * @returns {Promise<Object|undefined>}

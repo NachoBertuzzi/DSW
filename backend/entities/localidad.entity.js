@@ -1,4 +1,4 @@
-// entities/localidad.entity.js
+
 const { EntitySchema } = require('@mikro-orm/core');
 
 const Localidad = new EntitySchema({

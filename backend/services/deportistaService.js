@@ -1,6 +1,6 @@
-const { RequestContext } = require('@mikro-orm/core');
+const { RequestContext, wrap } = require('@mikro-orm/core');
 const { Deportista } = require('../entities/deportista.entity');
-const { Localidad } = require('../entities/localidad.entity'); // 👈
+const { Localidad } = require('../entities/localidad.entity');
 
 function em() {
   const _em = RequestContext.getEntityManager();
@@ -20,7 +20,7 @@ module.exports = {
   async create(data) {
     const _em = em();
 
-    // 🔑 convierte string a referencia de Localidad
+    // si viene string, lo convertimos a referencia
     if (data.localidad && typeof data.localidad === 'string') {
       data.localidad = _em.getReference(Localidad, data.localidad);
     }
@@ -38,7 +38,6 @@ module.exports = {
     const d = await _em.findOne(Deportista, { dni });
     if (!d) return undefined;
 
-    // 🔑 idem en update
     if (data.localidad && typeof data.localidad === 'string') {
       data.localidad = _em.getReference(Localidad, data.localidad);
     }
@@ -54,5 +53,27 @@ module.exports = {
     if (!d) return undefined;
     await _em.removeAndFlush(d);
     return d;
+  },
+
+  // ====== LOGIN (nuevo) ======
+  async login(usuarioOrEmail, contraseñaPlano) {
+    // permitimos usuario o email
+    const d = await em().findOne(
+      Deportista,
+      { $or: [{ usuario: usuarioOrEmail }, { email: usuarioOrEmail }] },
+      { populate: ['localidad'] }
+    );
+    if (!d) return null;
+
+    // el campo puede llamarse contrasena o "contraseña"
+    const guardado = d.contrasena ?? d['contraseña'];
+    const ok = contraseñaPlano === guardado; // si usás bcrypt, cambiá por bcrypt.compare
+
+    if (!ok) return null;
+
+    const plano = wrap(d).toObject();
+    delete plano.contrasena;
+    delete plano['contraseña'];
+    return plano;
   },
 };

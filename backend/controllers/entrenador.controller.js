@@ -46,4 +46,35 @@ async function remove(req, res) {
   res.status(200).send({ message: 'Entrenador eliminado' });
 }
 
-module.exports = { sanitizeEntrenadorInput, findAll, findOne, add, update, remove };
+// === LOGIN (nuevo) ===
+async function login(req, res) {
+  try {
+    const {
+      usuario,
+      email,   // por si te llega como email
+      mail,    // por si te llega como mail
+      contraseña,
+      contrasena,
+    } = req.body;
+
+    const userOrEmail = usuario ?? email ?? mail;
+    const pass = contraseña ?? contrasena;
+
+    if (!userOrEmail || !pass) {
+      return res.status(400).json({ mensaje: 'Faltan credenciales' });
+    }
+
+    const entrenador = await service.login(userOrEmail, pass);
+    if (!entrenador) {
+      return res.status(401).json({ mensaje: 'Credenciales incorrectas' });
+    }
+
+    return res.json({ entrenador });
+  } catch (e) {
+    console.error('Login entrenador:', e);
+    return res.status(500).json({ mensaje: 'Error del servidor' });
+  }
+}
+
+
+module.exports = { sanitizeEntrenadorInput, findAll, findOne, add, update, remove , login };

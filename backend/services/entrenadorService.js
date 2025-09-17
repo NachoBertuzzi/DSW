@@ -1,4 +1,4 @@
-const { RequestContext } = require('@mikro-orm/core');
+const { RequestContext, wrap } = require('@mikro-orm/core');
 const { Entrenador } = require('../entities/entrenador.entity');
 
 function em() {
@@ -43,5 +43,24 @@ module.exports = {
     if (!ent) return undefined;
     await _em.removeAndFlush(ent);
     return ent;
+  },
+
+  // ====== LOGIN (nuevo) ======
+  async login(usuarioOrEmail, contraseñaPlano) {
+    const e = await em().findOne(
+      Entrenador,
+      { $or: [{ usuario: usuarioOrEmail }, { email: usuarioOrEmail }] }
+    );
+    if (!e) return null;
+
+    const guardado = e.contrasena ?? e['contraseña'];
+    const ok = contraseñaPlano === guardado; // si usás bcrypt, cambiá por bcrypt.compare
+
+    if (!ok) return null;
+
+    const plano = wrap(e).toObject();
+    delete plano.contrasena;
+    delete plano['contraseña'];
+    return plano;
   },
 };

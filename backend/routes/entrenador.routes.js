@@ -11,4 +11,7 @@ router.put('/:dni', ctrl.sanitizeEntrenadorInput, ctrl.update);
 router.patch('/:dni', ctrl.sanitizeEntrenadorInput, ctrl.update);
 router.delete('/:dni', ctrl.remove);
 
+// ====== LOGIN (nuevo) ======
+router.post('/login', ctrl.login);
+
 module.exports = router;

@@ -2,13 +2,29 @@ const service = require('../services/entrenadorService.js');
 
 function sanitizeEntrenadorInput(req, _res, next) {
   const {
-    dni, nombre, apellido, usuario,
-    contrasena, especialidad, mail, tel,
+    dni,
+    nombre,
+    apellido,
+    usuario,
+    contrasena,
+    especialidad,
+    mail,     // puede venir como "mail"
+    email,    // o como "email"
+    tel,
   } = req.body;
 
+  // Normalizo: si viene "mail" lo copio a "email"
+  const normalizedEmail = email ?? mail;
+
   req.body.sanitizedInput = {
-    dni, nombre, apellido, usuario,
-    contrasena, especialidad, mail, tel,
+    dni,
+    nombre,
+    apellido,
+    usuario,
+    contrasena,
+    especialidad,
+    email: normalizedEmail, // <- la entidad Entrenador espera "email"
+    tel,
   };
 
   Object.keys(req.body.sanitizedInput).forEach((k) => {
@@ -76,5 +92,4 @@ async function login(req, res) {
   }
 }
 
-
-module.exports = { sanitizeEntrenadorInput, findAll, findOne, add, update, remove , login };
+module.exports = { sanitizeEntrenadorInput, findAll, findOne, add, update, remove, login };

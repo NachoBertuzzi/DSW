@@ -52,3 +52,4 @@ start().catch(err => {
   console.error('Error al iniciar:', err);
   process.exit(1);
 });
+

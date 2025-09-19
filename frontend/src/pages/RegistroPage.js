@@ -37,7 +37,7 @@ const RegistroPage = ({ onVolver }) => {
         ? {
             altura: Number(regAltura),
             peso: Number(regPeso),
-            localidad_nombre: regLocalidad.trim(),
+            localidad: regLocalidad.trim(), // cambiado para service
           }
         : {
             especialidad: regEspecialidad,

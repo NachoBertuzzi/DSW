@@ -1,6 +1,5 @@
 const service = require('../services/deportistaService.js');
 
-
 function sanitizeDeportistaInput(req, _res, next) {
   const {
     dni,
@@ -8,10 +7,11 @@ function sanitizeDeportistaInput(req, _res, next) {
     apellido,
     usuario,
     email,
-    contrasena, 
+    contraseña,
     altura,
     peso,
     telefono,
+    localidad,
   } = req.body;
 
   req.body.sanitizedInput = {
@@ -20,13 +20,13 @@ function sanitizeDeportistaInput(req, _res, next) {
     apellido,
     usuario,
     email,
-    contrasena,
+    contrasena: contraseña,
     altura,
     peso,
     telefono,
+    localidad,
   };
 
- 
   Object.keys(req.body.sanitizedInput).forEach((k) => {
     if (req.body.sanitizedInput[k] === undefined) delete req.body.sanitizedInput[k];
   });
@@ -47,7 +47,6 @@ async function findOne(req, res) {
 }
 
 async function add(req, res) {
-  
   const created = await service.create(req.body.sanitizedInput);
   return res.status(201).send({ message: 'Deportista creado', data: created });
 }
@@ -66,30 +65,22 @@ async function remove(req, res) {
   res.status(200).send({ message: 'Deportista eliminado' });
 }
 
-
-
-// === LOGIN (nuevo) ===
+// LOGIN
 async function login(req, res) {
   try {
     const { usuario, contraseña, contrasena } = req.body;
     const pass = contraseña ?? contrasena;
 
-    if (!usuario || !pass) {
-      return res.status(400).json({ mensaje: 'Faltan credenciales' });
-    }
+    if (!usuario || !pass) return res.status(400).json({ mensaje: 'Faltan credenciales' });
 
     const deportista = await service.login(usuario, pass);
-    if (!deportista) {
-      return res.status(401).json({ mensaje: 'Credenciales incorrectas' });
-    }
+    if (!deportista) return res.status(401).json({ mensaje: 'Credenciales incorrectas' });
 
-    // devolvemos el objeto sin contraseña (el service ya la quita)
     return res.json({ deportista });
   } catch (e) {
     console.error('Login deportista:', e);
     return res.status(500).json({ mensaje: 'Error del servidor' });
   }
 }
-
 
 module.exports = { sanitizeDeportistaInput, findAll, findOne, add, update, remove, login };

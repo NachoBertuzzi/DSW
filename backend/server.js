@@ -23,7 +23,7 @@ app.use(express.json());
 
 async function start() {
   // import dinámico (ESM) del ORM
-  const { orm, syncSchema } = await import('./db/orm.js');
+  const { orm, syncSchema } = await import('./db/orm.mjs');
 
   // Contexto por request (antes de rutas)
   app.use((req, res, next) => RequestContext.create(orm.em, next));

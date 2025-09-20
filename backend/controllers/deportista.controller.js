@@ -45,6 +45,18 @@ function sanitizeDeportistaInput(req, _res, next) {
 async function add(req, res) {
   const data = req.body.sanitizedInput;
 
+  // Validación de formato del email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(data.email)) {
+    return res.status(400).send({ mensaje: 'El email no tiene un formato válido.' });
+  }
+
+  // Validación para que no exista otro deportista con el mismo usuario
+  const existingUser = await service.getByUsuario(data.usuario);
+  if (existingUser) {
+    return res.status(400).send({ mensaje: 'El usuario ya existe.' });
+  }
+
   if (data.localidadCodPostal) {
     let localidadEntity = await localidadService.getById({ codPostal: data.localidadCodPostal.trim() });
     if (!localidadEntity) {

@@ -1,4 +1,11 @@
+// ...existing imports and código...
 import React, { useState } from 'react';
+
+// Función para validar formato de email usando una expresión regular
+const validateEmail = (email) => {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+};
 
 const RegistroPage = ({ onVolver }) => {
   const [regTipo, setRegTipo] = useState('deportista');
@@ -27,6 +34,12 @@ const RegistroPage = ({ onVolver }) => {
     e.preventDefault();
     setMensajeRegistro('');
 
+    // Validación de formato del email
+    if (!validateEmail(regEmail)) {
+      setMensajeRegistro('Error: El mail no tiene un formato válido.');
+      return;
+    }
+    
     const urlBase = 'http://localhost:3000/api';
     const urlRegistro =
       regTipo === 'deportista'
@@ -37,17 +50,16 @@ const RegistroPage = ({ onVolver }) => {
       dni: Number(regDni),
       nombre: regNombre,
       apellido: regApellido,
-      usuario: regUsuario,
+      usuario: regUsuario, // este campo será único
       email: regEmail,
-      // Siempre enviamos "contrasena" (sin ñ)
-      contrasena: regPassword,
+      contrasena: regPassword, // siempre se usa "contrasena"
       fecha_nacimiento: regFechaNacimiento,
       ...(regTipo === 'deportista'
         ? {
             altura: Number(regAltura),
             peso: Number(regPeso),
-            // Enviamos los tres campos para localidad
-            localidadCodPostal: regLocalidadCodPostal.trim(),
+            // Nota: ahora el código postal es de tipo number
+            localidadCodPostal: regLocalidadCodPostal.toString().trim(),
             localidadNombre: regLocalidadNombre.trim(),
             localidadProvincia: regLocalidadProvincia.trim(),
           }
@@ -203,7 +215,7 @@ const RegistroPage = ({ onVolver }) => {
             <div>
               <label>Localidad - Código Postal: </label>
               <input
-                type="text"
+                type="number"
                 required
                 value={regLocalidadCodPostal}
                 onChange={(e) => setRegLocalidadCodPostal(e.target.value)}

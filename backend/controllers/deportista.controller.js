@@ -1,4 +1,5 @@
 const service = require('../services/deportistaService.js');
+const localidadService = require('../services/localidadService.js');
 
 function sanitizeDeportistaInput(req, _res, next) {
   const {
@@ -7,11 +8,16 @@ function sanitizeDeportistaInput(req, _res, next) {
     apellido,
     usuario,
     email,
-    contraseña,
+    // Se usa siempre "contrasena" sin ñ
+    contrasena,
+    fecha_nacimiento,
     altura,
     peso,
     telefono,
-    localidad,
+    // Campos para localidad
+    localidadCodPostal,
+    localidadNombre,
+    localidadProvincia,
   } = req.body;
 
   req.body.sanitizedInput = {
@@ -20,18 +26,45 @@ function sanitizeDeportistaInput(req, _res, next) {
     apellido,
     usuario,
     email,
-    contrasena: contraseña,
+    contrasena,
+    fecha_nacimiento,
     altura,
     peso,
     telefono,
-    localidad,
+    localidadCodPostal,
+    localidadNombre,
+    localidadProvincia,
   };
 
   Object.keys(req.body.sanitizedInput).forEach((k) => {
     if (req.body.sanitizedInput[k] === undefined) delete req.body.sanitizedInput[k];
   });
-
   next();
+}
+
+async function add(req, res) {
+  const data = req.body.sanitizedInput;
+
+  if (data.localidadCodPostal) {
+    let localidadEntity = await localidadService.getById({ codPostal: data.localidadCodPostal.trim() });
+    if (!localidadEntity) {
+      // Se crea la localidad usando el código postal y asignándole el nombre y provincia recibidos
+      localidadEntity = await localidadService.create({
+        codPostal: data.localidadCodPostal.trim(),
+        nombre: data.localidadNombre ? data.localidadNombre.trim() : '',
+        provincia: data.localidadProvincia ? data.localidadProvincia.trim() : '',
+      });
+    }
+    data.localidad = localidadEntity;
+  }
+
+  // Elimina los campos extra que solo se usaron para la localidad
+  delete data.localidadCodPostal;
+  delete data.localidadNombre;
+  delete data.localidadProvincia;
+
+  const created = await service.create(data);
+  return res.status(201).send({ message: 'Deportista creado', data: created });
 }
 
 async function findAll(_req, res) {
@@ -44,11 +77,6 @@ async function findOne(req, res) {
   const item = await service.getById({ dni });
   if (!item) return res.status(404).send({ message: 'Deportista no encontrado' });
   res.json({ data: item });
-}
-
-async function add(req, res) {
-  const created = await service.create(req.body.sanitizedInput);
-  return res.status(201).send({ message: 'Deportista creado', data: created });
 }
 
 async function update(req, res) {
@@ -65,15 +93,12 @@ async function remove(req, res) {
   res.status(200).send({ message: 'Deportista eliminado' });
 }
 
-// LOGIN
 async function login(req, res) {
   try {
-    const { usuario, contraseña, contrasena } = req.body;
-    const pass = contraseña ?? contrasena;
+    const { usuario, contrasena } = req.body;
+    if (!usuario || !contrasena) return res.status(400).json({ mensaje: 'Faltan credenciales' });
 
-    if (!usuario || !pass) return res.status(400).json({ mensaje: 'Faltan credenciales' });
-
-    const deportista = await service.login(usuario, pass);
+    const deportista = await service.login(usuario, contrasena);
     if (!deportista) return res.status(401).json({ mensaje: 'Credenciales incorrectas' });
 
     return res.json({ deportista });

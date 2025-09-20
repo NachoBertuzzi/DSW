@@ -7,12 +7,20 @@ const RegistroPage = ({ onVolver }) => {
   const [regApellido, setRegApellido] = useState('');
   const [regUsuario, setRegUsuario] = useState('');
   const [regEmail, setRegEmail] = useState('');
-  const [regPassword, setRegPassword] = useState('');
+  const [regPassword, setRegPassword] = useState(''); // se usará "contrasena"
   const [regFechaNacimiento, setRegFechaNacimiento] = useState('');
+  
+  // Campos para deportista
   const [regAltura, setRegAltura] = useState('');
   const [regPeso, setRegPeso] = useState('');
+  // Se piden tres campos para la localidad: código postal, nombre y provincia
+  const [regLocalidadCodPostal, setRegLocalidadCodPostal] = useState('');
+  const [regLocalidadNombre, setRegLocalidadNombre] = useState('');
+  const [regLocalidadProvincia, setRegLocalidadProvincia] = useState('');
+  
+  // Campo para entrenador
   const [regEspecialidad, setRegEspecialidad] = useState('');
-  const [regLocalidad, setRegLocalidad] = useState('');
+  
   const [mensajeRegistro, setMensajeRegistro] = useState('');
 
   const handleRegistroSubmit = async (e) => {
@@ -31,13 +39,17 @@ const RegistroPage = ({ onVolver }) => {
       apellido: regApellido,
       usuario: regUsuario,
       email: regEmail,
-      contraseña: regPassword,
+      // Siempre enviamos "contrasena" (sin ñ)
+      contrasena: regPassword,
       fecha_nacimiento: regFechaNacimiento,
       ...(regTipo === 'deportista'
         ? {
             altura: Number(regAltura),
             peso: Number(regPeso),
-            localidad: regLocalidad.trim(), // cambiado para service
+            // Enviamos los tres campos para localidad
+            localidadCodPostal: regLocalidadCodPostal.trim(),
+            localidadNombre: regLocalidadNombre.trim(),
+            localidadProvincia: regLocalidadProvincia.trim(),
           }
         : {
             especialidad: regEspecialidad,
@@ -50,7 +62,6 @@ const RegistroPage = ({ onVolver }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-
       if (response.ok) {
         setMensajeRegistro('Registro exitoso! Ya podés iniciar sesión.');
         onVolver();
@@ -134,7 +145,7 @@ const RegistroPage = ({ onVolver }) => {
           />
         </div>
 
-        {/* BOTONES PARA ELEGIR TIPO DE USUARIO */}
+        {/* Botones para elegir tipo de usuario */}
         <div style={{ marginTop: 10, marginBottom: 10 }}>
           <label>Tipo de usuario: </label>
           <div style={{ display: 'flex', gap: 10, marginTop: 5 }}>
@@ -190,12 +201,30 @@ const RegistroPage = ({ onVolver }) => {
               />
             </div>
             <div>
-              <label>Localidad: </label>
+              <label>Localidad - Código Postal: </label>
               <input
                 type="text"
                 required
-                value={regLocalidad}
-                onChange={(e) => setRegLocalidad(e.target.value)}
+                value={regLocalidadCodPostal}
+                onChange={(e) => setRegLocalidadCodPostal(e.target.value)}
+              />
+            </div>
+            <div>
+              <label>Localidad - Nombre: </label>
+              <input
+                type="text"
+                required
+                value={regLocalidadNombre}
+                onChange={(e) => setRegLocalidadNombre(e.target.value)}
+              />
+            </div>
+            <div>
+              <label>Localidad - Provincia: </label>
+              <input
+                type="text"
+                required
+                value={regLocalidadProvincia}
+                onChange={(e) => setRegLocalidadProvincia(e.target.value)}
               />
             </div>
           </>

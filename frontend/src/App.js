@@ -3,6 +3,9 @@ import LoginPage from './pages/Login';
 import RegistroPage from './pages/RegistroPage';
 import MenuDeportista from './pages/MenuDeportista';
 import MenuEntrenador from './pages/MenuEntrenador';
+import './App.css';
+import './pages/inicio.css';
+import logo from './assets/logo.png';
 
 function App() {
   const [pantalla, setPantalla] = useState('inicio');
@@ -28,13 +31,16 @@ function App() {
   return (
     <div className="App" style={{ padding: 20 }}>
       {pantalla === 'inicio' && (
-        <>
-          <h1>Bienvenido</h1>
-          <button onClick={() => setPantalla('login')} style={{ marginRight: 10 }}>
-            Iniciar Sesión
-          </button>
-          <button onClick={() => setPantalla('registro')}>Registrarse</button>
-        </>
+        <div className="inicio-container">
+          <div className="inicio-box">
+            <img src={logo} alt="logo" className="inicio-logo" />
+            <h1 className="inicio-title">Bienvenido</h1>
+            <div className="inicio-buttons">
+              <button onClick={() => setPantalla('login')}>Iniciar Sesión</button>
+              <button onClick={() => setPantalla('registro')}>Registrarse</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {pantalla === 'login' && (
@@ -60,4 +66,3 @@ function App() {
 }
 
 export default App;
-

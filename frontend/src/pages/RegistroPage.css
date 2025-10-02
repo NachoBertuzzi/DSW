@@ -1,0 +1,129 @@
+/* Fondo general */
+.register-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #0d1b2a; /* azul oscuro */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: white;
+}
+
+/* Caja principal */
+.register-box {
+  background-color: #1b263b;
+  padding: 30px 40px;
+  border-radius: 12px;
+  box-shadow: 0px 8px 20px rgba(0,0,0,0.5);
+  width: 400px;
+  max-width: 90%;
+  text-align: center;
+  animation: boxAppear 0.8s ease-out;
+}
+
+/* Logo */
+.register-logo {
+  width: 150px;
+  margin-bottom: 15px;
+  animation: fadeInScale 1s ease-out;
+}
+
+/* Título */
+.register-box h2 {
+  margin-bottom: 20px;
+  color: #e63946; /* rojo vibrante */
+  animation: titleAppear 1s ease-out;
+}
+
+/* Campos */
+.register-box label {
+  display: block;
+  text-align: left;
+  margin: 8px 0 4px;
+  font-size: 0.9rem;
+}
+
+.register-box input {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  background-color: #f1f1f1;
+  font-size: 0.95rem;
+}
+
+/* Botones */
+.register-box button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  margin-top: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+/* Botón principal */
+.register-box button[type="submit"] {
+  background-color: #e63946;
+  color: white;
+}
+
+.register-box button[type="submit"]:hover {
+  background-color: #c1121f;
+}
+
+/* Botón secundario */
+.register-box .volver-btn {
+  background-color: transparent;
+  border: 1px solid #e63946;
+  color: #e63946;
+}
+
+.register-box .volver-btn:hover {
+  background-color: #e63946;
+  color: white;
+}
+
+/* Mensajes */
+.register-message {
+  margin-top: 15px;
+  font-size: 0.9rem;
+  color: crimson;
+}
+
+/* Animaciones */
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes boxAppear {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes titleAppear {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

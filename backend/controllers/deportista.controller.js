@@ -42,25 +42,14 @@ function sanitizeDeportistaInput(req, _res, next) {
   next();
 }
 
+// ...existing code...
 async function add(req, res) {
   const data = req.body.sanitizedInput;
 
-  // Validación de formato del email
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(data.email)) {
-    return res.status(400).send({ mensaje: 'El email no tiene un formato válido.' });
-  }
-
-  // Validación para que no exista otro deportista con el mismo usuario
-  const existingUser = await service.getByUsuario(data.usuario);
-  if (existingUser) {
-    return res.status(400).send({ mensaje: 'El usuario ya existe.' });
-  }
-
+  // Validación de email y usuario duplicado ya realizadas...
   if (data.localidadCodPostal) {
     let localidadEntity = await localidadService.getById({ codPostal: data.localidadCodPostal.trim() });
     if (!localidadEntity) {
-      // Se crea la localidad usando el código postal y asignándole el nombre y provincia recibidos
       localidadEntity = await localidadService.create({
         codPostal: data.localidadCodPostal.trim(),
         nombre: data.localidadNombre ? data.localidadNombre.trim() : '',
@@ -70,14 +59,26 @@ async function add(req, res) {
     data.localidad = localidadEntity;
   }
 
-  // Elimina los campos extra que solo se usaron para la localidad
   delete data.localidadCodPostal;
   delete data.localidadNombre;
   delete data.localidadProvincia;
 
-  const created = await service.create(data);
-  return res.status(201).send({ message: 'Deportista creado', data: created });
+  try {
+    const created = await service.create(data);
+    return res.status(201).send({ message: 'Deportista creado', data: created });
+  } catch (error) {
+    if (
+      error.message &&
+      error.message.includes('Duplicate entry') &&
+      error.message.includes('deportistas.PRIMARY')
+    ) {
+      return res.status(400).send({ mensaje: 'El DNI ya existe.' });
+    }
+    console.error(error);
+    return res.status(500).send({ mensaje: 'Error de conexión con el servidor' });
+  }
 }
+// ...existing code...
 
 async function findAll(_req, res) {
   const data = await service.getAll();

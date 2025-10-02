@@ -1,5 +1,5 @@
-// src/pages/MenuDeportista.js
 import React, { useState, useMemo } from 'react';
+import EntrenamientoNuevo from './EntrenamientoNuevo';
 
 function MenuDeportista({ onLogout }) {
   const [vista, setVista] = useState('home'); // home | agregar | historial | entrenador | perfil
@@ -30,7 +30,7 @@ function MenuDeportista({ onLogout }) {
         </div>
       )}
 
-      {vista === 'agregar' && <AgregarEntrenamiento onVolver={() => setVista('home')} />}
+      {vista === 'agregar' && <EntrenamientoNuevo onVolver={() => setVista('home')} />}
 
       {vista === 'historial' && <Historial onVolver={() => setVista('home')} />}
 

@@ -1,5 +1,6 @@
-// ...existing imports and código...
 import React, { useState } from 'react';
+import '../pages/RegistroPage.css';
+import logo from '../assets/logo.png';
 
 // Función para validar formato de email usando una expresión regular
 const validateEmail = (email) => {
@@ -58,7 +59,6 @@ const RegistroPage = ({ onVolver }) => {
         ? {
             altura: Number(regAltura),
             peso: Number(regPeso),
-            // Nota: ahora el código postal es de tipo number
             localidadCodPostal: regLocalidadCodPostal.toString().trim(),
             localidadNombre: regLocalidadNombre.trim(),
             localidadProvincia: regLocalidadProvincia.trim(),
@@ -90,178 +90,134 @@ const RegistroPage = ({ onVolver }) => {
   };
 
   return (
-    <div>
-      <h2>Registrarse</h2>
-      <form onSubmit={handleRegistroSubmit}>
-        <div>
-          <label>DNI: </label>
+    <div className="register-container">
+      <div className="register-box">
+        <img src={logo} alt="logo" className="register-logo" />
+        <h2>Registrarse</h2>
+        <form onSubmit={handleRegistroSubmit}>
+          <label>DNI:</label>
           <input
             type="number"
             required
             value={regDni}
             onChange={(e) => setRegDni(e.target.value)}
           />
-        </div>
-        <div>
-          <label>Nombre: </label>
+          
+          <label>Nombre:</label>
           <input
             type="text"
             required
             value={regNombre}
             onChange={(e) => setRegNombre(e.target.value)}
           />
-        </div>
-        <div>
-          <label>Apellido: </label>
+          
+          <label>Apellido:</label>
           <input
             type="text"
             required
             value={regApellido}
             onChange={(e) => setRegApellido(e.target.value)}
           />
-        </div>
-        <div>
-          <label>Nombre de usuario: </label>
+          
+          <label>Nombre de usuario:</label>
           <input
             type="text"
             required
             value={regUsuario}
             onChange={(e) => setRegUsuario(e.target.value)}
           />
-        </div>
-        <div>
-          <label>Email: </label>
+          
+          <label>Email:</label>
           <input
             type="email"
             required
             value={regEmail}
             onChange={(e) => setRegEmail(e.target.value)}
           />
-        </div>
-        <div>
-          <label>Contraseña: </label>
+          
+          <label>Contraseña:</label>
           <input
             type="password"
             required
             value={regPassword}
             onChange={(e) => setRegPassword(e.target.value)}
           />
-        </div>
-        <div>
-          <label>Fecha de Nacimiento: </label>
+          
+          <label>Fecha de Nacimiento:</label>
           <input
             type="date"
             required
             value={regFechaNacimiento}
             onChange={(e) => setRegFechaNacimiento(e.target.value)}
           />
-        </div>
 
-        {/* Botones para elegir tipo de usuario */}
-        <div style={{ marginTop: 10, marginBottom: 10 }}>
-          <label>Tipo de usuario: </label>
-          <div style={{ display: 'flex', gap: 10, marginTop: 5 }}>
-            <button
-              type="button"
-              onClick={() => setRegTipo('deportista')}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: regTipo === 'deportista' ? '#1976d2' : '#e0e0e0',
-                color: regTipo === 'deportista' ? 'white' : 'black',
-                border: 'none',
-                borderRadius: 4,
-                cursor: 'pointer',
-              }}
-            >
-              Deportista
-            </button>
-            <button
-              type="button"
-              onClick={() => setRegTipo('entrenador')}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: regTipo === 'entrenador' ? '#1976d2' : '#e0e0e0',
-                color: regTipo === 'entrenador' ? 'white' : 'black',
-                border: 'none',
-                borderRadius: 4,
-                cursor: 'pointer',
-              }}
-            >
-              Entrenador
-            </button>
-          </div>
-        </div>
-
-        {regTipo === 'deportista' && (
-          <>
-            <div>
-              <label>Altura (cm): </label>
+          {regTipo === 'deportista' && (
+            <>
+              <label>Altura (cm):</label>
               <input
                 type="number"
                 required
                 value={regAltura}
                 onChange={(e) => setRegAltura(e.target.value)}
               />
-            </div>
-            <div>
-              <label>Peso (kg): </label>
+              
+              <label>Peso (kg):</label>
               <input
                 type="number"
                 required
                 value={regPeso}
                 onChange={(e) => setRegPeso(e.target.value)}
               />
-            </div>
-            <div>
-              <label>Localidad - Código Postal: </label>
+              
+              <label>Localidad - Código Postal:</label>
               <input
                 type="number"
                 required
                 value={regLocalidadCodPostal}
                 onChange={(e) => setRegLocalidadCodPostal(e.target.value)}
               />
-            </div>
-            <div>
-              <label>Localidad - Nombre: </label>
+              
+              <label>Localidad - Nombre:</label>
               <input
                 type="text"
                 required
                 value={regLocalidadNombre}
                 onChange={(e) => setRegLocalidadNombre(e.target.value)}
               />
-            </div>
-            <div>
-              <label>Localidad - Provincia: </label>
+              
+              <label>Localidad - Provincia:</label>
               <input
                 type="text"
                 required
                 value={regLocalidadProvincia}
                 onChange={(e) => setRegLocalidadProvincia(e.target.value)}
               />
-            </div>
-          </>
-        )}
+            </>
+          )}
 
-        {regTipo === 'entrenador' && (
-          <div>
-            <label>Especialidad: </label>
-            <input
-              type="text"
-              required
-              value={regEspecialidad}
-              onChange={(e) => setRegEspecialidad(e.target.value)}
-            />
-          </div>
-        )}
+          {regTipo === 'entrenador' && (
+            <>
+              <label>Especialidad:</label>
+              <input
+                type="text"
+                required
+                value={regEspecialidad}
+                onChange={(e) => setRegEspecialidad(e.target.value)}
+              />
+            </>
+          )}
 
-        <button type="submit" style={{ marginTop: 15 }}>
-          Registrarse
+          <button type="submit">
+            Registrarse
+          </button>
+        </form>
+        <button onClick={onVolver} className="volver-btn">
+          Volver
         </button>
-      </form>
-      <button onClick={onVolver} style={{ marginTop: 10 }}>
-        Volver
-      </button>
-      {mensajeRegistro && <p>{mensajeRegistro}</p>}
+        {mensajeRegistro && (
+          <div className="register-message">{mensajeRegistro}</div>
+        )}
+      </div>
     </div>
   );
 };

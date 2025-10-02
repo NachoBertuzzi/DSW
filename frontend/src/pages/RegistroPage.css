@@ -127,3 +127,40 @@
     transform: translateX(0);
   }
 }
+/* Sección de selección de Tipo de Usuario */
+.user-type-container {
+  margin: 20px 0;
+  text-align: left;
+  font-size: 1rem;
+}
+
+.user-type-container label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.user-type-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.user-type-buttons button {
+  flex: 1;
+  padding: 10px;
+  background-color: #1b263b;  /* Fondo igual a la caja principal */
+  color: #fff;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.user-type-buttons button:hover {
+  transform: scale(1.05);
+}
+
+/* Opción seleccionada: remarca con el mismo tono rojo vibrante */
+.user-type-buttons button.active {
+  border-color: #e63946;
+  background-color: #e63946;
+}

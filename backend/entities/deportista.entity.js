@@ -18,6 +18,7 @@ const Deportista = new EntitySchema({
       kind: 'm:1',
       entity: 'Localidad',
       nullable: true,
+      fecha_nacimiento: { type: 'date', nullable: true },
     },
     entrenamientos: {
       kind: '1:m',

@@ -1,6 +1,6 @@
 const API_URL =
-  (import.meta?.env?.VITE_API_URL) ||
   process.env.REACT_APP_API_URL ||
+  process.env.REACT_APP_API_BASE || // por si el Login.js usa BASE
   'http://localhost:3000/api';
 
 async function api(path, { method = 'GET', body } = {}) {
@@ -18,7 +18,7 @@ async function api(path, { method = 'GET', body } = {}) {
 
 export const Entrenamientos = {
   crear: (payload) => api('/entrenamientos', { method: 'POST', body: payload }),
-  listarTodos: () => api('/entrenamientos'), // por si lo usás en historial
+  listarTodos: () => api('/entrenamientos'),
 };
 
 // Fallback local para “mis deportistas” hasta que haya endpoints reales
@@ -40,3 +40,6 @@ export const FallbackCoach = {
     localStorage.setItem(key, JSON.stringify(arr));
   },
 };
+
+// Exporto la base para usarla en otros lugares si hace falta
+export { API_URL };

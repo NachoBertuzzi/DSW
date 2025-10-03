@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Entrenamientos, FallbackCoach } from '../services/api';
+import { Entrenamientos, FallbackCoach, API_URL } from '../services/api';
+import SuccessCreated from './SuccessCreated';
 
 function MenuEntrenador({ onLogout }) {
   const [vista, setVista] = useState('home'); // home | asignar | historial | deportistas | perfil
@@ -9,6 +10,7 @@ function MenuEntrenador({ onLogout }) {
 
   return (
     <div style={styles.wrap}>
+      <SuccessCreated />
       <header style={styles.header}>
         <h2 style={{ margin: 0 }}>Menú del Entrenador</h2>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -40,7 +42,6 @@ function MenuEntrenador({ onLogout }) {
 
 /* =========================
    SUBVISTA: AsignarEntrenamiento
-   (incluye elegir deportista, agregar por username, fecha/hora, y POST a /entrenamientos)
 ========================= */
 function AsignarEntrenamiento({ onVolver }) {
   const coach = JSON.parse(localStorage.getItem('usuario') || '{}'); // debe tener dni
@@ -50,24 +51,23 @@ function AsignarEntrenamiento({ onVolver }) {
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10)); // YYYY-MM-DD
   const [hora, setHora] = useState(() => new Date().toTimeString().slice(0, 5));   // HH:mm
 
-  // builder simple (informativo por ahora; tu backend todavía no guarda ejercicios)
+  // builder simple (informativo por ahora)
   const [ejercicios, setEjercicios] = useState([]);
   const [nombre, setNombre] = useState('');
   const [grupo, setGrupo] = useState('');
   const [enviando, setEnviando] = useState(false);
 
-  // Cargar "mis deportistas" (fallback local hasta que haya endpoint real)
-  const cargar = () => {
+  // Cargar "mis deportistas" al montar o si cambia el DNI del coach
+  useEffect(() => {
     const arr = FallbackCoach.getLista(coach.dni);
     setLista(arr);
     if (!selId && arr.length) setSelId(String(arr[0].id));
-  };
-  useEffect(() => { cargar(); /* eslint-disable-next-line */ }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coach.dni]);
 
   const agregarDeportista = () => {
     const u = usernameNuevo.trim();
     if (!u) return;
-    // evitar duplicados
     if (lista.some(d => (d.username || d.nombre) === u)) {
       alert('Ese username ya está en tu lista.');
       return;
@@ -102,7 +102,7 @@ function AsignarEntrenamiento({ onVolver }) {
       horaEntrenamiento: hora,
       entrenador: coach.dni,               // referencia por DNI
       ...(deportistaDni ? { deportista: deportistaDni } : {}),
-      // ejercicios: []  // ← cuando extiendas el backend, lo mandamos acá
+      // ejercicios: []  // cuando extiendas el backend
     };
 
     try {
@@ -113,15 +113,13 @@ function AsignarEntrenamiento({ onVolver }) {
       onVolver();
     } catch (e1) {
       console.warn('Fallo Entrenamientos.crear, intento fetch directo:', e1);
-try {
-  // 2) Fallback directo a fetch (por si no existe services/api aún)
-  const BASE = (import.meta?.env?.VITE_API_URL) || process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
-  
-  const res = await fetch(`${BASE}/entrenamientos`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
+      try {
+        // 2) Fallback directo a fetch usando la misma base del service
+        const res = await fetch(`${API_URL}/entrenamientos`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         alert('Entrenamiento asignado');
         onVolver();
@@ -165,7 +163,7 @@ try {
         <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
       </div>
 
-      {/* Builder ejercicios (informativo por ahora) */}
+      {/* Builder ejercicios */}
       <div style={styles.formRow}>
         <input
           placeholder="Nombre ejercicio"
@@ -206,42 +204,39 @@ try {
 
 /* =========================
    SUBVISTA: HistorialEntrenador
-   (muestra todos los entrenamientos que asignaste, filtrando por tu DNI)
 ========================= */
 function HistorialEntrenador({ onVolver }) {
   const coach = JSON.parse(localStorage.getItem('usuario') || '{}');
   const [items, setItems] = useState([]);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
-  const BASE = (import.meta?.env?.VITE_API_URL) || process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-   try {
-  // Tu backend devuelve { data: [...] }
-  const res = await fetch(`${BASE}/entrenamientos`);
-  if (!res.ok) throw new Error('HTTP ' + res.status);
+      try {
+        const res = await fetch(`${API_URL}/entrenamientos`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
 
-  const json = await res.json();
-  const todos = json?.data || [];
-  const mios = todos.filter(e => e?.entrenador?.dni === coach.dni);
+        const json = await res.json();
+        const todos = json?.data || [];
+        const mios = todos.filter(e => e?.entrenador?.dni === coach.dni);
 
-  setItems(mios);
-} catch (e) {
-  console.error('HistorialEntrenador:', e);
-  setItems([]);
-} finally {
-  setLoading(false);
-}
-  })();
+        setItems(mios);
+      } catch (e) {
+        console.error('HistorialEntrenador:', e);
+        setItems([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [coach.dni]);
 
   const filtrados = items
     .filter(it => (q ? ((it?.deportista?.nombre || '').toLowerCase().includes(q.toLowerCase())) : true))
     .sort((a,b) => {
-  const da = new Date(`${a.fechaEntrenamiento}T${a.horaEntrenamiento || '00:00'}`);
-  const db = new Date(`${b.fechaEntrenamiento}T${b.horaEntrenamiento || '00:00'}`);
+      const da = new Date(`${a.fechaEntrenamiento}T${a.horaEntrenamiento || '00:00'}`);
+      const db = new Date(`${b.fechaEntrenamiento}T${b.horaEntrenamiento || '00:00'}`);
       return db - da;
     });
 
@@ -279,16 +274,16 @@ function HistorialEntrenador({ onVolver }) {
 
 /* =========================
    SUBVISTA: TusDeportistas
-   (lista + alta por username + baja, usando fallback local)
 ========================= */
 function TusDeportistas({ onVolver }) {
   const coach = JSON.parse(localStorage.getItem('usuario') || '{}');
   const [lista, setLista] = useState([]);
   const [username, setUsername] = useState('');
 
-  const cargar = () => setLista(FallbackCoach.getLista(coach.dni));
-
-  useEffect(() => { cargar(); /* eslint-disable-next-line */ }, []);
+  // Cargar lista al montar o si cambia el DNI del coach
+  useEffect(() => {
+    setLista(FallbackCoach.getLista(coach.dni));
+  }, [coach.dni]);
 
   const agregar = () => {
     const u = username.trim();
@@ -299,15 +294,14 @@ function TusDeportistas({ onVolver }) {
     }
     FallbackCoach.addPorUsername(coach.dni, u);
     setUsername('');
-    cargar();
+    setLista(FallbackCoach.getLista(coach.dni));
   };
 
   const baja = (id) => {
-  if (!window.confirm('¿Dar de baja a este deportista?')) return;
-  FallbackCoach.quitar(coach.dni, id);
-  cargar();
-};
-
+    if (!window.confirm('¿Dar de baja a este deportista?')) return;
+    FallbackCoach.quitar(coach.dni, id);
+    setLista(FallbackCoach.getLista(coach.dni));
+  };
 
   return (
     <section>

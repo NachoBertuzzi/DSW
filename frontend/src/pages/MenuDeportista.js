@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import EntrenamientoNuevo from './EntrenamientoNuevo';
+import SuccessCreated from './SuccessCreated';
 
 function MenuDeportista({ onLogout }) {
   const [vista, setVista] = useState('home'); // home | agregar | historial | entrenador | perfil
@@ -9,6 +10,9 @@ function MenuDeportista({ onLogout }) {
 
   return (
     <div style={styles.wrap}>
+      {/* Cartel “Usuario creado exitosamente” si venís del registro */}
+      <SuccessCreated />
+
       <header style={styles.header}>
         <h2 style={{ margin: 0 }}>Menú del Deportista</h2>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -90,8 +94,8 @@ function AgregarEntrenamiento({ onVolver }) {
   };
 
   const cancelar = () => {
-  if (window.confirm('¿Cancelar entrenamiento? Se perderán los cambios.')) onVolver();
-};
+    if (window.confirm('¿Cancelar entrenamiento? Se perderán los cambios.')) onVolver();
+  };
 
   return (
     <section>

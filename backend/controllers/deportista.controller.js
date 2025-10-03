@@ -108,11 +108,18 @@ async function remove(req, res) {
 
 async function login(req, res) {
   try {
-    const { usuario, contrasena } = req.body;
-    if (!usuario || !contrasena) return res.status(400).json({ mensaje: 'Faltan credenciales' });
+    const { usuario, email, mail, contrasena, contraseña, password } = req.body || {};
+    const userOrEmail = usuario ?? email ?? mail;
+    const pass = contrasena ?? contraseña ?? password;
 
-    const deportista = await service.login(usuario, contrasena);
-    if (!deportista) return res.status(401).json({ mensaje: 'Credenciales incorrectas' });
+    if (!userOrEmail || !pass) {
+      return res.status(400).json({ mensaje: 'Faltan credenciales' });
+    }
+
+    const deportista = await service.login(userOrEmail, pass);
+    if (!deportista) {
+      return res.status(401).json({ mensaje: 'Credenciales incorrectas' });
+    }
 
     return res.json({ deportista });
   } catch (e) {

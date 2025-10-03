@@ -1,3 +1,4 @@
+// backend/services/deportistaService.js
 const { RequestContext, wrap } = require('@mikro-orm/core');
 const { Deportista } = require('../entities/deportista.entity');
 
@@ -40,11 +41,29 @@ module.exports = {
     return deportista;
   },
 
-  async login(usuario, contrasena) {
-    return em().findOne(Deportista, { usuario, contrasena });
+  // Login: acepta usuario o email
+  async login(usuarioOrEmail, passPlano) {
+    const d = await em().findOne(
+      Deportista,
+      { $or: [{ usuario: usuarioOrEmail }, { email: usuarioOrEmail }] }
+    );
+    if (!d) return null;
+
+    // Comparación simple (si luego usan bcrypt, reemplazar por bcrypt.compare)
+    const guardada = d.contrasena ?? d['contraseña'];
+    if (guardada == null) return null;
+
+    const ok = String(passPlano) === String(guardada);
+    if (!ok) return null;
+
+    // No devolvemos la contraseña al cliente
+    const plano = wrap(d).toObject();
+    delete plano.contrasena;
+    delete plano['contraseña'];
+    return plano;
   },
 
-  // Nuevo método para buscar deportista por usuario, validando duplicidad
+  // Buscar deportista por usuario (para validaciones)
   async getByUsuario(usuario) {
     return em().findOne(Deportista, { usuario });
   },

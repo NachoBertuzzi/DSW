@@ -1,0 +1,29 @@
+[33m2464a6b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mJuan[m[33m, [m[1;31morigin/Juan[m[33m)[m menos advertencias en node server
+[33ma6352b3[m[33m ([m[1;31morigin/Valen[m[33m, [m[1;32mValen[m[33m)[m login terminado, comienzo de menus
+[33mc60350a[m validar login
+[33m8bac6a1[m listo
+[33m0a77ccd[m listo el backend
+[33mecf89d7[m funcionando la base de datos con mikro orm, con entidades y los repositorios de cada crud
+[33mdb77b85[m post consulta viernes
+[33m2fe37e5[m empezamos mikro orm
+[33m3b8f035[m Login funcional deportista y entrenador
+[33m182ca23[m registro deportista funcionando, conectado a bacj y DB
+[33m4e094a3[m Front empezado con models eliminados
+[33m9d22f86[m guardando en juan para pasarlo a nacho
+[33mceb0cc8[m elimine models y agregue draft de readme.md del backend
+[33m05cf306[m Subo todo el backend completo: controllers, routes, services, db, server
+[33m694b626[m Validaciones completas y función validarEntrenamiento lista
+[33m67292e8[m Backend final validado en Postman: CRUD y validaciones completas
+[33me80c57b[m Agrego validaciones
+[33m080984d[m version definitiva viernes 11/7
+[33m4f013e4[m viernes 11/7 revisado 2
+[33m3e90799[m viernes 11/7 revisado
+[33m5a766a2[m Subo CRUDs y server.js completo/ revisado en postman y actualizado en MySQL
+[33m810ef39[m agregue db.js y cambie models de deportista y services de deportista
+[33m633e100[m Subo CRUDs y server.js completo
+[33m2c9f008[m Todo ok
+[33m0208a67[m Actualizo backend con CRUD Localidad
+[33m38f9e08[m Update README.md
+[33mf568574[m hago esto
+[33m8d2a0d1[m Agrego backend y frontend
+[33mbf01045[m first commit

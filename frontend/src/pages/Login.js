@@ -2,27 +2,37 @@ import React, { useState } from 'react';
 import '../pages/login.css';
 import logo from '../assets/logo.png';
 
-const LoginPage = ({ onVolver, onLoginSuccess }) => {
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [mensajeLogin, setMensajeLogin] = useState('');
-  const [cargando, setCargando] = useState(false);
+const API_BASE =
+  process.env.REACT_APP_API_BASE ||
+  process.env.REACT_APP_API_URL ||
+  'http://localhost:3000/api';
 
-  const urlBase = 'http://localhost:3000/api';
+async function tryLogin(url, email, pass) {
+  const variantes = [
+    { usuario: email, contrasena: pass },
+    { email, password: pass },
+    { username: email, password: pass },
+    { usuario: email, contraseña: pass },
+    { mail: email, contrasena: pass },
+  ];
 
-  async function intentarLogin(url, tipoLabel) {
+  let ultima401 = null;
+  let ultima400Faltan = null;
+
+  for (const body of variantes) {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usuario: loginEmail, contrasena: loginPassword }),
+      body: JSON.stringify(body),
     });
 
-    if (res.status === 401) {
+    if (res.status === 401) { ultima401 = res; continue; }
+
+    if (res.status === 400) {
       const err = await res.json().catch(() => ({}));
-      const msg = err?.mensaje || `Credenciales no válidas para ${tipoLabel}`;
-      const e = new Error(msg);
-      e.kind = 'bad-credentials';
-      throw e;
+      const msg = (err?.mensaje || '').toLowerCase();
+      if (msg.includes('faltan credenciales')) { ultima400Faltan = err; continue; }
+      throw new Error(err?.mensaje || 'Solicitud inválida');
     }
 
     if (!res.ok) {
@@ -30,9 +40,29 @@ const LoginPage = ({ onVolver, onLoginSuccess }) => {
       throw new Error(err?.mensaje || 'Error del servidor');
     }
 
-    const data = await res.json();
-    return { tipo: tipoLabel, data };
+    const data = await res.json().catch(() => {
+      throw new Error('Respuesta inválida del servidor');
+    });
+    return data;
   }
+
+  if (ultima401) {
+    const err = await ultima401.json().catch(() => ({}));
+    const e = new Error(err?.mensaje || 'Credenciales no válidas');
+    e.kind = 'bad-credentials';
+    throw e;
+  }
+  if (ultima400Faltan) {
+    throw new Error(ultima400Faltan?.mensaje || 'Faltan credenciales');
+  }
+  throw new Error('No se pudo iniciar sesión');
+}
+
+const LoginPage = ({ onVolver, onLoginSuccess }) => {
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [mensajeLogin, setMensajeLogin] = useState('');
+  const [cargando, setCargando] = useState(false);
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -40,21 +70,33 @@ const LoginPage = ({ onVolver, onLoginSuccess }) => {
     setCargando(true);
 
     try {
-      let resultado;
+      let tipo = 'deportista';
+      let data;
+
       try {
-        resultado = await intentarLogin(`${urlBase}/deportistas/login`, 'deportista');
-      } catch (e1) {
-        if (e1.kind !== 'bad-credentials') throw e1;
-        resultado = await intentarLogin(`${urlBase}/entrenadores/login`, 'entrenador');
+        data = await tryLogin(`${API_BASE}/deportistas/login`, loginEmail, loginPassword);
+      } catch (_e1) {
+        tipo = 'entrenador';
+        data = await tryLogin(`${API_BASE}/entrenadores/login`, loginEmail, loginPassword);
       }
-      const { tipo, data } = resultado;
-      const usuario = data.deportista || data.entrenador || {};
+
+      // Normalizo SIEMPRE un objeto usuario válido
+      const bruto =
+        data?.deportista || data?.entrenador || data?.user || data?.usuario || data || {};
+      const usuario = (bruto && typeof bruto === 'object') ? { ...bruto } : {};
+
+      // Si falta email, lo completo con lo que el usuario escribió en el input
+      if (!usuario.email && typeof loginEmail === 'string') {
+        usuario.email = loginEmail;
+      }
+
       localStorage.setItem('tipo', tipo);
       localStorage.setItem('usuario', JSON.stringify(usuario));
+
       onLoginSuccess?.({ tipo, usuario });
     } catch (err) {
-      setMensajeLogin(err.message || 'Error al iniciar sesión');
       console.error(err);
+      setMensajeLogin(err.message || 'Error al iniciar sesión');
     } finally {
       setCargando(false);
     }
@@ -65,6 +107,7 @@ const LoginPage = ({ onVolver, onLoginSuccess }) => {
       <div className="login-box">
         <img src={logo} alt="logo" className="login-logo" />
         <h2>Iniciar Sesión</h2>
+
         <form onSubmit={handleLoginSubmit}>
           <label>Email (usuario):</label>
           <input
@@ -73,6 +116,7 @@ const LoginPage = ({ onVolver, onLoginSuccess }) => {
             value={loginEmail}
             onChange={(e) => setLoginEmail(e.target.value)}
           />
+
           <label>Contraseña:</label>
           <input
             type="password"
@@ -80,13 +124,16 @@ const LoginPage = ({ onVolver, onLoginSuccess }) => {
             value={loginPassword}
             onChange={(e) => setLoginPassword(e.target.value)}
           />
+
           <button type="submit" disabled={cargando}>
             {cargando ? 'Ingresando...' : 'Entrar'}
           </button>
         </form>
+
         <button onClick={onVolver} style={{ marginTop: 10 }}>
           Volver
         </button>
+
         {mensajeLogin && <div className="login-message">{mensajeLogin}</div>}
       </div>
     </div>

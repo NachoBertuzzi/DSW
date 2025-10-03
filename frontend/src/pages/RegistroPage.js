@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import '../pages/RegistroPage.css';
+import './styles/RegistroPage.css';
 import logo from '../assets/logo.png';
 
 // Validación de email
@@ -55,7 +55,10 @@ const RegistroPage = ({ onVolver }) => {
       return;
     }
 
-    const urlBase = 'http://localhost:3000/api';
+    const urlBase =
+  (import.meta?.env?.VITE_API_URL) ||
+  process.env.REACT_APP_API_URL ||
+  'http://localhost:3000/api';
     const urlRegistro =
       regTipo === 'deportista'
         ? `${urlBase}/deportistas`

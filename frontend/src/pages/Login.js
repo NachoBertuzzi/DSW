@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import '../pages/login.css';
+import './styles/login.css';
 import logo from '../assets/logo.png';
 
 const API_BASE =

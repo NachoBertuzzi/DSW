@@ -1,0 +1,82 @@
+/* Paleta similar al inicio */
+:root{
+  --bg:#0d1b2a;
+  --panel:#1b263b;
+  --ink:#ffffff;
+  --muted:#b8c1d1;
+  --accent:#e63946;
+}
+
+.menu-screen{
+  min-height:100vh;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding:32px;
+}
+
+.menu-header{
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:20px;
+}
+.menu-header h2{ margin:0; }
+
+.menu-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:16px;
+}
+
+.menu-card{
+  background:#122035;
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:16px;
+  padding:18px;
+  text-align:left;
+  cursor:pointer;
+  box-shadow:0 8px 20px rgba(0,0,0,.35);
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.menu-card:hover{ transform:translateY(-2px); box-shadow:0 12px 24px rgba(0,0,0,.45); }
+.card-title{ font-weight:700; margin-bottom:6px; }
+.card-desc{ opacity:.85; }
+
+.panel{ background:var(--panel); border-radius:12px; padding:20px; box-shadow:0 8px 20px rgba(0,0,0,.4); }
+
+.row{ display:flex; }
+.wrap{ flex-wrap:wrap; }
+.gap{ gap:10px; margin:10px 0; }
+
+.input{
+  background:#f1f1f1; color:#111; border:none; border-radius:8px; padding:10px;
+}
+.input.small{ width:130px; }
+.input.tiny{ width:90px; }
+
+.btn{
+  padding:10px 14px; border:none; border-radius:10px; cursor:pointer;
+  background:#24324a; color:var(--ink);
+}
+.btn:hover{ filter:brightness(1.1); }
+.btn-primary{ background:var(--accent) !important; }
+.btn-outline{ background:transparent; border:1px solid var(--accent); color:var(--accent); }
+.btn.link{ background:transparent; padding:0; color:var(--muted); }
+
+.header-actions{ display:flex; align-items:center; gap:8px; }
+
+.muted{ color:var(--muted); }
+
+.list{ list-style:none; padding:0; margin:10px 0; }
+.item{ background:#0f1c2c; border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:12px; margin-bottom:10px; }
+.item-head{ display:flex; justify-content:space-between; align-items:baseline; }
+.icon{ background:transparent; color:#fff; border:none; cursor:pointer; }
+
+.series{ margin-top:8px; }
+.series-row{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+
+.card-box{ border:1px solid rgba(255,255,255,.08); background:#0f1c2c; border-radius:10px; padding:12px; }
+
+.placeholder{
+  border:1px dashed #6b7a90; border-radius:10px; padding:16px; color:var(--muted);
+  background:#0f1c2c;
+}

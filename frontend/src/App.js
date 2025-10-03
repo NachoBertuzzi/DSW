@@ -4,7 +4,7 @@ import RegistroPage from './pages/RegistroPage';
 import MenuDeportista from './pages/MenuDeportista';
 import MenuEntrenador from './pages/MenuEntrenador';
 import './App.css';
-import './pages/inicio.css';
+import './pages/styles/inicio.css';
 import logo from './assets/logo.png';
 
 function App() {

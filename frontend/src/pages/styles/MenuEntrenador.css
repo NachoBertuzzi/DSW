@@ -1,0 +1,90 @@
+/* Fondo general */
+.menu-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 60px;
+  background-color: #0d1b2a; /* azul oscuro */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: white;
+}
+
+/* Caja principal */
+.menu-box {
+  background-color: #1b263b;
+  padding: 30px 40px;
+  border-radius: 12px;
+  box-shadow: 0px 8px 20px rgba(0,0,0,0.5);
+  width: 500px;
+  max-width: 90%;
+  animation: boxAppear 0.8s ease-out;
+}
+
+/* Título */
+.menu-box h2 {
+  margin-bottom: 20px;
+  color: #e63946; /* rojo vibrante */
+  text-align: center;
+  animation: titleAppear 1s ease-out;
+}
+
+/* Botones de opciones */
+.menu-box button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  margin: 8px 0;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+/* Botón principal */
+.menu-box .main-btn {
+  background-color: #e63946;
+  color: white;
+}
+
+.menu-box .main-btn:hover {
+  background-color: #c1121f;
+}
+
+/* Botón secundario */
+.menu-box .secondary-btn {
+  background-color: transparent;
+  border: 1px solid #e63946;
+  color: #e63946;
+}
+
+.menu-box .secondary-btn:hover {
+  background-color: #e63946;
+  color: white;
+}
+
+/* Listas */
+.menu-box ul {
+  list-style: none;
+  padding: 0;
+  margin: 15px 0;
+}
+
+.menu-box li {
+  padding: 8px;
+  border-bottom: 1px solid #444;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Animaciones */
+@keyframes boxAppear {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes titleAppear {
+  0% { opacity: 0; transform: translateX(-20px); }
+  100% { opacity: 1; transform: translateX(0); }
+}

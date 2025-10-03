@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Entrenamientos, FallbackCoach, API_URL } from '../services/api';
 import SuccessCreated from './SuccessCreated';
+import './styles/MenuEntrenador.css';
 
 function MenuEntrenador({ onLogout }) {
   const [vista, setVista] = useState('home'); // home | asignar | historial | deportistas | perfil
@@ -9,26 +10,22 @@ function MenuEntrenador({ onLogout }) {
   }, []);
 
   return (
-    <div style={styles.wrap}>
+    <div className="menu-screen coach">
       <SuccessCreated />
-      <header style={styles.header}>
-        <h2 style={{ margin: 0 }}>Menú del Entrenador</h2>
-        <div style={{ display: 'flex', gap: 8 }}>
+      <header className="menu-header">
+        <h2>Menú del Entrenador</h2>
+        <div className="header-actions">
           <small>{usuario?.nombre ? `Hola, ${usuario.nombre}` : ''}</small>
-          <button onClick={onLogout}>Cerrar sesión</button>
+          <button className="btn btn-outline" onClick={onLogout}>Cerrar sesión</button>
         </div>
       </header>
 
       {vista === 'home' && (
-        <div style={styles.grid}>
-          <Card title="1) Asignar entrenamiento" onClick={() => setVista('asignar')}
-                desc="Crear y asignar entrenamientos" />
-          <Card title="2) Historial de entrenamientos" onClick={() => setVista('historial')}
-                desc="Ver entrenamientos que asignaste" />
-          <Card title="3) Tus deportistas" onClick={() => setVista('deportistas')}
-                desc="Listar, agregar y dar de baja" />
-          <Card title="4) Tu perfil" onClick={() => setVista('perfil')}
-                desc="Datos de tu cuenta" />
+        <div className="menu-grid">
+          <Card title="1) Asignar entrenamiento" desc="Crear y asignar entrenamientos" onClick={() => setVista('asignar')} />
+          <Card title="2) Historial de entrenamientos" desc="Ver entrenamientos que asignaste" onClick={() => setVista('historial')} />
+          <Card title="3) Tus deportistas" desc="Listar, agregar y dar de baja" onClick={() => setVista('deportistas')} />
+          <Card title="4) Tu perfil" desc="Datos de tu cuenta" onClick={() => setVista('perfil')} />
         </div>
       )}
 
@@ -40,24 +37,19 @@ function MenuEntrenador({ onLogout }) {
   );
 }
 
-/* =========================
-   SUBVISTA: AsignarEntrenamiento
-========================= */
+/* ---------- Asignar ---------- */
 function AsignarEntrenamiento({ onVolver }) {
-  const coach = JSON.parse(localStorage.getItem('usuario') || '{}'); // debe tener dni
+  const coach = JSON.parse(localStorage.getItem('usuario') || '{}');
   const [lista, setLista] = useState([]);
   const [selId, setSelId] = useState('');
   const [usernameNuevo, setUsernameNuevo] = useState('');
-  const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10)); // YYYY-MM-DD
-  const [hora, setHora] = useState(() => new Date().toTimeString().slice(0, 5));   // HH:mm
-
-  // builder simple (informativo por ahora)
+  const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0,10));
+  const [hora, setHora] = useState(() => new Date().toTimeString().slice(0,5));
   const [ejercicios, setEjercicios] = useState([]);
   const [nombre, setNombre] = useState('');
   const [grupo, setGrupo] = useState('');
   const [enviando, setEnviando] = useState(false);
 
-  // Cargar "mis deportistas" al montar o si cambia el DNI del coach
   useEffect(() => {
     const arr = FallbackCoach.getLista(coach.dni);
     setLista(arr);
@@ -68,25 +60,17 @@ function AsignarEntrenamiento({ onVolver }) {
   const agregarDeportista = () => {
     const u = usernameNuevo.trim();
     if (!u) return;
-    if (lista.some(d => (d.username || d.nombre) === u)) {
-      alert('Ese username ya está en tu lista.');
-      return;
-    }
+    if (lista.some(d => (d.username || d.nombre) === u)) return alert('Ese username ya está en tu lista.');
     const nuevo = FallbackCoach.addPorUsername(coach.dni, u);
-    setUsernameNuevo('');
-    setLista((p) => [nuevo, ...p]);
-    setSelId(String(nuevo.id));
+    setUsernameNuevo(''); setLista(p => [nuevo, ...p]); setSelId(String(nuevo.id));
   };
 
   const agregarEj = () => {
     if (!nombre.trim()) return alert('Poné un nombre de ejercicio');
-    setEjercicios((p) => [
-      ...p,
-      { id: crypto.randomUUID(), nombre: nombre.trim(), grupo: grupo.trim() },
-    ]);
+    setEjercicios(p => [...p, { id: crypto.randomUUID(), nombre: nombre.trim(), grupo: grupo.trim() }]);
     setNombre(''); setGrupo('');
   };
-  const eliminarEj = (id) => setEjercicios((p) => p.filter((e) => e.id !== id));
+  const eliminarEj = (id) => setEjercicios(p => p.filter(e=>e.id!==id));
 
   const terminar = async () => {
     if (!selId) return alert('Elegí un deportista');
@@ -95,116 +79,80 @@ function AsignarEntrenamiento({ onVolver }) {
     if (!coach?.dni) return alert('No se encontró tu DNI de entrenador en la sesión');
 
     const seleccionado = lista.find(d => String(d.id) === String(selId));
-    const deportistaDni = seleccionado?.dni || null; // en fallback no lo tenemos
+    const deportistaDni = seleccionado?.dni || null;
 
     const payload = {
       fechaEntrenamiento: fecha,
       horaEntrenamiento: hora,
-      entrenador: coach.dni,               // referencia por DNI
+      entrenador: coach.dni,
       ...(deportistaDni ? { deportista: deportistaDni } : {}),
-      // ejercicios: []  // cuando extiendas el backend
     };
 
     try {
       setEnviando(true);
-      // 1) Intento con el service
       await Entrenamientos.crear(payload);
       alert('Entrenamiento asignado');
       onVolver();
     } catch (e1) {
-      console.warn('Fallo Entrenamientos.crear, intento fetch directo:', e1);
       try {
-        // 2) Fallback directo a fetch usando la misma base del service
         const res = await fetch(`${API_URL}/entrenamientos`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        alert('Entrenamiento asignado');
-        onVolver();
-      } catch (e2) {
-        console.error(e2);
-        alert('No se pudo guardar en el backend');
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        alert('Entrenamiento asignado'); onVolver();
+      } catch(e2) {
+        console.error(e2); alert('No se pudo guardar en el backend');
       }
-    } finally {
-      setEnviando(false);
-    }
+    } finally { setEnviando(false); }
   };
 
   return (
-    <section>
+    <section className="panel">
       <Back onClick={onVolver} />
       <h3>Asignar entrenamiento</h3>
 
-      {/* Elegir / agregar deportista */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '8px 0' }}>
-        <select value={selId} onChange={(e) => setSelId(e.target.value)} style={styles.input}>
+      <div className="row gap wrap">
+        <select className="input" value={selId} onChange={e=>setSelId(e.target.value)}>
           <option value="">— Elegí un deportista —</option>
-          {lista.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.nombre || d.username || d.id}
-            </option>
-          ))}
+          {lista.map(d => <option key={d.id} value={d.id}>{d.nombre || d.username || d.id}</option>)}
         </select>
-
-        <input
-          placeholder="Agregar deportista por username…"
-          value={usernameNuevo}
-          onChange={(e) => setUsernameNuevo(e.target.value)}
-          style={styles.input}
-        />
-        <button onClick={agregarDeportista}>Agregar</button>
+        <input className="input" placeholder="Agregar deportista por username…" value={usernameNuevo} onChange={e=>setUsernameNuevo(e.target.value)} />
+        <button className="btn" onClick={agregarDeportista}>Agregar</button>
       </div>
 
-      {/* Fecha / hora */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '8px 0' }}>
-        <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
-        <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
+      <div className="row gap wrap">
+        <input className="input" type="date" value={fecha} onChange={e=>setFecha(e.target.value)} />
+        <input className="input" type="time" value={hora} onChange={e=>setHora(e.target.value)} />
       </div>
 
-      {/* Builder ejercicios */}
-      <div style={styles.formRow}>
-        <input
-          placeholder="Nombre ejercicio"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          style={styles.input}
-        />
-        <input
-          placeholder="Grupo muscular"
-          value={grupo}
-          onChange={(e) => setGrupo(e.target.value)}
-          style={styles.input}
-        />
-        <button onClick={agregarEj}>Agregar</button>
+      <div className="row gap wrap">
+        <input className="input" placeholder="Nombre ejercicio" value={nombre} onChange={e=>setNombre(e.target.value)} />
+        <input className="input" placeholder="Grupo muscular" value={grupo} onChange={e=>setGrupo(e.target.value)} />
+        <button className="btn btn-primary" onClick={agregarEj}>Agregar</button>
       </div>
 
-      <ul style={styles.list}>
-        {ejercicios.map((e) => (
-          <li key={e.id} style={styles.listItem}>
-            <div>
-              <strong>{e.nombre}</strong>{' '}
-              <small style={{ opacity: 0.7 }}>{e.grupo}</small>
+      <ul className="list">
+        {ejercicios.map(e=>(
+          <li key={e.id} className="item">
+            <div className="item-head">
+              <div><strong>{e.nombre}</strong> <small className="muted">{e.grupo}</small></div>
+              <button className="icon" onClick={()=>eliminarEj(e.id)}>✕</button>
             </div>
-            <button onClick={() => eliminarEj(e.id)}>✕</button>
           </li>
         ))}
       </ul>
 
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={terminar} disabled={!selId || ejercicios.length === 0 || enviando}>
+      <div className="row gap">
+        <button className="btn btn-primary" disabled={!selId || ejercicios.length===0 || enviando} onClick={terminar}>
           {enviando ? 'Guardando…' : 'Terminar'}
         </button>
-        <button onClick={onVolver} disabled={enviando}>Cancelar</button>
+        <button className="btn btn-outline" disabled={enviando} onClick={onVolver}>Cancelar</button>
       </div>
     </section>
   );
 }
 
-/* =========================
-   SUBVISTA: HistorialEntrenador
-========================= */
+/* ---------- Historial ---------- */
 function HistorialEntrenador({ onVolver }) {
   const coach = JSON.parse(localStorage.getItem('usuario') || '{}');
   const [items, setItems] = useState([]);
@@ -214,87 +162,54 @@ function HistorialEntrenador({ onVolver }) {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      try {
+      try{
         const res = await fetch(`${API_URL}/entrenamientos`);
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-
-        const json = await res.json();
+        const json = await res.json().catch(()=>({}));
         const todos = json?.data || [];
-        const mios = todos.filter(e => e?.entrenador?.dni === coach.dni);
-
-        setItems(mios);
-      } catch (e) {
-        console.error('HistorialEntrenador:', e);
-        setItems([]);
-      } finally {
-        setLoading(false);
-      }
+        setItems(todos.filter(e => e?.entrenador?.dni === coach.dni));
+      }catch(e){ console.error(e); setItems([]); }
+      finally{ setLoading(false); }
     })();
   }, [coach.dni]);
 
   const filtrados = items
-    .filter(it => (q ? ((it?.deportista?.nombre || '').toLowerCase().includes(q.toLowerCase())) : true))
-    .sort((a,b) => {
-      const da = new Date(`${a.fechaEntrenamiento}T${a.horaEntrenamiento || '00:00'}`);
-      const db = new Date(`${b.fechaEntrenamiento}T${b.horaEntrenamiento || '00:00'}`);
-      return db - da;
-    });
+    .filter(it => q ? ((it?.deportista?.nombre||'').toLowerCase().includes(q.toLowerCase())) : true)
+    .sort((a,b)=> new Date(`${b.fechaEntrenamiento}T${b.horaEntrenamiento||'00:00'}`) - new Date(`${a.fechaEntrenamiento}T${a.horaEntrenamiento||'00:00'}`));
 
   return (
-    <section>
-      <Back onClick={onVolver}/>
+    <section className="panel">
+      <Back onClick={onVolver} />
       <h3>Historial de entrenamientos asignados</h3>
-
-      <input
-        placeholder="Filtrar por deportista…"
-        value={q}
-        onChange={(e)=>setQ(e.target.value)}
-        style={styles.input}
-      />
-
-      {loading ? <p>Cargando…</p> :
-        (filtrados.length === 0 ? (
-          <p>No asignaste entrenamientos todavía.</p>
-        ) : (
-          <ul style={styles.list}>
-            {filtrados.map(it => (
-              <li key={it.id} style={styles.listItem}>
-                <div>
-                  <strong>{it.fechaEntrenamiento} {it.horaEntrenamiento || ''}</strong><br/>
-                  <small>Deportista: {it?.deportista?.nombre || '—'}</small>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ))
+      <input className="input" placeholder="Filtrar por deportista…" value={q} onChange={e=>setQ(e.target.value)} />
+      {loading ? <p className="muted">Cargando…</p> :
+        filtrados.length === 0 ? <p className="muted">No asignaste entrenamientos todavía.</p> :
+        <ul className="list">
+          {filtrados.map(it=>(
+            <li key={it.id} className="item">
+              <div><strong>{it.fechaEntrenamiento} {it.horaEntrenamiento || ''}</strong><br/>
+              <small className="muted">Deportista: {it?.deportista?.nombre || '—'}</small></div>
+            </li>
+          ))}
+        </ul>
       }
     </section>
   );
 }
 
-/* =========================
-   SUBVISTA: TusDeportistas
-========================= */
+/* ---------- TusDeportistas ---------- */
 function TusDeportistas({ onVolver }) {
   const coach = JSON.parse(localStorage.getItem('usuario') || '{}');
   const [lista, setLista] = useState([]);
   const [username, setUsername] = useState('');
 
-  // Cargar lista al montar o si cambia el DNI del coach
-  useEffect(() => {
-    setLista(FallbackCoach.getLista(coach.dni));
-  }, [coach.dni]);
+  useEffect(()=>{ setLista(FallbackCoach.getLista(coach.dni)); }, [coach.dni]);
 
   const agregar = () => {
     const u = username.trim();
     if (!u) return;
-    if (lista.some(d => (d.username || d.nombre) === u)) {
-      alert('Ese username ya está en tu lista.');
-      return;
-    }
+    if (lista.some(d => (d.username || d.nombre) === u)) return alert('Ese username ya está en tu lista.');
     FallbackCoach.addPorUsername(coach.dni, u);
-    setUsername('');
-    setLista(FallbackCoach.getLista(coach.dni));
+    setUsername(''); setLista(FallbackCoach.getLista(coach.dni));
   };
 
   const baja = (id) => {
@@ -304,31 +219,21 @@ function TusDeportistas({ onVolver }) {
   };
 
   return (
-    <section>
-      <Back onClick={onVolver}/>
+    <section className="panel">
+      <Back onClick={onVolver} />
       <h3>Tus deportistas</h3>
 
-      <div style={{display:'flex', gap:8, margin:'8px 0', flexWrap:'wrap'}}>
-        <input
-          placeholder="Agregar por username…"
-          value={username}
-          onChange={(e)=>setUsername(e.target.value)}
-          style={styles.input}
-        />
-        <button onClick={agregar}>Agregar</button>
+      <div className="row gap wrap">
+        <input className="input" placeholder="Agregar por username…" value={username} onChange={e=>setUsername(e.target.value)} />
+        <button className="btn btn-primary" onClick={agregar}>Agregar</button>
       </div>
 
-      {lista.length === 0 ? (
-        <p>No tenés deportistas asignados.</p>
-      ) : (
-        <ul style={styles.list}>
-          {lista.map(d => (
-            <li key={d.id} style={styles.listItem}>
-              <div>
-                <strong>{d.nombre || d.username}</strong>
-                {d.username && <div><small>@{d.username}</small></div>}
-              </div>
-              <button onClick={()=>baja(d.id)}>Dar de baja</button>
+      {lista.length === 0 ? <p className="muted">No tenés deportistas asignados.</p> : (
+        <ul className="list">
+          {lista.map(d=>(
+            <li key={d.id} className="item">
+              <div><strong>{d.nombre || d.username}</strong>{d.username && <div><small className="muted">@{d.username}</small></div>}</div>
+              <button className="btn btn-outline" onClick={()=>baja(d.id)}>Dar de baja</button>
             </li>
           ))}
         </ul>
@@ -337,54 +242,33 @@ function TusDeportistas({ onVolver }) {
   );
 }
 
-/* =========================
-   SUBVISTA: Perfil
-========================= */
+/* ---------- Perfil ---------- */
 function Perfil({ onVolver }) {
   const usuario = useMemo(() => {
     try { return JSON.parse(localStorage.getItem('usuario')) ?? {}; } catch { return {}; }
   }, []);
   return (
-    <section>
-      <Back onClick={onVolver}/>
+    <section className="panel">
+      <Back onClick={onVolver} />
       <h3>Tu perfil</h3>
-      <p><strong>Nombre:</strong> {usuario?.nombre || '-'}</p>
-      <p><strong>Email:</strong> {usuario?.email || '-'}</p>
-      <button onClick={()=>alert('Dar de baja cuenta (simulado)')}>Dar de baja cuenta</button>
+      <div className="card-box">
+        <p><strong>Nombre:</strong> {usuario?.nombre || '-'}</p>
+        <p><strong>Email:</strong> {usuario?.email || '-'}</p>
+      </div>
+      <button className="btn btn-outline" onClick={()=>alert('Dar de baja cuenta (simulado)')}>Dar de baja cuenta</button>
     </section>
   );
 }
 
-/* =========================
-   UI helpers
-========================= */
+/* ---------- UI ---------- */
 function Card({ title, desc, onClick }) {
   return (
-    <button onClick={onClick} style={styles.card}>
-      <div style={{textAlign:'left'}}>
-        <div style={{fontWeight:700}}>{title}</div>
-        <div style={{opacity:0.8, marginTop:4}}>{desc}</div>
-      </div>
+    <button className="menu-card" onClick={onClick}>
+      <div className="card-title">{title}</div>
+      <div className="card-desc">{desc}</div>
     </button>
   );
 }
-
-function Back({ onClick }) {
-  return <button onClick={onClick} style={{marginBottom:10}}>← Volver</button>;
-}
-
-/* =========================
-   estilos
-========================= */
-const styles = {
-  wrap: { maxWidth: 900, margin: '0 auto', padding: 16 },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 },
-  card: { width:'100%', padding:16, border:'1px solid #ddd', borderRadius:12, cursor:'pointer', background:'white', textAlign:'left' },
-  formRow: { display:'flex', flexWrap:'wrap', gap:8, margin:'8px 0' },
-  input: { padding:8, borderRadius:6, border:'1px solid #ddd' },
-  list: { listStyle:'none', padding:0, marginTop:8 },
-  listItem: { border:'1px solid #eee', borderRadius:8, padding:12, marginBottom:8, background:'#fff', display:'flex', justifyContent:'space-between', alignItems:'center' }
-};
+function Back({ onClick }) { return <button className="btn link" onClick={onClick}>← Volver</button>; }
 
 export default MenuEntrenador;

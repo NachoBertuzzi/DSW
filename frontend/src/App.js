@@ -8,7 +8,7 @@ import './pages/styles/inicio.css';
 import logo from './assets/logo.png';
 
 function App() {
-  const [pantalla, setPantalla] = useState('inicio');
+  const [pantalla, setPantalla] = useState('login'); // 👈 arranca directamente en login
 
   // Si el usuario ya tenía sesión guardada, lo mando directo a su menú
   useEffect(() => {
@@ -25,33 +25,20 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('tipo');
     localStorage.removeItem('usuario');
-    setPantalla('inicio');
+    setPantalla('login'); // 👈 vuelve al login, no al inicio
   };
 
   return (
     <div className="App" style={{ padding: 20 }}>
-      {pantalla === 'inicio' && (
-        <div className="inicio-container">
-          <div className="inicio-box">
-            <img src={logo} alt="logo" className="inicio-logo" />
-            <h1 className="inicio-title">Bienvenido</h1>
-            <div className="inicio-buttons">
-              <button onClick={() => setPantalla('login')}>Iniciar Sesión</button>
-              <button onClick={() => setPantalla('registro')}>Registrarse</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {pantalla === 'login' && (
         <LoginPage
-          onVolver={() => setPantalla('inicio')}
+          onIrRegistro={() => setPantalla('registro')} // 👈 nueva prop
           onLoginSuccess={handleLoginSuccess}
         />
       )}
 
       {pantalla === 'registro' && (
-        <RegistroPage onVolver={() => setPantalla('inicio')} />
+        <RegistroPage onVolver={() => setPantalla('login')} /> // 👈 vuelve al login
       )}
 
       {pantalla === 'menu-deportista' && (

@@ -58,7 +58,7 @@ async function tryLogin(url, email, pass) {
   throw new Error('No se pudo iniciar sesión');
 }
 
-const LoginPage = ({ onVolver, onLoginSuccess }) => {
+const LoginPage = ({ onLoginSuccess, onIrRegistro }) => {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [mensajeLogin, setMensajeLogin] = useState('');
@@ -80,12 +80,10 @@ const LoginPage = ({ onVolver, onLoginSuccess }) => {
         data = await tryLogin(`${API_BASE}/entrenadores/login`, loginEmail, loginPassword);
       }
 
-      // Normalizo SIEMPRE un objeto usuario válido
       const bruto =
         data?.deportista || data?.entrenador || data?.user || data?.usuario || data || {};
       const usuario = (bruto && typeof bruto === 'object') ? { ...bruto } : {};
 
-      // Si falta email, lo completo con lo que el usuario escribió en el input
       if (!usuario.email && typeof loginEmail === 'string') {
         usuario.email = loginEmail;
       }
@@ -130,9 +128,21 @@ const LoginPage = ({ onVolver, onLoginSuccess }) => {
           </button>
         </form>
 
-        <button onClick={onVolver} style={{ marginTop: 10 }}>
-          Volver
-        </button>
+        <div style={{ marginTop: 15 }}>
+          <small>¿No tenés cuenta?</small>{' '}
+          <button
+            onClick={onIrRegistro}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#007bff',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+            }}
+          >
+            Registrate
+          </button>
+        </div>
 
         {mensajeLogin && <div className="login-message">{mensajeLogin}</div>}
       </div>

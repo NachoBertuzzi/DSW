@@ -13,6 +13,7 @@ function MenuDeportista({ onLogout }) {
   return (
     <div className="menu-screen">
       {/* Wrappée SuccessCreated para evitar que su overlay bloquee clicks (temporal) */}
+      <h2>Menú principal</h2>
       <div className="success-block" style={{ pointerEvents: 'none' }}>
         <SuccessCreated />
       </div>

@@ -12,22 +12,28 @@ function MenuEntrenador({ onLogout }) {
   return (
     <div className="menu-screen coach">
       <SuccessCreated />
-      <header className="menu-header">
-        <h2>Menú del Entrenador</h2>
-        <div className="header-actions">
-          <small>{usuario?.nombre ? `Hola, ${usuario.nombre}` : ''}</small>
-          <button className="btn btn-outline" onClick={onLogout}>Cerrar sesión</button>
-        </div>
-      </header>
+<header className="menu-header">
+  <h2>Menú principal</h2>
+  <div className="header-actions">
+    <small>{usuario?.nombre ? `Hola, ${usuario.nombre}` : ''}</small>
+    <div className="dropdown-header">
+      <button className="hamburger-header">☰</button>
+      <div className="dropdown-content-header">
+        <button onClick={() => setVista('perfil')}>Tu Perfil</button>
+        <button onClick={onLogout}>Cerrar sesión</button>
+      </div>
+    </div>
+  </div>
+</header>
 
-      {vista === 'home' && (
-        <div className="menu-grid">
-          <Card title="1) Asignar entrenamiento" desc="Crear y asignar entrenamientos" onClick={() => setVista('asignar')} />
-          <Card title="2) Historial de entrenamientos" desc="Ver entrenamientos que asignaste" onClick={() => setVista('historial')} />
-          <Card title="3) Tus deportistas" desc="Listar, agregar y dar de baja" onClick={() => setVista('deportistas')} />
-          <Card title="4) Tu perfil" desc="Datos de tu cuenta" onClick={() => setVista('perfil')} />
-        </div>
-      )}
+{vista === 'home' && (
+  <div className="menu-grid">
+    <Card title="1) Asignar entrenamiento" desc="Crear y asignar entrenamientos" onClick={() => setVista('asignar')} />
+    <Card title="2) Historial de entrenamientos" desc="Ver entrenamientos que asignaste" onClick={() => setVista('historial')} />
+    <Card title="3) Tus deportistas" desc="Listar, agregar y dar de baja" onClick={() => setVista('deportistas')} />
+    {/* La opción 'Tu Perfil' se eliminó del menú principal */}
+  </div>
+)}
 
       {vista === 'asignar' && <AsignarEntrenamiento onVolver={() => setVista('home')} />}
       {vista === 'historial' && <HistorialEntrenador onVolver={() => setVista('home')} />}

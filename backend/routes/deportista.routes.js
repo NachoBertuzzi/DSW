@@ -13,4 +13,6 @@ router.delete('/:dni', ctrl.remove);
 // ====== LOGIN (nuevo) ======
 router.post('/login', ctrl.login);
 
+router.post('/eliminar', ctrl.remove); 
+
 module.exports = router;

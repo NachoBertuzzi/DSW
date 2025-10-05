@@ -242,20 +242,98 @@ function TuEntrenador({ onVolver }) {
 
 function Perfil({ onVolver }) {
   const usuario = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem('usuario')) ?? {}; } catch { return {}; }
+    try {
+      return JSON.parse(localStorage.getItem('usuario')) ?? {};
+    } catch {
+      return {};
+    }
   }, []);
+
+const actualizarPeso = async () => {
+  const nuevoPeso = prompt("Ingresa tu nuevo peso (kg):", usuario?.peso ?? "");
+  if (nuevoPeso) {
+    try {
+      const res = await fetch(`http://localhost:3000/api/deportistas/${usuario.dni}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ peso: nuevoPeso }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Peso actualizado correctamente");
+        const actualizado = { ...usuario, peso: nuevoPeso };
+        localStorage.setItem("usuario", JSON.stringify(actualizado));
+        window.location.reload();
+      } else {
+        alert(data.mensaje || "Error al actualizar el peso");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error al conectar con el servidor");
+    }
+  }
+};
+
+
+  const darBajaCuenta = async () => {
+    if (!usuario?.dni) {
+      alert("No se encontró información del usuario");
+      return;
+    }
+
+    const contrasena = prompt("Ingresa tu contraseña para confirmar la baja de tu cuenta:");
+    if (!contrasena) return;
+
+    try {
+      const deleteRes = await fetch('http://localhost:3000/api/deportistas/eliminar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dni: usuario.dni, contrasena })
+      });
+
+      if (deleteRes.ok) {
+        alert('Cuenta eliminada correctamente');
+        localStorage.removeItem('usuario');
+        window.location.reload(); // 🔁 se recarga el sitio
+      } else {
+        const err = await deleteRes.json();
+        alert(err.mensaje || 'Error eliminando la cuenta');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error de conexión con el servidor');
+    }
+  };
+
   return (
     <section className="panel">
       <Back onClick={onVolver} />
       <h3>Tu perfil</h3>
+
       <div className="card-box">
         <p><strong>Nombre:</strong> {usuario?.nombre ?? '-'}</p>
         <p><strong>Email:</strong> {usuario?.email ?? '-'}</p>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <p><strong>Peso:</strong> {usuario?.peso ?? '-'}</p>
+          <button className="btn btn-sm btn-primary" onClick={actualizarPeso}>
+            Actualizar
+          </button>
+        </div>
       </div>
-      <button className="btn btn-outline" onClick={()=>alert('Dar de baja cuenta (simulado)')}>Dar de baja la cuenta</button>
+
+      <button className="btn btn-outline" onClick={darBajaCuenta}>
+        Dar de baja la cuenta
+      </button>
     </section>
   );
 }
+
+
+
+
 
 /* ---------- UI ---------- */
 function Card({ title, desc, onClick }) {

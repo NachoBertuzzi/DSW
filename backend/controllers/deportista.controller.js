@@ -100,11 +100,21 @@ async function update(req, res) {
 }
 
 async function remove(req, res) {
-  const dni = req.params.dni;
-  const deleted = await service.remove({ dni });
-  if (!deleted) return res.status(404).send({ message: 'Deportista no encontrado' });
-  res.status(200).send({ message: 'Deportista eliminado' });
+  const { dni, contrasena } = req.body;
+
+  if (!contrasena) return res.status(400).json({ mensaje: 'Se requiere contraseña' });
+
+  const deportista = await service.getById({ dni });
+  if (!deportista) return res.status(404).json({ mensaje: 'Deportista no encontrado' });
+
+  const guardada = deportista.contrasena ?? deportista['contraseña'];
+  if (String(contrasena) !== String(guardada))
+    return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
+
+  await service.remove({ dni });
+  return res.status(200).json({ mensaje: 'Cuenta eliminada correctamente' });
 }
+
 
 async function login(req, res) {
   try {

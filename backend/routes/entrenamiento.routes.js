@@ -1,6 +1,6 @@
+// backend/routes/entrenamiento.routes.js
 const { Router } = require('express');
 const ctrl = require('../controllers/entrenamiento.controller');
-
 const router = Router();
 
 router.get('/', ctrl.findAll);

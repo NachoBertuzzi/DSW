@@ -1,4 +1,4 @@
-
+// backend/entities/localidad.entity.js
 const { EntitySchema } = require('@mikro-orm/core');
 
 const Localidad = new EntitySchema({
@@ -8,12 +8,8 @@ const Localidad = new EntitySchema({
     codPostal: { type: 'string', primary: true },
     nombre: { type: 'string' },
     provincia: { type: 'string' },
-    deportistas: {
-      kind: '1:m',
-      entity: 'Deportista',
-      mappedBy: 'localidad',
-      nullable: true,
-    },
+    // Podrías declarar el 1:m inverso, pero es opcional y para evitar ciclos lo dejo fuera.
+    // deportistas: { kind: '1:m', entity: 'Deportista', mappedBy: 'localidad', nullable: true },
   },
 });
 

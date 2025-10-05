@@ -138,4 +138,31 @@ async function login(req, res) {
   }
 }
 
-module.exports = { sanitizeDeportistaInput, findAll, findOne, add, update, remove, login };
+async function asignarEjercicio(req, res) {
+  const { deportista, entrenador, fechaEntrenamiento, horaEntrenamiento, ejercicios } = req.body;
+  
+  if (!deportista || !ejercicios || ejercicios.length === 0) {
+    return res.status(400).json({ mensaje: 'Faltan datos' });
+  }
+
+  try {
+    // Tomamos al deportista
+    const d = await service.getById({ dni: deportista });
+    if (!d) return res.status(404).json({ mensaje: 'Deportista no encontrado' });
+
+    // Guardamos los ejercicios asignados
+    // Opción 1: reemplazar todos los ejercicios
+    const actualizado = await service.update(deportista, { ejerciciosAsignados: ejercicios });
+
+    // Opción 2: si querés mantener un historial, podés hacer push a un array en la base
+    // await service.addEjercicios(deportista, ejercicios);
+
+    return res.status(200).json({ mensaje: 'Ejercicios asignados', data: actualizado });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ mensaje: 'Error del servidor' });
+  }
+}
+
+
+module.exports = { sanitizeDeportistaInput, findAll, findOne, add, update, remove, login, asignarEjercicio };

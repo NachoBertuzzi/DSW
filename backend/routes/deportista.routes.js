@@ -15,4 +15,7 @@ router.post('/login', ctrl.login);
 
 router.post('/eliminar', ctrl.remove); 
 
+router.post('/asignarEjercicio', ctrl.asignarEjercicio);
+
+
 module.exports = router;

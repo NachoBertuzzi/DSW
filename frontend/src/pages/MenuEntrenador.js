@@ -44,72 +44,82 @@ function MenuEntrenador({ onLogout }) {
 }
 
 /* ---------- Asignar ---------- */
-function AsignarEntrenamiento({ onVolver }) {
+export function AsignarEntrenamiento({ onVolver }) {
   const coach = JSON.parse(localStorage.getItem('usuario') || '{}');
   const [lista, setLista] = useState([]);
   const [selId, setSelId] = useState('');
   const [usernameNuevo, setUsernameNuevo] = useState('');
-  const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0,10));
-  const [hora, setHora] = useState(() => new Date().toTimeString().slice(0,5));
+  const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
+  const [hora, setHora] = useState(() => new Date().toTimeString().slice(0, 5));
   const [ejercicios, setEjercicios] = useState([]);
-  const [nombre, setNombre] = useState('');
   const [grupo, setGrupo] = useState('');
+  const [nombre, setNombre] = useState('');
   const [enviando, setEnviando] = useState(false);
+
+  const GRUPOS_EJERCICIOS = {
+    Pecho: ["Press de banca", "Press inclinado", "Aperturas con mancuernas", "Fondos", "Pullover", "Pec deck", "Press declinado", "Flexiones", "Press máquina", "Cruce de cables"],
+    Espalda: ["Dominadas", "Remo barra", "Remo mancuerna", "Peso muerto", "Jalón al pecho", "Pull-over polea", "Remo máquina", "Hiperextensiones", "Encogimientos", "Remo al mentón"],
+    Hombros: ["Press militar", "Elevaciones laterales", "Elevaciones frontales", "Elevaciones posteriores", "Press Arnold", "Face pull", "Remo al mentón", "Encogimiento hombros", "Elevación máquina", "Pájaros"],
+    Bíceps: ["Curl barra", "Curl mancuernas", "Curl martillo", "Curl concentrado", "Curl predicador", "Curl polea", "Curl inverso", "Curl alternado", "Curl 21s", "Zottman"],
+    Tríceps: ["Fondos", "Press francés", "Extensión polea", "Patada tríceps", "Press cerrado", "Skull crusher", "Extensión mancuerna", "Dips banco", "Extensión máquina", "Press polea"],
+    Piernas: ["Sentadilla barra", "Sentadilla frontal", "Prensa", "Zancadas", "Peso muerto rumano", "Extensión piernas", "Curl piernas", "Elevación talones", "Hip thrust", "Step-ups"],
+    Abdominales: ["Crunch", "Elevación piernas", "Plancha", "Plancha lateral", "Crunch polea", "Ab wheel", "Elevación rodillas", "Crunch oblicuo", "Mountain climbers", "Russian twists"]
+  };
 
   useEffect(() => {
     const arr = FallbackCoach.getLista(coach.dni);
     setLista(arr);
     if (!selId && arr.length) setSelId(String(arr[0].id));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [coach.dni]);
 
-  const agregarDeportista = () => {
-    const u = usernameNuevo.trim();
-    if (!u) return;
-    if (lista.some(d => (d.username || d.nombre) === u)) return alert('Ese username ya está en tu lista.');
-    const nuevo = FallbackCoach.addPorUsername(coach.dni, u);
-    setUsernameNuevo(''); setLista(p => [nuevo, ...p]); setSelId(String(nuevo.id));
-  };
+  const ejerciciosDelGrupo = grupo ? GRUPOS_EJERCICIOS[grupo] : [];
 
   const agregarEj = () => {
-    if (!nombre.trim()) return alert('Poné un nombre de ejercicio');
-    setEjercicios(p => [...p, { id: crypto.randomUUID(), nombre: nombre.trim(), grupo: grupo.trim() }]);
-    setNombre(''); setGrupo('');
+    if (!nombre || !grupo) return alert('Seleccioná grupo y ejercicio');
+    setEjercicios(p => [...p, { id: crypto.randomUUID(), nombre, grupo }]);
+    setNombre('');
   };
-  const eliminarEj = (id) => setEjercicios(p => p.filter(e=>e.id!==id));
+
+  const eliminarEj = (id) => setEjercicios(p => p.filter(e => e.id !== id));
 
   const terminar = async () => {
     if (!selId) return alert('Elegí un deportista');
-    if (!fecha || !hora) return alert('Completá fecha y hora');
     if (ejercicios.length === 0) return alert('Agregá al menos un ejercicio');
     if (!coach?.dni) return alert('No se encontró tu DNI de entrenador en la sesión');
 
     const seleccionado = lista.find(d => String(d.id) === String(selId));
-    const deportistaDni = seleccionado?.dni || null;
+    const deportistaUsername = seleccionado?.username || seleccionado?.nombre || null;
 
     const payload = {
       fechaEntrenamiento: fecha,
-      horaEntrenamiento: hora,
+      horaEntrenamiento: hora || null,
       entrenador: coach.dni,
-      ...(deportistaDni ? { deportista: deportistaDni } : {}),
+      ...(deportistaUsername ? { deportista: deportistaUsername } : {}),
+      ejercicios
     };
 
     try {
       setEnviando(true);
-      await Entrenamientos.crear(payload);
+      await Entrenamientos.crear(payload); // tu servicio
       alert('Entrenamiento asignado');
       onVolver();
     } catch (e1) {
       try {
         const res = await fetch(`${API_URL}/entrenamientos`, {
-          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error('HTTP '+res.status);
-        alert('Entrenamiento asignado'); onVolver();
-      } catch(e2) {
-        console.error(e2); alert('No se pudo guardar en el backend');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        alert('Entrenamiento asignado');
+        onVolver();
+      } catch (e2) {
+        console.error(e2);
+        alert('No se pudo guardar en el backend');
       }
-    } finally { setEnviando(false); }
+    } finally {
+      setEnviando(false);
+    }
   };
 
   return (
@@ -118,38 +128,63 @@ function AsignarEntrenamiento({ onVolver }) {
       <h3>Asignar entrenamiento</h3>
 
       <div className="row gap wrap">
-        <select className="input" value={selId} onChange={e=>setSelId(e.target.value)}>
+        <select className="input" value={selId} onChange={e => setSelId(e.target.value)}>
           <option value="">— Elegí un deportista —</option>
-          {lista.map(d => <option key={d.id} value={d.id}>{d.nombre || d.username || d.id}</option>)}
+          {lista.map(d => (
+            <option key={d.id} value={d.id}>
+              {d.nombre || d.username || d.id}
+            </option>
+          ))}
         </select>
-        <input className="input" placeholder="Agregar deportista por username…" value={usernameNuevo} onChange={e=>setUsernameNuevo(e.target.value)} />
-        <button className="btn" onClick={agregarDeportista}>Agregar</button>
+
+        <input
+          className="input"
+          placeholder="O escribí su username…"
+          value={usernameNuevo}
+          onChange={e => setUsernameNuevo(e.target.value)}
+        />
+        <button
+          className="btn"
+          onClick={() => {
+            const u = usernameNuevo.trim();
+            if (!u) return;
+            const encontrado = lista.find(d => (d.username || d.nombre) === u);
+            if (!encontrado) return alert('Ese usuario no está asignado a vos');
+            setSelId(String(encontrado.id));
+            setUsernameNuevo('');
+          }}
+        >
+          Seleccionar
+        </button>
       </div>
 
       <div className="row gap wrap">
-        <input className="input" type="date" value={fecha} onChange={e=>setFecha(e.target.value)} />
-        <input className="input" type="time" value={hora} onChange={e=>setHora(e.target.value)} />
-      </div>
+        <select className="input" value={grupo} onChange={e => { setGrupo(e.target.value); setNombre(''); }}>
+          <option value="">— Seleccioná grupo muscular —</option>
+          {Object.keys(GRUPOS_EJERCICIOS).map(g => <option key={g} value={g}>{g}</option>)}
+        </select>
 
-      <div className="row gap wrap">
-        <input className="input" placeholder="Nombre ejercicio" value={nombre} onChange={e=>setNombre(e.target.value)} />
-        <input className="input" placeholder="Grupo muscular" value={grupo} onChange={e=>setGrupo(e.target.value)} />
-        <button className="btn btn-primary" onClick={agregarEj}>Agregar</button>
+        <select className="input" value={nombre} onChange={e => setNombre(e.target.value)} disabled={!grupo}>
+          <option value="">— Seleccioná ejercicio —</option>
+          {ejerciciosDelGrupo.map(ej => <option key={ej} value={ej}>{ej}</option>)}
+        </select>
+
+        <button className="btn btn-primary" onClick={agregarEj} disabled={!nombre}>Agregar</button>
       </div>
 
       <ul className="list">
-        {ejercicios.map(e=>(
+        {ejercicios.map(e => (
           <li key={e.id} className="item">
             <div className="item-head">
               <div><strong>{e.nombre}</strong> <small className="muted">{e.grupo}</small></div>
-              <button className="icon" onClick={()=>eliminarEj(e.id)}>✕</button>
+              <button className="icon" onClick={() => eliminarEj(e.id)}>✕</button>
             </div>
           </li>
         ))}
       </ul>
 
       <div className="row gap">
-        <button className="btn btn-primary" disabled={!selId || ejercicios.length===0 || enviando} onClick={terminar}>
+        <button className="btn btn-primary" disabled={!selId || ejercicios.length === 0 || enviando} onClick={terminar}>
           {enviando ? 'Guardando…' : 'Terminar'}
         </button>
         <button className="btn btn-outline" disabled={enviando} onClick={onVolver}>Cancelar</button>

@@ -245,20 +245,61 @@ function TusDeportistas({ onVolver }) {
 /* ---------- Perfil ---------- */
 function Perfil({ onVolver }) {
   const usuario = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem('usuario')) ?? {}; } catch { return {}; }
+    try {
+      return JSON.parse(localStorage.getItem("usuario")) ?? {};
+    } catch {
+      return {};
+    }
   }, []);
+
+  const eliminarCuenta = async () => {
+    const confirmacion = window.confirm(
+      "¿Seguro que querés eliminar tu cuenta? Esta acción no se puede deshacer."
+    );
+    if (!confirmacion) return;
+
+    const contrasena = prompt("Por seguridad, ingresá tu contraseña:");
+    if (!contrasena) return;
+
+    try {
+      const res = await fetch(`http://localhost:3000/api/entrenadores/${usuario.dni}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contrasena }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Cuenta eliminada correctamente.");
+        localStorage.removeItem("usuario");
+        window.location.reload();
+      } else {
+        alert(data.mensaje || "Error al eliminar la cuenta");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión con el servidor");
+    }
+  };
+
   return (
     <section className="panel">
       <Back onClick={onVolver} />
       <h3>Tu perfil</h3>
+
       <div className="card-box">
-        <p><strong>Nombre:</strong> {usuario?.nombre || '-'}</p>
-        <p><strong>Email:</strong> {usuario?.email || '-'}</p>
+        <p><strong>Nombre:</strong> {usuario?.nombre || "-"}</p>
+        <p><strong>Email:</strong> {usuario?.email || "-"}</p>
       </div>
-      <button className="btn btn-outline" onClick={()=>alert('Dar de baja cuenta (simulado)')}>Dar de baja cuenta</button>
+
+      <button className="btn btn-outline" onClick={eliminarCuenta}>
+        Dar de baja cuenta
+      </button>
     </section>
   );
 }
+
 
 /* ---------- UI ---------- */
 function Card({ title, desc, onClick }) {

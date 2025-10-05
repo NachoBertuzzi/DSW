@@ -57,10 +57,32 @@ async function update(req, res) {
 }
 
 async function remove(req, res) {
-  const deleted = await service.remove({ dni: req.params.dni });
-  if (!deleted) return res.status(404).send({ message: 'Entrenador no encontrado' });
-  res.status(200).send({ message: 'Entrenador eliminado' });
+  try {
+    const { dni } = req.params;
+    const { contrasena } = req.body;
+
+    if (!contrasena) {
+      return res.status(400).json({ mensaje: 'Se requiere la contraseña para eliminar la cuenta' });
+    }
+
+    const entrenador = await service.getById({ dni });
+    if (!entrenador) {
+      return res.status(404).json({ mensaje: 'Entrenador no encontrado' });
+    }
+
+    const guardada = entrenador.contrasena ?? entrenador['contraseña'];
+    if (String(contrasena) !== String(guardada)) {
+      return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
+    }
+
+    await service.remove({ dni });
+    return res.status(200).json({ mensaje: 'Cuenta eliminada correctamente' });
+  } catch (err) {
+    console.error('Error al eliminar cuenta:', err);
+    return res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
 }
+
 
 // === LOGIN (nuevo) ===
 async function login(req, res) {

@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import EntrenamientoNuevo from './EntrenamientoNuevo';
 import SuccessCreated from './SuccessCreated';
 import { Entrenamientos } from '../services/api';
 import './styles/MenuDeportista.css';
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 
 function MenuDeportista({ onLogout }) {
   const [vista, setVista] = useState('home'); // home | agregar | historial | entrenador | perfil
@@ -12,22 +12,27 @@ function MenuDeportista({ onLogout }) {
 
   return (
     <div className="menu-screen">
-      <SuccessCreated />
+      {/* Wrappée SuccessCreated para evitar que su overlay bloquee clicks (temporal) */}
+      <div className="success-block" style={{ pointerEvents: 'none' }}>
+        <SuccessCreated />
+      </div>
 
-      <header className="menu-header">
-        <h2>Menú del Deportista</h2>
-        <div className="header-actions">
-          <small>{usuario?.nombre ? `Hola, ${usuario.nombre}` : ''}</small>
-          <button className="btn btn-outline" onClick={onLogout}>Cerrar sesión</button>
+      <div className="header-actions">
+        <small>{usuario?.nombre ? `Hola, ${usuario.nombre}` : ''}</small>
+        <div className="dropdown-header">
+          <button type="button" className="hamburger-header">&#9776;</button>
+          <div className="dropdown-content-header">
+            <button type="button" className="btn" onClick={() => setVista('perfil')}>Ver mi perfil</button>
+            <button type="button" className="btn btn-outline" onClick={onLogout}>Cerrar sesión</button>
+          </div>
         </div>
-      </header>
+      </div>
 
       {vista === 'home' && (
         <div className="menu-grid">
-          <Card title="1) Agregar entrenamiento" desc="Crear entrenamiento (propio o asignado)" onClick={() => setVista('agregar')} />
-          <Card title="2) Historial de entrenamientos" desc="Ver entrenamientos anteriores" onClick={() => setVista('historial')} />
-          <Card title="3) Tu entrenador" desc="Ver/Agregar/Cambiar entrenador" onClick={() => setVista('entrenador')} />
-          <Card title="4) Tu perfil" desc="Datos de tu cuenta" onClick={() => setVista('perfil')} />
+          <Card title="Agregar entrenamiento" desc="Crear entrenamiento (propio o asignado)" onClick={() => setVista('agregar')} />
+          <Card title="Historial de entrenamientos" desc="Ver entrenamientos anteriores" onClick={() => setVista('historial')} />
+          <Card title="Tu entrenador" desc="Ver/Agregar/Cambiar entrenador" onClick={() => setVista('entrenador')} />
         </div>
       )}
 
@@ -131,8 +136,8 @@ function Agregar({ onVolver }) {
       <h3>Agregar entrenamiento</h3>
 
       <div className="row gap">
-        <button className={`btn ${modo==='propio'?'btn-primary':''}`} onClick={()=>setModo('propio')}>Opción 1: Propio</button>
-        <button className={`btn ${modo==='asignado'?'btn-primary':''}`} onClick={()=>setModo('asignado')}>Opción 2: Asignado</button>
+        <button type="button" className={`btn ${modo==='propio'?'btn-primary':''}`} onClick={()=>setModo('propio')}>Opción 1: Propio</button>
+        <button type="button" className={`btn ${modo==='asignado'?'btn-primary':''}`} onClick={()=>setModo('asignado')}>Opción 2: Asignado</button>
       </div>
 
       <div className="row gap">
@@ -150,7 +155,7 @@ function Agregar({ onVolver }) {
             <input className="input" placeholder="Nombre del ejercicio" value={nombre} onChange={e=>setNombre(e.target.value)} />
             <input className="input" placeholder="Grupo muscular" value={grupo} onChange={e=>setGrupo(e.target.value)} />
             <input className="input small" type="number" min={1} value={cantSeries} onChange={e=>setCantSeries(e.target.value)} placeholder="Cant. series" />
-            <button className="btn btn-primary" onClick={agregarEjercicio}>Agregar</button>
+            <button type="button" className="btn btn-primary" onClick={agregarEjercicio}>Agregar</button>
           </div>
 
           {ejercicios.length === 0 && <p className="muted">Lista de ejercicios (vacía). Agregá el primero.</p>}
@@ -160,7 +165,7 @@ function Agregar({ onVolver }) {
               <li key={e.id} className="item">
                 <div className="item-head">
                   <strong>{e.nombre}</strong>
-                  <button className="icon" title="Eliminar" onClick={()=>eliminarEjercicio(e.id)}>✕</button>
+                  <button type="button" className="icon" title="Eliminar" onClick={()=>eliminarEjercicio(e.id)}>✕</button>
                 </div>
                 <small className="muted">{e.grupo || '—'}</small>
                 <div className="series">
@@ -177,8 +182,8 @@ function Agregar({ onVolver }) {
           </ul>
 
           <div className="row gap">
-            <button className="btn btn-primary" disabled={ejercicios.length===0||enviando} onClick={terminar}>{enviando?'Guardando…':'Terminar entrenamiento'}</button>
-            <button className="btn btn-outline" disabled={enviando} onClick={cancelar}>Cancelar</button>
+            <button type="button" className="btn btn-primary" disabled={ejercicios.length===0||enviando} onClick={terminar}>{enviando?'Guardando…':'Terminar entrenamiento'}</button>
+            <button type="button" className="btn btn-outline" disabled={enviando} onClick={cancelar}>Cancelar</button>
           </div>
         </>
       ) : (
@@ -193,8 +198,8 @@ function Agregar({ onVolver }) {
             </ul>
           )}
           <div className="row gap">
-            <button className="btn btn-primary" disabled={enviando} onClick={terminar}>{enviando?'Guardando…':'Terminar entrenamiento'}</button>
-            <button className="btn btn-outline" disabled={enviando} onClick={cancelar}>Cancelar</button>
+            <button type="button" className="btn btn-primary" disabled={enviando} onClick={terminar}>{enviando?'Guardando…':'Terminar entrenamiento'}</button>
+            <button type="button" className="btn btn-outline" disabled={enviando} onClick={cancelar}>Cancelar</button>
           </div>
         </>
       )}
@@ -221,7 +226,7 @@ function TuEntrenador({ onVolver }) {
       {!tiene ? (
         <>
           <p className="muted">No tenés entrenador asignado.</p>
-          <button className="btn btn-primary" onClick={()=>alert('Listado de entrenadores (simulado)')}>Agregar entrenador</button>
+          <button type="button" className="btn btn-primary" onClick={()=>alert('Listado de entrenadores (simulado)')}>Agregar entrenador</button>
         </>
       ) : (
         <>
@@ -230,9 +235,9 @@ function TuEntrenador({ onVolver }) {
             <small>Rating: 4.6/5</small>
           </div>
           <div className="row gap">
-            <button className="btn btn-primary" onClick={()=>alert('Feedback (simulado)')}>Dar feedback</button>
-            <button className="btn" onClick={()=>alert('Cambiar (simulado)')}>Cambiar</button>
-            <button className="btn btn-outline" onClick={()=>setTiene(false)}>Dar de baja</button>
+            <button type="button" className="btn btn-primary" onClick={()=>alert('Feedback (simulado)')}>Dar feedback</button>
+            <button type="button" className="btn" onClick={()=>alert('Cambiar (simulado)')}>Cambiar</button>
+            <button type="button" className="btn btn-outline" onClick={()=>setTiene(false)}>Dar de baja</button>
           </div>
         </>
       )}
@@ -243,15 +248,23 @@ function TuEntrenador({ onVolver }) {
 function Perfil({ onVolver }) {
   const usuario = useMemo(() => {
     try {
-      return JSON.parse(localStorage.getItem('usuario')) ?? {};
+      return JSON.parse(localStorage.getItem("usuario")) ?? {};
     } catch {
       return {};
     }
   }, []);
 
-const actualizarPeso = async () => {
-  const nuevoPeso = prompt("Ingresa tu nuevo peso (kg):", usuario?.peso ?? "");
-  if (nuevoPeso) {
+  const [historial, setHistorial] = useState([]);
+
+  useEffect(() => {
+    const guardado = JSON.parse(localStorage.getItem("historialPesos") || "[]");
+    setHistorial(guardado);
+  }, []);
+
+  const actualizarPeso = async () => {
+    const nuevoPeso = prompt("Ingresa tu nuevo peso (kg):", usuario?.peso ?? "");
+    if (!nuevoPeso) return;
+
     try {
       const res = await fetch(`http://localhost:3000/api/deportistas/${usuario.dni}`, {
         method: "PUT",
@@ -263,9 +276,13 @@ const actualizarPeso = async () => {
 
       if (res.ok) {
         alert("Peso actualizado correctamente");
+
         const actualizado = { ...usuario, peso: nuevoPeso };
         localStorage.setItem("usuario", JSON.stringify(actualizado));
-        window.location.reload();
+
+        const nuevoHistorial = [...historial, parseFloat(nuevoPeso)];
+        localStorage.setItem("historialPesos", JSON.stringify(nuevoHistorial));
+        setHistorial(nuevoHistorial);
       } else {
         alert(data.mensaje || "Error al actualizar el peso");
       }
@@ -273,9 +290,7 @@ const actualizarPeso = async () => {
       console.error(err);
       alert("Error al conectar con el servidor");
     }
-  }
-};
-
+  };
 
   const darBajaCuenta = async () => {
     if (!usuario?.dni) {
@@ -287,63 +302,89 @@ const actualizarPeso = async () => {
     if (!contrasena) return;
 
     try {
-      const deleteRes = await fetch('http://localhost:3000/api/deportistas/eliminar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dni: usuario.dni, contrasena })
+      const deleteRes = await fetch("http://localhost:3000/api/deportistas/eliminar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dni: usuario.dni, contrasena }),
       });
 
       if (deleteRes.ok) {
-        alert('Cuenta eliminada correctamente');
-        localStorage.removeItem('usuario');
-        window.location.reload(); // 🔁 se recarga el sitio
+        alert("Cuenta eliminada correctamente");
+        localStorage.removeItem("usuario");
+        localStorage.removeItem("historialPesos");
+        window.location.reload();
       } else {
         const err = await deleteRes.json();
-        alert(err.mensaje || 'Error eliminando la cuenta');
+        alert(err.mensaje || "Error eliminando la cuenta");
       }
     } catch (e) {
       console.error(e);
-      alert('Error de conexión con el servidor');
+      alert("Error de conexión con el servidor");
     }
   };
 
+  const datosGrafico = historial.map((peso, i) => ({ id: i + 1, peso }));
+
   return (
-    <section className="panel">
+    <section className="panel perfil-panel">
       <Back onClick={onVolver} />
-      <h3>Tu perfil</h3>
+      <h3 className="perfil-titulo">Tu Perfil</h3>
 
-      <div className="card-box">
-        <p><strong>Nombre:</strong> {usuario?.nombre ?? '-'}</p>
-        <p><strong>Email:</strong> {usuario?.email ?? '-'}</p>
+      <div className="perfil-card">
+        <p><strong>Nombre:</strong> {usuario?.nombre ?? "-"}</p>
+        <p><strong>Email:</strong> {usuario?.email ?? "-"}</p>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <p><strong>Peso:</strong> {usuario?.peso ?? '-'}</p>
-          <button className="btn btn-sm btn-primary" onClick={actualizarPeso}>
+        <div className="perfil-peso">
+          <p><strong>Peso actual:</strong> {usuario?.peso ?? "-"}</p>
+          <button type="button" className="btn btn-sm btn-primary" onClick={actualizarPeso}>
             Actualizar
           </button>
         </div>
       </div>
 
-      <button className="btn btn-outline" onClick={darBajaCuenta}>
+      {historial.length > 1 ? (
+        <div className="grafico-box">
+          <h4 className="grafico-titulo">Progreso de tu peso</h4>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={datosGrafico}>
+              <XAxis dataKey="id" stroke="#ccc" />
+              <YAxis stroke="#ccc" />
+              <Line
+                type="monotone"
+                dataKey="peso"
+                stroke="#e63946"
+                strokeWidth={3}
+                dot={{ fill: "#fff" }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      ) : (
+        <p className="grafico-placeholder">
+          Aún no hay suficientes registros para mostrar el progreso.
+        </p>
+      )}
+
+      <button type="button" className="btn btn-outline" onClick={darBajaCuenta}>
         Dar de baja la cuenta
       </button>
     </section>
   );
 }
 
-
-
-
-
 /* ---------- UI ---------- */
 function Card({ title, desc, onClick }) {
   return (
-    <button className="menu-card" onClick={onClick}>
+    <button
+      type="button"
+      className="menu-card"
+      onClick={(e) => { e.stopPropagation(); console.log('Card click:', title); onClick && onClick(); }}
+    >
       <div className="card-title">{title}</div>
       <div className="card-desc">{desc}</div>
     </button>
   );
 }
-function Back({ onClick }) { return <button className="btn link" onClick={onClick}>← Volver</button>; }
+function Back({ onClick }) { return <button type="button" className="btn link" onClick={onClick}>← Volver</button>; }
 
 export default MenuDeportista;

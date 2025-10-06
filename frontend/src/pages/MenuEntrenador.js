@@ -12,28 +12,27 @@ function MenuEntrenador({ onLogout }) {
   return (
     <div className="menu-screen coach">
       <SuccessCreated />
-<header className="menu-header">
-  <h2>Menú principal</h2>
-  <div className="header-actions">
-    <small>{usuario?.nombre ? `Hola, ${usuario.nombre}` : ''}</small>
-    <div className="dropdown-header">
-      <button className="hamburger-header">☰</button>
-      <div className="dropdown-content-header">
-        <button onClick={() => setVista('perfil')}>Tu Perfil</button>
-        <button onClick={onLogout}>Cerrar sesión</button>
-      </div>
-    </div>
-  </div>
-</header>
+      <header className="menu-header">
+        <h2>Menú principal</h2>
+        <div className="header-actions">
+          <small>{usuario?.nombre ? `Hola, ${usuario.nombre}` : ''}</small>
+          <div className="dropdown-header">
+            <button className="hamburger-header">☰</button>
+            <div className="dropdown-content-header">
+              <button onClick={() => setVista('perfil')}>Tu Perfil</button>
+              <button onClick={onLogout}>Cerrar sesión</button>
+            </div>
+          </div>
+        </div>
+      </header>
 
-{vista === 'home' && (
-  <div className="menu-grid">
-    <Card title="1) Asignar entrenamiento" desc="Crear y asignar entrenamientos" onClick={() => setVista('asignar')} />
-    <Card title="2) Historial de entrenamientos" desc="Ver entrenamientos que asignaste" onClick={() => setVista('historial')} />
-    <Card title="3) Tus deportistas" desc="Listar, agregar y dar de baja" onClick={() => setVista('deportistas')} />
-    {/* La opción 'Tu Perfil' se eliminó del menú principal */}
-  </div>
-)}
+      {vista === 'home' && (
+        <div className="menu-grid">
+          <Card title="1) Asignar entrenamiento" desc="Crear y asignar entrenamientos" onClick={() => setVista('asignar')} />
+          <Card title="2) Historial de entrenamientos" desc="Ver entrenamientos que asignaste" onClick={() => setVista('historial')} />
+          <Card title="3) Tus deportistas" desc="Listar, agregar y dar de baja" onClick={() => setVista('deportistas')} />
+        </div>
+      )}
 
       {vista === 'asignar' && <AsignarEntrenamiento onVolver={() => setVista('home')} />}
       {vista === 'historial' && <HistorialEntrenador onVolver={() => setVista('home')} />}
@@ -49,8 +48,8 @@ export function AsignarEntrenamiento({ onVolver }) {
   const [lista, setLista] = useState([]);
   const [selId, setSelId] = useState('');
   const [usernameNuevo, setUsernameNuevo] = useState('');
-  const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
-  const [hora, setHora] = useState(() => new Date().toTimeString().slice(0, 5));
+  const [fecha] = useState(() => new Date().toISOString().slice(0, 10));
+  const [hora] = useState(() => new Date().toTimeString().slice(0, 5));
   const [ejercicios, setEjercicios] = useState([]);
   const [grupo, setGrupo] = useState('');
   const [nombre, setNombre] = useState('');
@@ -70,7 +69,7 @@ export function AsignarEntrenamiento({ onVolver }) {
     const arr = FallbackCoach.getLista(coach.dni);
     setLista(arr);
     if (!selId && arr.length) setSelId(String(arr[0].id));
-  }, [coach.dni]);
+  }, [coach.dni, selId]);
 
   const ejerciciosDelGrupo = grupo ? GRUPOS_EJERCICIOS[grupo] : [];
 
@@ -100,7 +99,7 @@ export function AsignarEntrenamiento({ onVolver }) {
 
     try {
       setEnviando(true);
-      await Entrenamientos.crear(payload); // tu servicio
+      await Entrenamientos.crear(payload);
       alert('Entrenamiento asignado');
       onVolver();
     } catch (e1) {
@@ -243,20 +242,27 @@ function TusDeportistas({ onVolver }) {
   const [lista, setLista] = useState([]);
   const [username, setUsername] = useState('');
 
-  useEffect(()=>{ setLista(FallbackCoach.getLista(coach.dni)); }, [coach.dni]);
+  const cargar = () => setLista(FallbackCoach.getLista(coach.dni));
+
+  useEffect(cargar, [coach.dni]);
 
   const agregar = () => {
     const u = username.trim();
     if (!u) return;
     if (lista.some(d => (d.username || d.nombre) === u)) return alert('Ese username ya está en tu lista.');
     FallbackCoach.addPorUsername(coach.dni, u);
-    setUsername(''); setLista(FallbackCoach.getLista(coach.dni));
+    setUsername(''); cargar();
   };
 
   const baja = (id) => {
     if (!window.confirm('¿Dar de baja a este deportista?')) return;
     FallbackCoach.quitar(coach.dni, id);
-    setLista(FallbackCoach.getLista(coach.dni));
+    cargar();
+  };
+
+  const fmt = (iso) => {
+    try { const d = new Date(iso); return d.toLocaleDateString() + ' ' + d.toLocaleTimeString().slice(0,5); }
+    catch { return ''; }
   };
 
   return (
@@ -267,16 +273,29 @@ function TusDeportistas({ onVolver }) {
       <div className="row gap wrap">
         <input className="input" placeholder="Agregar por username…" value={username} onChange={e=>setUsername(e.target.value)} />
         <button className="btn btn-primary" onClick={agregar}>Agregar</button>
+        <button className="btn btn-outline" onClick={cargar}>Actualizar</button>
       </div>
 
       {lista.length === 0 ? <p className="muted">No tenés deportistas asignados.</p> : (
         <ul className="list">
-          {lista.map(d=>(
-            <li key={d.id} className="item">
-              <div><strong>{d.nombre || d.username}</strong>{d.username && <div><small className="muted">@{d.username}</small></div>}</div>
-              <button className="btn btn-outline" onClick={()=>baja(d.id)}>Dar de baja</button>
-            </li>
-          ))}
+          {lista.map(d=>{
+            const ultima = FallbackCoach.getUltimaNota(coach.dni, d.dni || d.id);
+            return (
+              <li key={d.id} className="item">
+                <div>
+                  <strong>{d.nombre || d.username}</strong>
+                  {d.username && <div><small className="muted">@{d.username}</small></div>}
+                  {ultima && (
+                    <div style={{marginTop: 4}}>
+                      <small className="muted">Última nota ({fmt(ultima.fecha)}):</small>
+                      <div>{ultima.texto}</div>
+                    </div>
+                  )}
+                </div>
+                <button className="btn btn-outline" onClick={()=>baja(d.id)}>Dar de baja</button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
@@ -294,9 +313,7 @@ function Perfil({ onVolver }) {
   }, []);
 
   const eliminarCuenta = async () => {
-    const confirmacion = window.confirm(
-      "¿Seguro que querés eliminar tu cuenta? Esta acción no se puede deshacer."
-    );
+    const confirmacion = window.confirm("¿Seguro que querés eliminar tu cuenta? Esta acción no se puede deshacer.");
     if (!confirmacion) return;
 
     const contrasena = prompt("Por seguridad, ingresá tu contraseña:");
@@ -340,7 +357,6 @@ function Perfil({ onVolver }) {
     </section>
   );
 }
-
 
 /* ---------- UI ---------- */
 function Card({ title, desc, onClick }) {

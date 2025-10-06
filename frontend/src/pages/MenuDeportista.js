@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import SuccessCreated from './SuccessCreated';
-import { Entrenamientos } from '../services/api';
+import { Entrenamientos, FallbackCoach, API_URL } from '../services/api';
 import './styles/MenuDeportista.css';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 
@@ -12,7 +12,6 @@ function MenuDeportista({ onLogout }) {
 
   return (
     <div className="menu-screen">
-      {/* Wrappée SuccessCreated para evitar que su overlay bloquee clicks (temporal) */}
       <h2>Menú principal</h2>
       <div className="success-block" style={{ pointerEvents: 'none' }}>
         <SuccessCreated />
@@ -70,7 +69,6 @@ function Agregar({ onVolver }) {
     }
   }, [modo, usuario?.dni]);
 
-  // agregar ejercicio
   const agregarEjercicio = () => {
     const n = nombre.trim();
     const g = grupo.trim();
@@ -111,8 +109,7 @@ function Agregar({ onVolver }) {
       if (Entrenamientos?.crear) {
         await Entrenamientos.crear(payload);
       } else {
-        const BASE = (import.meta?.env?.VITE_API_URL) || process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
-        const res = await fetch(`${BASE}/entrenamientos`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        const res = await fetch(`${API_URL}/entrenamientos`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
         if (!res.ok) throw new Error('HTTP '+res.status);
       }
 
@@ -218,27 +215,230 @@ function Historial({ onVolver }) {
   );
 }
 
+/* ---------- Tu Entrenador ---------- */
 function TuEntrenador({ onVolver }) {
-  const [tiene, setTiene] = useState(false);
+  const usuario = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem('usuario')) ?? {}; } catch { return {}; }
+  }, []);
+
+  const KEY_COACH = `athlete:${usuario?.dni}:coach`;
+
+  const [coach, setCoach] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(KEY_COACH)) || null; } catch { return null; }
+  });
+
+  const [lista, setLista] = useState([]);
+  const [qEsp, setQEsp] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [modo, setModo] = useState('ver'); // ver | elegir
+
+  // notas
+  const [nota, setNota] = useState('');
+  const [notas, setNotas] = useState([]);
+
+  // 1) Traer entrenadores (API -> fallback)
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_URL}/entrenadores`);
+        const json = await res.json().catch(() => ({}));
+        const arr = Array.isArray(json) ? json : (Array.isArray(json?.data) ? json.data : []);
+        if (arr.length) setLista(arr);
+        else setLista((FallbackCoach?.getTodos && FallbackCoach.getTodos()) || []);
+      } catch {
+        setLista((FallbackCoach?.getTodos && FallbackCoach.getTodos()) || []);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // Si ya había vínculo previo, me aseguro de estar en la lista del coach y traigo notas
+  useEffect(() => {
+    if (!coach?.dni || !usuario?.dni) return;
+    try {
+      const arr = FallbackCoach.getLista(coach.dni) || [];
+      const existe = arr.some(d => String(d.dni) === String(usuario.dni));
+      if (!existe) {
+        FallbackCoach.addDeportista(coach.dni, {
+          dni: usuario.dni,
+          username: usuario.usuario || usuario.username || null,
+          nombre: usuario.nombre || null,
+        });
+      }
+      setNotas(FallbackCoach.getNotas(coach.dni, usuario.dni));
+    } catch {}
+  }, [coach?.dni, usuario?.dni, usuario?.nombre, usuario?.username, usuario?.usuario]);
+
+  const asignar = async (ent) => {
+    try {
+      await fetch(`${API_URL}/deportistas/${usuario?.dni}/entrenador`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entrenadorDni: ent.dni })
+      }).catch(() => {});
+    } catch {}
+
+    if (coach?.dni) {
+      try { FallbackCoach.quitarPorDni(coach.dni, usuario?.dni); } catch {}
+    }
+    try {
+      FallbackCoach.addDeportista(ent.dni, {
+        dni: usuario?.dni,
+        username: usuario?.usuario || usuario?.username || null,
+        nombre: usuario?.nombre || null,
+      });
+    } catch {}
+
+    localStorage.setItem(KEY_COACH, JSON.stringify(ent));
+    setCoach(ent);
+    setModo('ver');
+    setNotas(FallbackCoach.getNotas(ent.dni, usuario.dni));
+    alert('Entrenador asignado');
+  };
+
+  const baja = async () => {
+    if (!window.confirm('¿Seguro que querés dar de baja a tu entrenador?')) return;
+
+    try {
+      await fetch(`${API_URL}/deportistas/${usuario?.dni}/entrenador`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entrenadorDni: null })
+      }).catch(() => {});
+    } catch {}
+
+    if (coach?.dni) {
+      try { FallbackCoach.quitarPorDni(coach.dni, usuario?.dni); } catch {}
+    }
+
+    localStorage.removeItem(KEY_COACH);
+    setCoach(null);
+    setNotas([]);
+    setModo('elegir');
+  };
+
+  const cambiar = () => {
+    setModo('elegir');
+    window.scrollTo(0, 0);
+  };
+
+  const feedback = () => {
+    alert('Feedback y puntaje: no implementado todavía (parte de AD).');
+  };
+
+  const enviarNota = () => {
+    const t = nota.trim();
+    if (!t) return alert('Escribí una nota');
+    if (!coach?.dni || !usuario?.dni) return;
+
+    try {
+      FallbackCoach.setNota(coach.dni, usuario.dni, t);
+      setNota('');
+      setNotas(FallbackCoach.getNotas(coach.dni, usuario.dni));
+      alert('Nota enviada a tu entrenador');
+    } catch (e) {
+      console.error(e);
+      alert('No se pudo guardar la nota');
+    }
+  };
+
+  const filtrados = lista
+    .filter(e => qEsp ? String(e.especialidad || '').toLowerCase().includes(qEsp.toLowerCase()) : true)
+    .sort((a, b) => (a?.nombre || '').localeCompare(b?.nombre || ''));
+
   return (
     <section className="panel">
       <Back onClick={onVolver} />
       <h3>Tu entrenador</h3>
-      {!tiene ? (
+
+      {coach && modo === 'ver' ? (
         <>
-          <p className="muted">No tenés entrenador asignado.</p>
-          <button type="button" className="btn btn-primary" onClick={()=>alert('Listado de entrenadores (simulado)')}>Agregar entrenador</button>
+          <div className="card-box">
+            <p><strong>Entrenador/a:</strong> {coach?.nombre || '-'} {coach?.apellido || ''}</p>
+            <p><strong>Especialidad:</strong> {coach?.especialidad || '-'}</p>
+            <p><strong>Email:</strong> {coach?.email || '-'}</p>
+          </div>
+
+          <div className="card-box">
+            <p><strong>Dejar una nota para tu entrenador</strong></p>
+            <textarea
+              className="input"
+              rows={3}
+              placeholder="Ej: La semana que viene me gustaría hacer 3 entrenamientos de fuerza…"
+              value={nota}
+              onChange={(e)=>setNota(e.target.value)}
+            />
+            <div className="row gap" style={{ marginTop: 8 }}>
+              <button type="button" className="btn btn-primary" onClick={enviarNota}>Enviar nota</button>
+            </div>
+            {notas?.length > 0 && (
+              <>
+                <p style={{ marginTop: 12 }}><small className="muted">Tus notas recientes</small></p>
+                <ul className="list">
+                  {notas.slice(-3).reverse().map(n=>(
+                    <li key={n.id} className="item">
+                      <div><small className="muted">{new Date(n.fecha).toLocaleString()}</small></div>
+                      <div>{n.texto}</div>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+
+          <div className="row gap">
+            <button type="button" className="btn btn-primary" onClick={feedback}>Dar feedback</button>
+            <button type="button" className="btn" onClick={cambiar}>Cambiar entrenador</button>
+            <button type="button" className="btn btn-outline" onClick={baja}>Dar de baja entrenador</button>
+          </div>
+
+          <div className="row" style={{ marginTop: 12 }}>
+            <button type="button" className="btn link" onClick={onVolver}>← Volver</button>
+          </div>
         </>
       ) : (
         <>
-          <div className="card-box">
-            <strong>Entrenador/a: </strong>Nombre Apellido<br/>
-            <small>Rating: 4.6/5</small>
+          {!coach && <p className="muted">No tenés entrenador asignado.</p>}
+
+          <div className="row gap wrap">
+            <input
+              className="input"
+              placeholder="Filtrar por especialidad (p. ej. Fuerza, Hipertrofia, Running)…"
+              value={qEsp}
+              onChange={(e) => setQEsp(e.target.value)}
+            />
+            <button className="btn btn-outline" onClick={() => setQEsp('')}>Limpiar filtro</button>
           </div>
+
+          {loading ? (
+            <p className="muted">Cargando entrenadores…</p>
+          ) : filtrados.length === 0 ? (
+            <p className="muted">No se encontraron entrenadores para ese filtro.</p>
+          ) : (
+            <ul className="list">
+              {filtrados.map((e) => (
+                <li key={e.dni || e.id} className="item">
+                  <div className="item-head">
+                    <div>
+                      <strong>{e.nombre || '-'} {e.apellido || ''}</strong>
+                      <div><small className="muted">DNI/ID: {e.dni || e.id || '—'}</small></div>
+                    </div>
+                    <button className="btn btn-primary" onClick={() => asignar(e)}>Elegir</button>
+                  </div>
+                  <div>
+                    <small className="muted">
+                      Especialidad: {e.especialidad || '—'}{e.email ? ` · ${e.email}` : ''}
+                    </small>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
           <div className="row gap">
-            <button type="button" className="btn btn-primary" onClick={()=>alert('Feedback (simulado)')}>Dar feedback</button>
-            <button type="button" className="btn" onClick={()=>alert('Cambiar (simulado)')}>Cambiar</button>
-            <button type="button" className="btn btn-outline" onClick={()=>setTiene(false)}>Dar de baja</button>
+            <button type="button" className="btn btn-outline" onClick={onVolver}>Volver</button>
           </div>
         </>
       )}
@@ -267,7 +467,7 @@ function Perfil({ onVolver }) {
     if (!nuevoPeso) return;
 
     try {
-      const res = await fetch(`http://localhost:3000/api/deportistas/${usuario.dni}`, {
+      const res = await fetch(`${API_URL}/deportistas/${usuario.dni}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ peso: nuevoPeso }),
@@ -303,7 +503,7 @@ function Perfil({ onVolver }) {
     if (!contrasena) return;
 
     try {
-      const deleteRes = await fetch("http://localhost:3000/api/deportistas/eliminar", {
+      const deleteRes = await fetch(`${API_URL}/deportistas/eliminar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dni: usuario.dni, contrasena }),
@@ -379,7 +579,7 @@ function Card({ title, desc, onClick }) {
     <button
       type="button"
       className="menu-card"
-      onClick={(e) => { e.stopPropagation(); console.log('Card click:', title); onClick && onClick(); }}
+      onClick={(e) => { e.stopPropagation(); onClick && onClick(); }}
     >
       <div className="card-title">{title}</div>
       <div className="card-desc">{desc}</div>

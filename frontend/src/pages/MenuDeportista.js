@@ -39,86 +39,102 @@ function MenuDeportista({ onLogout }) {
   );
 }
 
-
-/* ---------- Subvista: AGREGAR (con “cargar último”) ---------- */
+/* ---------- Subvista: AGREGAR (con “último bloqueado” + “Crear nuevo”) ---------- */
 function Agregar({ onVolver }) {
   const usuario = useMemo(() => JSON.parse(localStorage.getItem('usuario') || '{}'), []);
 
-  const [modo, setModo] = useState('propio'); // propio | asignado
+  // estado de sesión
+  const [enCurso, setEnCurso] = useState(false); // false = viendo último bloqueado, true = cargando uno nuevo
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
   const [hora, setHora] = useState(() => new Date().toTimeString().slice(0, 5));
-
-  // Nombre del entrenador (solo informativo para historial)
   const [coachName, setCoachName] = useState('');
 
-  // builder propio
-  const [query, setQuery] = useState('');
+  // catálogo grupo -> ejercicios
+  const GRUPOS_EJERCICIOS = {
+    Pecho: ["Press de banca","Press inclinado","Aperturas con mancuernas","Fondos","Pullover","Pec deck","Press declinado","Flexiones","Press máquina","Cruce de cables"],
+    Espalda: ["Dominadas","Remo barra","Remo mancuerna","Peso muerto","Jalón al pecho","Pull-over polea","Remo máquina","Hiperextensiones","Encogimientos","Remo al mentón"],
+    Hombros: ["Press militar","Elevaciones laterales","Elevaciones frontales","Elevaciones posteriores","Press Arnold","Face pull","Remo al mentón","Encogimiento hombros","Elevación máquina","Pájaros"],
+    Bíceps: ["Curl barra","Curl mancuernas","Curl martillo","Curl concentrado","Curl predicador","Curl polea","Curl inverso","Curl alternado","Curl 21s","Zottman"],
+    Tríceps: ["Fondos","Press francés","Extensión polea","Patada tríceps","Press cerrado","Skull crusher","Extensión mancuerna","Dips banco","Extensión máquina","Press polea"],
+    Piernas: ["Sentadilla barra","Sentadilla frontal","Prensa","Zancadas","Peso muerto rumano","Extensión piernas","Curl piernas","Elevación talones","Hip thrust","Step-ups"],
+    Abdominales: ["Crunch","Elevación piernas","Plancha","Plancha lateral","Crunch polea","Ab wheel","Elevación rodillas","Crunch oblicuo","Mountain climbers","Russian twists"]
+  };
+
+  // builder
   const [ejercicios, setEjercicios] = useState([]);
-  const [nombre, setNombre] = useState('');
   const [grupo, setGrupo] = useState('');
+  const [nombre, setNombre] = useState('');
   const [cantSeries, setCantSeries] = useState(1);
 
   const [enviando, setEnviando] = useState(false);
-  const [cargadoUltimo, setCargadoUltimo] = useState(false);
-
-  // asignado (placeholder local)
   const [asignados, setAsignados] = useState([]);
-  useEffect(() => {
-    if (modo === 'asignado') {
-      const key = `assigned:${usuario?.dni}`;
-      setAsignados(JSON.parse(localStorage.getItem(key) || '[]'));
-    }
-  }, [modo, usuario?.dni]);
 
-  // >>> NUEVO: precargar el último entrenamiento del historial al entrar
+  // cargar asignados (si algún día los usás)
   useEffect(() => {
-    try {
-      if (!usuario?.dni) return;
-      if (ejercicios.length > 0) return; // si ya hay algo cargado, no pisar
-      const keyHist = `athlete:${usuario.dni}:historial`;
-      const arr = JSON.parse(localStorage.getItem(keyHist) || '[]');
-      const ultimo = arr?.[0];
-      if (ultimo?.ejercicios?.length) {
-        // normalizo: aseguro id y bandera eliminado
-        const clon = ultimo.ejercicios.map(e => ({
-          id: e.id || crypto.randomUUID(),
-          nombre: e.nombre || '',
-          grupo: e.grupo || '',
-          eliminado: !!e.eliminado, // si estaba eliminado, lo respetamos
-          series: Array.isArray(e.series) ? e.series.map(s => ({ peso: s.peso || '', reps: s.reps || '' })) : [],
-        }));
-        setEjercicios(clon);
-        setCoachName(ultimo.entrenadorNombre || '');
-        setCargadoUltimo(true);
-      }
-    } catch { /* noop */ }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const key = `assigned:${usuario?.dni}`;
+    setAsignados(JSON.parse(localStorage.getItem(key) || '[]'));
   }, [usuario?.dni]);
 
-  const limpiarLista = () => {
+  // Al entrar: si hay último entrenamiento => mostrarlo bloqueado (enCurso=false)
+  // si no hay nada => arrancar enCurso=true vacío
+  useEffect(() => {
+    const keyHist = `athlete:${usuario?.dni}:historial`;
+    const arr = JSON.parse(localStorage.getItem(keyHist) || '[]');
+    const ultimo = arr?.[0];
+
+    if (ultimo?.ejercicios?.length) {
+      const clon = ultimo.ejercicios.map(e => ({
+        id: e.id || crypto.randomUUID(),
+        nombre: e.nombre || '',
+        grupo: e.grupo || '',
+        eliminado: !!e.eliminado,
+        series: Array.isArray(e.series)
+          ? e.series.map(s => ({ peso: s.peso || '', reps: s.reps || '' }))
+          : [],
+      }));
+      setEjercicios(clon);
+      setCoachName(ultimo.entrenadorNombre || '');
+      setFecha(ultimo.fechaEntrenamiento || new Date().toISOString().slice(0, 10));
+      setHora(ultimo.horaEntrenamiento || new Date().toTimeString().slice(0, 5));
+      setEnCurso(false); // bloqueado, se puede “Crear nuevo”
+    } else {
+      setEjercicios([]);
+      setEnCurso(true); // no había último => empezá uno nuevo
+    }
+  }, [usuario?.dni]);
+
+  const nuevoEntrenamiento = () => {
+    setEnCurso(true);
     setEjercicios([]);
-    setCargadoUltimo(false);
+    setGrupo('');
+    setNombre('');
+    setCantSeries(1);
+    setCoachName('');
+    setFecha(new Date().toISOString().slice(0, 10));
+    setHora(new Date().toTimeString().slice(0, 5));
   };
 
-  // ---- ejercicios (propio) ----
-  const agregarEjercicio = () => {
-    const n = nombre.trim();
-    const g = grupo.trim();
-    const series = Math.max(1, Number(cantSeries) || 1);
-    if (!n) return alert('Poné un nombre de ejercicio');
+  const ejerciciosDelGrupo = grupo ? GRUPOS_EJERCICIOS[grupo] : [];
 
+  const agregarEjercicio = () => {
+    if (!enCurso) return; // bloqueado si es el último
+    if (!grupo) return alert('Seleccioná un grupo muscular');
+    if (!nombre) return alert('Seleccioná un ejercicio');
+
+    const series = Math.max(1, parseInt(cantSeries, 10) || 1);
     const nuevo = {
       id: crypto.randomUUID(),
-      nombre: n,
-      grupo: g,
+      nombre,
+      grupo,
       eliminado: false,
       series: Array.from({ length: series }, () => ({ peso: '', reps: '' })),
     };
     setEjercicios(prev => [nuevo, ...prev]);
-    setNombre(''); setGrupo(''); setCantSeries(1);
+    setNombre(''); // dejo el grupo para cargar varios del mismo
   };
 
   const setSerieValor = (idEj, idx, campo, valor) => {
+    if (!enCurso) return;
     setEjercicios(prev =>
       prev.map(e =>
         e.id !== idEj
@@ -128,20 +144,16 @@ function Agregar({ onVolver }) {
     );
   };
 
-  const eliminarEjercicio = (id, siEliminar = true) => {
-    setEjercicios(prev => prev.map(e => (e.id === id ? { ...e, eliminado: siEliminar } : e)));
+  const eliminarEjercicio = (id) => {
+    if (!enCurso) return;
+    setEjercicios(prev => prev.filter(e => e.id !== id));
   };
 
-  const ejerciciosActivos = ejercicios.filter(e => !e.eliminado);
-  const ejerciciosFiltrados = query
-    ? ejerciciosActivos.filter(e => (e.nombre + ' ' + (e.grupo || '')).toLowerCase().includes(query.toLowerCase()))
-    : ejerciciosActivos;
-
-  // ---- guardar entrenamiento ----
   const terminar = async () => {
+    if (!enCurso) return; // ya está cerrado
     if (!fecha || !hora) return alert('Completá fecha y hora');
     if (!usuario?.dni) return alert('No se encontró tu DNI en la sesión');
-    if (modo === 'propio' && ejerciciosActivos.length === 0) return alert('Agregá al menos un ejercicio');
+    if (ejercicios.length === 0) return alert('Agregá al menos un ejercicio');
 
     const payload = {
       fechaEntrenamiento: fecha,
@@ -152,23 +164,24 @@ function Agregar({ onVolver }) {
     try {
       setEnviando(true);
 
-      // 1) backend (best-effort)
       let created = null;
       try {
-        if (Entrenamientos?.crear) created = await Entrenamientos.crear(payload);
-        else {
+        if (Entrenamientos?.crear) {
+          created = await Entrenamientos.crear(payload);
+        } else {
           const base = (import.meta?.env?.VITE_API_URL) || process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
           const res = await fetch(`${base}/entrenamientos`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
           });
           if (!res.ok) throw new Error('HTTP ' + res.status);
           created = await res.json().catch(() => ({}));
         }
-      } catch { /* si falla, seguimos guardando local */ }
+      } catch { /* best-effort */ }
 
       const backendId = created?.data?.id ?? created?.id ?? null;
 
-      // 2) guardo detalle completo (incluye eliminados) en historial local
       const keyHist = `athlete:${usuario?.dni}:historial`;
       const prev = JSON.parse(localStorage.getItem(keyHist) || '[]');
       const item = {
@@ -177,17 +190,14 @@ function Agregar({ onVolver }) {
         fechaEntrenamiento: fecha,
         horaEntrenamiento: hora,
         entrenadorNombre: coachName.trim() || null,
-        ejercicios: ejercicios.map(e => ({ ...e })), // TODOS (eliminados y no)
+        ejercicios: ejercicios.map(e => ({ ...e })),
         createdAt: new Date().toISOString(),
       };
       localStorage.setItem(keyHist, JSON.stringify([item, ...prev]));
 
-      // limpio builder y vuelvo
-      setEjercicios([]);
-      setNombre(''); setGrupo(''); setCantSeries(1); setCoachName('');
-      setCargadoUltimo(false);
-      alert('Entrenamiento guardado');
-      onVolver();
+      // Cerramos sesión actual y quedamos mostrando el último
+      setEnCurso(false);
+      alert('Entrenamiento guardado. Quedó como último. Usá “Crear nuevo entrenamiento” para empezar otro.');
     } catch (e) {
       console.error(e);
       alert('No se pudo guardar en el backend');
@@ -196,23 +206,29 @@ function Agregar({ onVolver }) {
     }
   };
 
-  const cancelar = () => {
-    if (window.confirm('¿Cancelar? Se perderán los cambios.')) onVolver();
-  };
+  const disabledAll = !enCurso || enviando;
 
   return (
     <section className="panel">
       <Back onClick={onVolver} />
       <h3>Agregar entrenamiento</h3>
 
-      <div className="row gap">
-        <button className={`btn ${modo === 'propio' ? 'btn-primary' : ''}`} onClick={() => setModo('propio')}>Opción 1: Propio</button>
-        <button className={`btn ${modo === 'asignado' ? 'btn-primary' : ''}`} onClick={() => setModo('asignado')}>Opción 2: Asignado</button>
+      {/* BANNER SIEMPRE ARRIBA */}
+      <div className="card-box" style={{ background: '#10223b', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <strong>{enCurso ? 'Cargando nuevo entrenamiento' : 'Viendo el último entrenamiento guardado'}</strong><br/>
+            {!enCurso && <small className="muted">Para empezar otro, tocá “Crear nuevo entrenamiento”.</small>}
+          </div>
+          <button className="btn btn-primary" onClick={nuevoEntrenamiento} disabled={enviando}>
+            Crear nuevo entrenamiento
+          </button>
+        </div>
       </div>
 
       <div className="row gap">
-        <input className="input" type="date" value={fecha} onChange={e => setFecha(e.target.value)} />
-        <input className="input" type="time" value={hora} onChange={e => setHora(e.target.value)} />
+        <input className="input" type="date" value={fecha} onChange={e => setFecha(e.target.value)} disabled={disabledAll} />
+        <input className="input" type="time" value={hora} onChange={e => setHora(e.target.value)} disabled={disabledAll} />
       </div>
 
       <div className="row gap">
@@ -221,107 +237,60 @@ function Agregar({ onVolver }) {
           placeholder="Nombre del entrenador (opcional)"
           value={coachName}
           onChange={e => setCoachName(e.target.value)}
+          disabled={disabledAll}
         />
       </div>
 
-      {cargadoUltimo && ejercicios.length > 0 && (
-        <div className="row gap" style={{ alignItems: 'center' }}>
-          <small className="muted">Se cargó el último entrenamiento guardado.</small>
-          <button className="btn btn-outline" onClick={limpiarLista}>Vaciar lista</button>
-        </div>
-      )}
+      <div className="row gap wrap">
+        <select className="input" value={grupo} onChange={e => { setGrupo(e.target.value); setNombre(''); }} disabled={disabledAll}>
+          <option value="">— Seleccioná grupo muscular —</option>
+          {Object.keys(GRUPOS_EJERCICIOS).map(g => <option key={g} value={g}>{g}</option>)}
+        </select>
 
-      {modo === 'propio' ? (
-        <>
-          <div className="row gap">
-            <input
-              className="input"
-              placeholder="Filtrar por nombre o grupo…"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-            />
-          </div>
+        <select className="input" value={nombre} onChange={e => setNombre(e.target.value)} disabled={!grupo || disabledAll}>
+          <option value="">— Seleccioná ejercicio —</option>
+          {(grupo ? GRUPOS_EJERCICIOS[grupo] : []).map(ej => <option key={ej} value={ej}>{ej}</option>)}
+        </select>
 
-          <div className="row gap wrap">
-            <input className="input" placeholder="Nombre del ejercicio" value={nombre} onChange={e => setNombre(e.target.value)} />
-            <input className="input" placeholder="Grupo muscular" value={grupo} onChange={e => setGrupo(e.target.value)} />
-            <input className="input small" type="number" min={1} value={cantSeries} onChange={e => setCantSeries(e.target.value)} placeholder="Cant. series" />
-            <button className="btn btn-primary" onClick={agregarEjercicio}>Agregar</button>
-          </div>
+        <input className="input small" type="number" min={1} value={cantSeries} onChange={e => setCantSeries(e.target.value)} placeholder="Cant. series" disabled={disabledAll} />
+        <button className="btn btn-primary" onClick={agregarEjercicio} disabled={!nombre || disabledAll}>Agregar</button>
+      </div>
 
-          {ejerciciosFiltrados.length === 0 ? (
-            <p className="muted">Lista de ejercicios (vacía o todos eliminados).</p>
-          ) : (
-            <ul className="list">
-              {ejerciciosFiltrados.map(e => (
-                <li key={e.id} className="item">
-                  <div className="item-head">
-                    <strong>{e.nombre}</strong>
-                    <button className="btn btn-outline" onClick={() => eliminarEjercicio(e.id, true)}>Eliminar</button>
-                  </div>
-                  <small className="muted">{e.grupo || '—'}</small>
-                  <div className="series">
-                    {e.series.map((s, i) => (
-                      <div key={i} className="series-row">
-                        <span>Serie #{i + 1}</span>
-                        <input
-                          className="input tiny"
-                          type="number"
-                          placeholder="Peso"
-                          value={s.peso}
-                          onChange={ev => setSerieValor(e.id, i, 'peso', ev.target.value)}
-                        />
-                        <input
-                          className="input tiny"
-                          type="number"
-                          placeholder="Reps"
-                          value={s.reps}
-                          onChange={ev => setSerieValor(e.id, i, 'reps', ev.target.value)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {ejercicios.some(x => x.eliminado) &&
-            <small className="muted">Se ocultaron {ejercicios.filter(x => x.eliminado).length} ejercicios eliminados (igual quedarán registrados en el historial).</small>
-          }
-
-          <div className="row gap">
-            <button className="btn btn-primary" disabled={ejerciciosActivos.length === 0 || enviando} onClick={terminar}>
-              {enviando ? 'Guardando…' : 'Terminar entrenamiento'}
-            </button>
-            <button className="btn btn-outline" disabled={enviando} onClick={cancelar}>Cancelar</button>
-          </div>
-        </>
+      {ejercicios.length === 0 ? (
+        <p className="muted" style={{ marginTop: 8 }}>Lista de ejercicios vacía.</p>
       ) : (
-        <>
-          {asignados.length === 0 ? (
-            <div className="placeholder">(No hay ejercicios asignados todavía.)</div>
-          ) : (
-            <ul className="list">
-              {asignados.map(e => (
-                <li key={e.id} className="item">
-                  <strong>{e.nombre}</strong> <small className="muted">{e.grupo}</small>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="row gap">
-            <button className="btn btn-primary" disabled={enviando} onClick={terminar}>
-              {enviando ? 'Guardando…' : 'Terminar entrenamiento'}
-            </button>
-            <button className="btn btn-outline" disabled={enviando} onClick={cancelar}>Cancelar</button>
-          </div>
-        </>
+        <ul className="list">
+          {ejercicios.map(e => (
+            <li key={e.id} className="item">
+              <div className="item-head">
+                <strong>{e.nombre}</strong>
+                {enCurso && <button className="btn btn-outline" onClick={() => eliminarEjercicio(e.id)} disabled={disabledAll}>Eliminar</button>}
+              </div>
+              <small className="muted">{e.grupo || '—'}</small>
+
+              <div className="series" style={{ marginTop: 6 }}>
+                {e.series.map((s, i) => (
+                  <div key={i} className="series-row">
+                    <span>Serie #{i + 1}</span>
+                    <input className="input tiny" type="number" placeholder="Peso" value={s.peso} onChange={ev => setSerieValor(e.id, i, 'peso', ev.target.value)} disabled={disabledAll} />
+                    <input className="input tiny" type="number" placeholder="Reps" value={s.reps} onChange={ev => setSerieValor(e.id, i, 'reps', ev.target.value)} disabled={disabledAll} />
+                  </div>
+                ))}
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
+
+      <div className="row gap">
+        <button className="btn btn-primary" disabled={!enCurso || ejercicios.length === 0 || enviando} onClick={terminar}>
+          {enviando ? 'Guardando…' : 'Terminar entrenamiento'}
+        </button>
+        <button className="btn btn-outline" disabled={enviando} onClick={onVolver}>Volver</button>
+      </div>
     </section>
   );
 }
-
 
 /* ================== Subvista: HISTORIAL ================== */
 function Historial({ onVolver }) {
@@ -334,49 +303,26 @@ function Historial({ onVolver }) {
     const keyHist = `athlete:${usuario?.dni}:historial`;
     const local = JSON.parse(localStorage.getItem(keyHist) || '[]');
 
-    // (opcional) tratar de traer también backend y fusionar por fecha/hora
-    (async () => {
-      setLoading(true);
-      try {
-        let remotos = [];
-        try {
-          const res = await Entrenamientos.listarTodos?.();
-          const todos = res?.data ?? res ?? [];
-          remotos = todos.filter(e => String(e?.deportista?.dni) === String(usuario?.dni));
-        } catch { /* si falla, mostramos solo local */ }
+    const ordenado = [...local].sort(
+      (a, b) =>
+        new Date(`${b.fechaEntrenamiento}T${b.horaEntrenamiento || '00:00'}`) -
+        new Date(`${a.fechaEntrenamiento}T${a.horaEntrenamiento || '00:00'}`)
+    );
 
-        // Orden: los locales ya traen detalle de ejercicios
-        const ordenado = [...local].sort(
-          (a, b) =>
-            new Date(`${b.fechaEntrenamiento}T${b.horaEntrenamiento || '00:00'}`) -
-            new Date(`${a.fechaEntrenamiento}T${a.horaEntrenamiento || '00:00'}`)
-        );
-
-        setItems(ordenado);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    setItems(ordenado);
+    setLoading(false);
   }, [usuario?.dni]);
 
-  const borrar = async (it) => {
+  const borrar = (it) => {
     if (!window.confirm('¿Eliminar este entrenamiento del historial?')) return;
     const keyHist = `athlete:${usuario?.dni}:historial`;
     const rest = items.filter(x => x.idLocal !== it.idLocal);
     localStorage.setItem(keyHist, JSON.stringify(rest));
     setItems(rest);
-
-    // si existe en backend, intento borrar
-    if (it.backendId) {
-      try {
-        const base = API_URL || (import.meta?.env?.VITE_API_URL) || 'http://localhost:3000/api';
-        await fetch(`${base}/entrenamientos/${it.backendId}`, { method: 'DELETE' });
-      } catch { /* best effort */ }
-    }
   };
 
   const filtrados = items.filter(it =>
-    q ? (JSON.stringify(it).toLowerCase().includes(q.toLowerCase())) : true
+    q ? JSON.stringify(it).toLowerCase().includes(q.toLowerCase()) : true
   );
 
   return (

@@ -24,4 +24,3 @@ export const syncSchema = async () => {
 
 //esta funcion va a generar la base de datos si no existe y anlaliza si existe 
 // si necesita cambios contra el esquema.
-

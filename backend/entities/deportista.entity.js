@@ -1,25 +1,27 @@
-
+// backend/entities/deportista.entity.js
 const { EntitySchema } = require('@mikro-orm/core');
 
 const Deportista = new EntitySchema({
   name: 'Deportista',
   tableName: 'deportistas',
   properties: {
-    dni: { type: 'string', primary: true },
+    dni: { type: 'string', primary: true },           // usa string; si guardás números igual funciona
     nombre: { type: 'string' },
     apellido: { type: 'string' },
     usuario: { type: 'string' },
     email: { type: 'string' },
-    contrasena: { type: 'string' }, 
+    contrasena: { type: 'string' },
+    fecha_nacimiento: { type: 'date', nullable: true },
     altura: { type: 'number', nullable: true },
     peso: { type: 'number', nullable: true },
     telefono: { type: 'string', nullable: true },
+
     localidad: {
       kind: 'm:1',
       entity: 'Localidad',
       nullable: true,
-      fecha_nacimiento: { type: 'date', nullable: true },
     },
+
     entrenamientos: {
       kind: '1:m',
       entity: 'Entrenamiento',

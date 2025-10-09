@@ -1,6 +1,11 @@
+// controllers/deportistaController.js
 const service = require('../services/deportistaService.js');
 const localidadService = require('../services/localidadService.js');
 
+/**
+ * Normaliza y filtra la entrada del body.
+ * Acordate: usamos "contrasena" sin ñ para evitar problemas de encoding.
+ */
 function sanitizeDeportistaInput(req, _res, next) {
   const {
     dni,
@@ -8,17 +13,16 @@ function sanitizeDeportistaInput(req, _res, next) {
     apellido,
     usuario,
     email,
-    // Se usa siempre "contrasena" sin ñ
-    contrasena,
+    contrasena, // <- siempre sin ñ
     fecha_nacimiento,
     altura,
     peso,
     telefono,
-    // Campos para localidad
+    // Campos de localidad opcionales
     localidadCodPostal,
     localidadNombre,
     localidadProvincia,
-  } = req.body;
+  } = req.body || {};
 
   req.body.sanitizedInput = {
     dni,
@@ -36,55 +40,64 @@ function sanitizeDeportistaInput(req, _res, next) {
     localidadProvincia,
   };
 
+  // Remueve los undefined
   Object.keys(req.body.sanitizedInput).forEach((k) => {
     if (req.body.sanitizedInput[k] === undefined) delete req.body.sanitizedInput[k];
   });
+
   next();
 }
 
-// ...existing code...
+/**
+ * POST /deportistas
+ * Crea deportista y, si corresponde, crea/relaciona localidad.
+ */
 async function add(req, res) {
-  const data = req.body.sanitizedInput;
-
-  // Validación de email y usuario duplicado ya realizadas...
-  if (data.localidadCodPostal) {
-    let localidadEntity = await localidadService.getById({ codPostal: data.localidadCodPostal.trim() });
-    if (!localidadEntity) {
-      localidadEntity = await localidadService.create({
-        codPostal: data.localidadCodPostal.trim(),
-        nombre: data.localidadNombre ? data.localidadNombre.trim() : '',
-        provincia: data.localidadProvincia ? data.localidadProvincia.trim() : '',
-      });
-    }
-    data.localidad = localidadEntity;
-  }
-
-  delete data.localidadCodPostal;
-  delete data.localidadNombre;
-  delete data.localidadProvincia;
+  const data = req.body.sanitizedInput || {};
 
   try {
+    if (data.localidadCodPostal) {
+      let localidadEntity = await localidadService.getById({ codPostal: data.localidadCodPostal.trim() });
+      if (!localidadEntity) {
+        localidadEntity = await localidadService.create({
+          codPostal: data.localidadCodPostal.trim(),
+          nombre: data.localidadNombre ? data.localidadNombre.trim() : '',
+          provincia: data.localidadProvincia ? data.localidadProvincia.trim() : '',
+        });
+      }
+      data.localidad = localidadEntity;
+    }
+
+    delete data.localidadCodPostal;
+    delete data.localidadNombre;
+    delete data.localidadProvincia;
+
     const created = await service.create(data);
     return res.status(201).send({ message: 'Deportista creado', data: created });
   } catch (error) {
+    // MySQL duplicate PK (dni)
     if (
-      error.message &&
-      error.message.includes('Duplicate entry') &&
-      error.message.includes('deportistas.PRIMARY')
+      error?.message?.includes('Duplicate entry') &&
+      error?.message?.includes('deportistas.PRIMARY')
     ) {
       return res.status(400).send({ mensaje: 'El DNI ya existe.' });
     }
-    console.error(error);
+    console.error('[deportista.add] ', error);
     return res.status(500).send({ mensaje: 'Error de conexión con el servidor' });
   }
 }
-// ...existing code...
 
+/**
+ * GET /deportistas
+ */
 async function findAll(_req, res) {
   const data = await service.getAll();
   res.json({ data });
 }
 
+/**
+ * GET /deportistas/:dni
+ */
 async function findOne(req, res) {
   const dni = req.params.dni;
   const item = await service.getById({ dni });
@@ -92,6 +105,9 @@ async function findOne(req, res) {
   res.json({ data: item });
 }
 
+/**
+ * PUT /deportistas/:dni
+ */
 async function update(req, res) {
   const dni = req.params.dni;
   const updated = await service.update(dni, req.body.sanitizedInput);
@@ -99,23 +115,40 @@ async function update(req, res) {
   return res.status(200).send({ message: 'Deportista actualizado', data: updated });
 }
 
+/**
+ * DELETE
+ * - /deportistas  (modo seguro)  requiere { dni, contrasena } en body.
+ * - /deportistas/:dni (compat)    si viene :dni por params, igual exigimos contrasena.
+ */
 async function remove(req, res) {
-  const { dni, contrasena } = req.body;
+  // Compatibilidad: permitimos dni por body o por params
+  const dni = req.body?.dni ?? req.params?.dni;
+  const { contrasena } = req.body || {};
 
-  if (!contrasena) return res.status(400).json({ mensaje: 'Se requiere contraseña' });
+  if (!dni) return res.status(400).json({ mensaje: 'Falta DNI' });
+
+  // Exigimos contraseña (modo seguro). Si querés permitir sin contraseña, sacá este check.
+  if (!contrasena) {
+    return res.status(400).json({ mensaje: 'Se requiere contraseña' });
+  }
 
   const deportista = await service.getById({ dni });
   if (!deportista) return res.status(404).json({ mensaje: 'Deportista no encontrado' });
 
+  // Soporta ambos nombres por si en DB se guardó "contraseña"
   const guardada = deportista.contrasena ?? deportista['contraseña'];
-  if (String(contrasena) !== String(guardada))
+  if (String(contrasena) !== String(guardada)) {
     return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
+  }
 
   await service.remove({ dni });
   return res.status(200).json({ mensaje: 'Cuenta eliminada correctamente' });
 }
 
-
+/**
+ * POST /deportistas/login
+ * Acepta { usuario | email | mail, contrasena | contraseña | password }
+ */
 async function login(req, res) {
   try {
     const { usuario, email, mail, contrasena, contraseña, password } = req.body || {};
@@ -138,31 +171,58 @@ async function login(req, res) {
   }
 }
 
+/**
+ * POST /deportistas/asignar-ejercicio
+ * Body:
+ * {
+ *   "deportista": "<dni>",
+ *   "entrenador": "<dni/usuario>" (opcional),
+ *   "fechaEntrenamiento": "YYYY-MM-DD" (opcional),
+ *   "horaEntrenamiento": "HH:mm" (opcional),
+ *   "ejercicios": [ ... ] // requerido, no vacío
+ * }
+ *
+ * Implementación: reemplaza los ejercicios actuales por los enviados.
+ * Si querés historial, implementá en el service un addEjercicios() y reemplazá la línea marcada.
+ */
 async function asignarEjercicio(req, res) {
-  const { deportista, entrenador, fechaEntrenamiento, horaEntrenamiento, ejercicios } = req.body;
-  
-  if (!deportista || !ejercicios || ejercicios.length === 0) {
+  const { deportista, entrenador, fechaEntrenamiento, horaEntrenamiento, ejercicios } = req.body || {};
+
+  if (!deportista || !Array.isArray(ejercicios) || ejercicios.length === 0) {
     return res.status(400).json({ mensaje: 'Faltan datos' });
   }
 
   try {
-    // Tomamos al deportista
     const d = await service.getById({ dni: deportista });
     if (!d) return res.status(404).json({ mensaje: 'Deportista no encontrado' });
 
-    // Guardamos los ejercicios asignados
-    // Opción 1: reemplazar todos los ejercicios
-    const actualizado = await service.update(deportista, { ejerciciosAsignados: ejercicios });
+    // Opción 1: reemplazar
+    const payload = {
+      ejerciciosAsignados: ejercicios,
+      fechaUltimaAsignacion: fechaEntrenamiento ?? new Date(),
+      horaUltimaAsignacion: horaEntrenamiento ?? null,
+      ultimoEntrenadorAsignador: entrenador ?? null,
+    };
 
-    // Opción 2: si querés mantener un historial, podés hacer push a un array en la base
-    // await service.addEjercicios(deportista, ejercicios);
+    const actualizado = await service.update(deportista, payload);
+
+    // Opción 2 (historial):
+    // const actualizado = await service.addEjercicios(deportista, { ejercicios, fechaEntrenamiento, horaEntrenamiento, entrenador });
 
     return res.status(200).json({ mensaje: 'Ejercicios asignados', data: actualizado });
   } catch (err) {
-    console.error(err);
+    console.error('[deportista.asignarEjercicio] ', err);
     return res.status(500).json({ mensaje: 'Error del servidor' });
   }
 }
 
-
-module.exports = { sanitizeDeportistaInput, findAll, findOne, add, update, remove, login, asignarEjercicio };
+module.exports = {
+  sanitizeDeportistaInput,
+  findAll,
+  findOne,
+  add,
+  update,
+  remove,
+  login,
+  asignarEjercicio,
+};

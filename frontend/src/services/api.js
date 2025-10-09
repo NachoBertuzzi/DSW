@@ -1,3 +1,4 @@
+// src/services/api.js
 const API_URL =
   process.env.REACT_APP_API_URL ||
   process.env.REACT_APP_API_BASE || // por si el Login.js usa BASE
@@ -19,6 +20,7 @@ async function api(path, { method = 'GET', body } = {}) {
 export const Entrenamientos = {
   crear: (payload) => api('/entrenamientos', { method: 'POST', body: payload }),
   listarTodos: () => api('/entrenamientos'),
+  eliminar: (id) => api(`/entrenamientos/${id}`, { method: 'DELETE' }), // ← NUEVO
 };
 
 // ---------- Fallback local para UI del entrenador y "mis deportistas"

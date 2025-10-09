@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Entrenamientos, FallbackCoach, API_URL } from '../services/api';
+import { FallbackCoach, API_URL } from '../services/api';
 import SuccessCreated from './SuccessCreated';
 import './styles/MenuEntrenador.css';
 
@@ -12,6 +12,7 @@ function MenuEntrenador({ onLogout }) {
   return (
     <div className="menu-screen coach">
       <SuccessCreated />
+
       <header className="menu-header">
         <h2>Menú principal</h2>
         <div className="header-actions">
@@ -45,11 +46,12 @@ function MenuEntrenador({ onLogout }) {
 /* ---------- Asignar ---------- */
 export function AsignarEntrenamiento({ onVolver }) {
   const coach = JSON.parse(localStorage.getItem('usuario') || '{}');
+
   const [lista, setLista] = useState([]);
-  const [selId, setSelId] = useState('');
+  const [selId, setSelId] = useState(''); // id interno de FallbackCoach
   const [usernameNuevo, setUsernameNuevo] = useState('');
-  const [fecha] = useState(() => new Date().toISOString().slice(0, 10));
-  const [hora] = useState(() => new Date().toTimeString().slice(0, 5));
+  const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
+  const [hora, setHora] = useState(() => new Date().toTimeString().slice(0, 5));
   const [ejercicios, setEjercicios] = useState([]);
   const [grupo, setGrupo] = useState('');
   const [nombre, setNombre] = useState('');
@@ -73,10 +75,32 @@ export function AsignarEntrenamiento({ onVolver }) {
 
   const ejerciciosDelGrupo = grupo ? GRUPOS_EJERCICIOS[grupo] : [];
 
+  // Alta rápida por username a la lista del coach
+  const agregarDeportista = () => {
+    const u = usernameNuevo.trim();
+    if (!u) return;
+    if (lista.some(d => (d.username || d.nombre) === u)) return alert('Ese username ya está en tu lista.');
+    const nuevo = FallbackCoach.addPorUsername(coach.dni, u);
+    setUsernameNuevo('');
+    setLista(p => [nuevo, ...p]);
+    setSelId(String(nuevo.id));
+  };
+
+  const seleccionarPorUsername = () => {
+    const u = usernameNuevo.trim();
+    if (!u) return;
+    const encontrado = lista.find(d => (d.username || d.nombre) === u);
+    if (!encontrado) return alert('Ese usuario no está asignado a vos');
+    setSelId(String(encontrado.id));
+    setUsernameNuevo('');
+  };
+
   const agregarEj = () => {
-    if (!nombre || !grupo) return alert('Seleccioná grupo y ejercicio');
+    if (!grupo) return alert('Seleccioná un grupo muscular');
+    if (!nombre) return alert('Seleccioná un ejercicio');
     setEjercicios(p => [...p, { id: crypto.randomUUID(), nombre, grupo }]);
     setNombre('');
+    // dejo el grupo para cargar varios del mismo
   };
 
   const eliminarEj = (id) => setEjercicios(p => p.filter(e => e.id !== id));
@@ -86,36 +110,41 @@ export function AsignarEntrenamiento({ onVolver }) {
     if (ejercicios.length === 0) return alert('Agregá al menos un ejercicio');
     if (!coach?.dni) return alert('No se encontró tu DNI de entrenador en la sesión');
 
+    // Busco el seleccionado de la lista del coach
     const seleccionado = lista.find(d => String(d.id) === String(selId));
+    const deportistaDni = seleccionado?.dni || seleccionado?.id || null; // FallbackCoach suele tener dni, si no uso id
     const deportistaUsername = seleccionado?.username || seleccionado?.nombre || null;
 
+    if (!deportistaDni) {
+      return alert('No encuentro el DNI/ID del deportista seleccionado. Revisá tu lista.');
+    }
+
+    // El backend espera: { deportista: "<dni>", entrenador, fechaEntrenamiento, horaEntrenamiento, ejercicios: [...] }
     const payload = {
-      fechaEntrenamiento: fecha,
-      horaEntrenamiento: hora || null,
+      deportista: deportistaDni,
       entrenador: coach.dni,
-      ...(deportistaUsername ? { deportista: deportistaUsername } : {}),
-      ejercicios
+      fechaEntrenamiento: fecha,
+      horaEntrenamiento: hora,
+      ejercicios: ejercicios.map(e => ({ nombre: e.nombre, grupo: e.grupo })),
+      ...(deportistaUsername ? { deportistaUsername } : {}), // opcional, por si después lo usan
     };
 
     try {
       setEnviando(true);
-      await Entrenamientos.crear(payload);
+      const res = await fetch(`${API_URL}/deportistas/asignarEjercicio`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => '');
+        throw new Error(`HTTP ${res.status} ${txt}`);
+      }
       alert('Entrenamiento asignado');
       onVolver();
-    } catch (e1) {
-      try {
-        const res = await fetch(`${API_URL}/entrenamientos`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        alert('Entrenamiento asignado');
-        onVolver();
-      } catch (e2) {
-        console.error(e2);
-        alert('No se pudo guardar en el backend');
-      }
+    } catch (e) {
+      console.error(e);
+      alert('No se pudo guardar en el backend');
     } finally {
       setEnviando(false);
     }
@@ -138,23 +167,17 @@ export function AsignarEntrenamiento({ onVolver }) {
 
         <input
           className="input"
-          placeholder="O escribí su username…"
+          placeholder="Agregar / buscar por username…"
           value={usernameNuevo}
           onChange={e => setUsernameNuevo(e.target.value)}
         />
-        <button
-          className="btn"
-          onClick={() => {
-            const u = usernameNuevo.trim();
-            if (!u) return;
-            const encontrado = lista.find(d => (d.username || d.nombre) === u);
-            if (!encontrado) return alert('Ese usuario no está asignado a vos');
-            setSelId(String(encontrado.id));
-            setUsernameNuevo('');
-          }}
-        >
-          Seleccionar
-        </button>
+        <button className="btn" onClick={agregarDeportista}>Agregar</button>
+        <button className="btn" onClick={seleccionarPorUsername}>Seleccionar</button>
+      </div>
+
+      <div className="row gap wrap">
+        <input className="input" type="date" value={fecha} onChange={e => setFecha(e.target.value)} />
+        <input className="input" type="time" value={hora} onChange={e => setHora(e.target.value)} />
       </div>
 
       <div className="row gap wrap">
@@ -165,7 +188,7 @@ export function AsignarEntrenamiento({ onVolver }) {
 
         <select className="input" value={nombre} onChange={e => setNombre(e.target.value)} disabled={!grupo}>
           <option value="">— Seleccioná ejercicio —</option>
-          {ejerciciosDelGrupo.map(ej => <option key={ej} value={ej}>{ej}</option>)}
+          { (grupo ? GRUPOS_EJERCICIOS[grupo] : []).map(ej => <option key={ej} value={ej}>{ej}</option>) }
         </select>
 
         <button className="btn btn-primary" onClick={agregarEj} disabled={!nombre}>Agregar</button>
@@ -183,7 +206,11 @@ export function AsignarEntrenamiento({ onVolver }) {
       </ul>
 
       <div className="row gap">
-        <button className="btn btn-primary" disabled={!selId || ejercicios.length === 0 || enviando} onClick={terminar}>
+        <button
+          className="btn btn-primary"
+          disabled={!selId || ejercicios.length === 0 || enviando}
+          onClick={terminar}
+        >
           {enviando ? 'Guardando…' : 'Terminar'}
         </button>
         <button className="btn btn-outline" disabled={enviando} onClick={onVolver}>Cancelar</button>
@@ -202,35 +229,42 @@ function HistorialEntrenador({ onVolver }) {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      try{
+      try {
         const res = await fetch(`${API_URL}/entrenamientos`);
-        const json = await res.json().catch(()=>({}));
+        const json = await res.json().catch(() => ({}));
         const todos = json?.data || [];
         setItems(todos.filter(e => e?.entrenador?.dni === coach.dni));
-      }catch(e){ console.error(e); setItems([]); }
-      finally{ setLoading(false); }
+      } catch (e) {
+        console.error(e);
+        setItems([]);
+      } finally { setLoading(false); }
     })();
   }, [coach.dni]);
 
   const filtrados = items
-    .filter(it => q ? ((it?.deportista?.nombre||'').toLowerCase().includes(q.toLowerCase())) : true)
-    .sort((a,b)=> new Date(`${b.fechaEntrenamiento}T${b.horaEntrenamiento||'00:00'}`) - new Date(`${a.fechaEntrenamiento}T${a.horaEntrenamiento||'00:00'}`));
+    .filter(it => q ? ((it?.deportista?.nombre || '').toLowerCase().includes(q.toLowerCase())) : true)
+    .sort((a, b) =>
+      new Date(`${b.fechaEntrenamiento}T${b.horaEntrenamiento || '00:00'}`) -
+      new Date(`${a.fechaEntrenamiento}T${a.horaEntrenamiento || '00:00'}`)
+    );
 
   return (
     <section className="panel">
       <Back onClick={onVolver} />
       <h3>Historial de entrenamientos asignados</h3>
-      <input className="input" placeholder="Filtrar por deportista…" value={q} onChange={e=>setQ(e.target.value)} />
+      <input className="input" placeholder="Filtrar por deportista…" value={q} onChange={e => setQ(e.target.value)} />
       {loading ? <p className="muted">Cargando…</p> :
         filtrados.length === 0 ? <p className="muted">No asignaste entrenamientos todavía.</p> :
-        <ul className="list">
-          {filtrados.map(it=>(
-            <li key={it.id} className="item">
-              <div><strong>{it.fechaEntrenamiento} {it.horaEntrenamiento || ''}</strong><br/>
-              <small className="muted">Deportista: {it?.deportista?.nombre || '—'}</small></div>
-            </li>
-          ))}
-        </ul>
+          <ul className="list">
+            {filtrados.map(it => (
+              <li key={it.id} className="item">
+                <div>
+                  <strong>{it.fechaEntrenamiento} {it.horaEntrenamiento || ''}</strong><br />
+                  <small className="muted">Deportista: {it?.deportista?.nombre || '—'}</small>
+                </div>
+              </li>
+            ))}
+          </ul>
       }
     </section>
   );
@@ -243,7 +277,6 @@ function TusDeportistas({ onVolver }) {
   const [username, setUsername] = useState('');
 
   const cargar = () => setLista(FallbackCoach.getLista(coach.dni));
-
   useEffect(cargar, [coach.dni]);
 
   const agregar = () => {
@@ -251,7 +284,8 @@ function TusDeportistas({ onVolver }) {
     if (!u) return;
     if (lista.some(d => (d.username || d.nombre) === u)) return alert('Ese username ya está en tu lista.');
     FallbackCoach.addPorUsername(coach.dni, u);
-    setUsername(''); cargar();
+    setUsername('');
+    cargar();
   };
 
   const baja = (id) => {
@@ -271,7 +305,7 @@ function TusDeportistas({ onVolver }) {
       <h3>Tus deportistas</h3>
 
       <div className="row gap wrap">
-        <input className="input" placeholder="Agregar por username…" value={username} onChange={e=>setUsername(e.target.value)} />
+        <input className="input" placeholder="Agregar por username…" value={username} onChange={e => setUsername(e.target.value)} />
         <button className="btn btn-primary" onClick={agregar}>Agregar</button>
         <button className="btn btn-outline" onClick={cargar}>Actualizar</button>
       </div>
@@ -320,14 +354,12 @@ function Perfil({ onVolver }) {
     if (!contrasena) return;
 
     try {
-      const res = await fetch(`http://localhost:3000/api/entrenadores/${usuario.dni}`, {
+      const res = await fetch(`${API_URL}/entrenadores/${usuario.dni}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ contrasena }),
       });
-
-      const data = await res.json();
-
+      const data = await res.json().catch(()=>({}));
       if (res.ok) {
         alert("Cuenta eliminada correctamente.");
         localStorage.removeItem("usuario");
@@ -351,9 +383,7 @@ function Perfil({ onVolver }) {
         <p><strong>Email:</strong> {usuario?.email || "-"}</p>
       </div>
 
-      <button className="btn btn-outline" onClick={eliminarCuenta}>
-        Dar de baja cuenta
-      </button>
+      <button className="btn btn-outline" onClick={eliminarCuenta}>Dar de baja cuenta</button>
     </section>
   );
 }

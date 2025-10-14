@@ -276,6 +276,144 @@
   color: var(--muted);
   font-style: italic;
 }
+/* ====== BOTÓN HERO (Crear nuevo entrenamiento) ====== */
+.btn-hero {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  font-weight: 700;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ff4d6d, #ff8fa3);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(255, 77, 109, 0.35);
+  transition: transform .15s ease, box-shadow .15s ease, filter .2s ease;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.btn-hero:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(255, 77, 109, 0.45);
+  filter: brightness(1.05);
+}
+
+.btn-hero:active {
+  transform: translateY(0);
+}
+
+.btn-hero-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: rgba(255,255,255,.18);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.25);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.btn-hero-glow {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background: radial-gradient(120px 60px at 0% 50%, rgba(255,255,255,.25), transparent 60%),
+              radial-gradient(120px 60px at 100% 50%, rgba(255,255,255,.2), transparent 60%);
+  opacity: .35;
+  pointer-events: none;
+  animation: heroGlow 3s ease-in-out infinite alternate;
+}
+@keyframes heroGlow {
+  from { opacity: .3; }
+  to   { opacity: .65; }
+}
+
+/* ====== MODAL DE ÉXITO ====== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 10, 20, 0.68);
+  backdrop-filter: blur(3px);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+}
+
+.modal-success {
+  position: relative;
+  width: min(520px, 92vw);
+  background: radial-gradient(120% 120% at 0% 0%, #0e1b2e, #0a1626 60%);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 16px;
+  padding: 26px 22px 18px;
+  box-shadow:
+    0 20px 50px rgba(0,0,0,.45),
+    inset 0 1px 0 rgba(255,255,255,.05);
+  color: #eaf2ff;
+  text-align: center;
+  animation: popIn .2s ease-out;
+}
+
+@keyframes popIn {
+  from { transform: scale(.97); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.modal-success h4 {
+  margin: 8px 0 6px;
+  font-size: 1.25rem;
+}
+
+.modal-success .muted {
+  color: #9fb3d9;
+}
+
+.modal-success-badge {
+  width: 56px; height: 56px;
+  margin: 0 auto 8px;
+  border-radius: 16px;
+  display: grid; place-items: center;
+  font-size: 28px; font-weight: 800;
+  color: #0b1626;
+  background: linear-gradient(135deg, #8ce99a, #51cf66);
+  box-shadow:
+    0 10px 24px rgba(81, 207, 102, .35),
+    inset 0 1px 0 rgba(255,255,255,.6);
+}
+
+.modal-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+}
+
+.modal-success .btn.btn-primary {
+  padding: 10px 18px;
+  border-radius: 12px;
+}
+
+/* chispas decorativas */
+.modal-success .spark {
+  position: absolute;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fff, rgba(255,255,255,0) 70%);
+  opacity: .65;
+  filter: drop-shadow(0 0 6px rgba(255,255,255,.6));
+}
+.modal-success .s1 { top: 14px; left: 12px; }
+.modal-success .s2 { bottom: 14px; right: 18px; width: 8px; height: 8px; opacity: .5; }
+.modal-success .s3 { top: 50%; right: -6px; width: 12px; height: 12px; opacity: .45; }
+
+/* Ajustes pequeños para inputs tiny ya existentes (si no los tenías) */
+.input.tiny {
+  width: 92px;
+}
+
 
 /* DEBUG / FIX TEMPORAL: fuerza pointer-events y prioridad en el stacking */
 .success-block { pointer-events: none; } /* mantén esto mientras probamos */

@@ -419,3 +419,24 @@
 .success-block { pointer-events: none; } /* mantén esto mientras probamos */
 .menu-screen * { pointer-events: auto !important; }
 .panel, .menu-card, .btn, .dropdown-content-header { position: relative; z-index: 999; }
+
+/* Alinear los controls por la base en filas con inputs */
+.row.align-end {
+  align-items: flex-end;
+}
+
+/* Campo apilado (input + texto de ayuda) */
+.field {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-width: 160px;
+  /* evita que salte de línea fácil */
+}
+
+.field .help {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.2;
+}

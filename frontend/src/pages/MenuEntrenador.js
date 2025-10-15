@@ -31,7 +31,7 @@ function MenuEntrenador({ onLogout }) {
         <div className="menu-grid">
           <Card title="1) Asignar entrenamiento" desc="Crear y asignar entrenamientos" onClick={() => setVista('asignar')} />
           <Card title="2) Historial de entrenamientos" desc="Ver entrenamientos que asignaste" onClick={() => setVista('historial')} />
-          <Card title="3) Tus deportistas" desc="Listar, agregar y dar de baja" onClick={() => setVista('deportistas')} />
+          <Card title="3) Tus deportistas" desc="Ver y dar de baja" onClick={() => setVista('deportistas')} />
         </div>
       )}
 
@@ -48,59 +48,47 @@ export function AsignarEntrenamiento({ onVolver }) {
   const coach = JSON.parse(localStorage.getItem('usuario') || '{}');
 
   const [lista, setLista] = useState([]);
+  const [q, setQ] = useState('');
   const [selId, setSelId] = useState(''); // id interno de FallbackCoach
-  const [usernameNuevo, setUsernameNuevo] = useState('');
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
-  const [hora, setHora] = useState(() => new Date().toTimeString().slice(0, 5));
+  const [hora, setHora] = useState('');   // OPCIONAL
   const [ejercicios, setEjercicios] = useState([]);
   const [grupo, setGrupo] = useState('');
   const [nombre, setNombre] = useState('');
   const [enviando, setEnviando] = useState(false);
 
   const GRUPOS_EJERCICIOS = {
-    Pecho: ["Press de banca", "Press inclinado", "Aperturas con mancuernas", "Fondos", "Pullover", "Pec deck", "Press declinado", "Flexiones", "Press máquina", "Cruce de cables"],
-    Espalda: ["Dominadas", "Remo barra", "Remo mancuerna", "Peso muerto", "Jalón al pecho", "Pull-over polea", "Remo máquina", "Hiperextensiones", "Encogimientos", "Remo al mentón"],
-    Hombros: ["Press militar", "Elevaciones laterales", "Elevaciones frontales", "Elevaciones posteriores", "Press Arnold", "Face pull", "Remo al mentón", "Encogimiento hombros", "Elevación máquina", "Pájaros"],
-    Bíceps: ["Curl barra", "Curl mancuernas", "Curl martillo", "Curl concentrado", "Curl predicador", "Curl polea", "Curl inverso", "Curl alternado", "Curl 21s", "Zottman"],
-    Tríceps: ["Fondos", "Press francés", "Extensión polea", "Patada tríceps", "Press cerrado", "Skull crusher", "Extensión mancuerna", "Dips banco", "Extensión máquina", "Press polea"],
-    Piernas: ["Sentadilla barra", "Sentadilla frontal", "Prensa", "Zancadas", "Peso muerto rumano", "Extensión piernas", "Curl piernas", "Elevación talones", "Hip thrust", "Step-ups"],
-    Abdominales: ["Crunch", "Elevación piernas", "Plancha", "Plancha lateral", "Crunch polea", "Ab wheel", "Elevación rodillas", "Crunch oblicuo", "Mountain climbers", "Russian twists"]
+    Pecho: ["Press de banca","Press inclinado","Aperturas con mancuernas","Fondos","Pullover","Pec deck","Press declinado","Flexiones","Press máquina","Cruce de cables"],
+    Espalda: ["Dominadas","Remo barra","Remo mancuerna","Peso muerto","Jalón al pecho","Pull-over polea","Remo máquina","Hiperextensiones","Encogimientos","Remo al mentón"],
+    Hombros: ["Press militar","Elevaciones laterales","Elevaciones frontales","Elevaciones posteriores","Press Arnold","Face pull","Remo al mentón","Encogimiento hombros","Elevación máquina","Pájaros"],
+    Bíceps: ["Curl barra","Curl mancuernas","Curl martillo","Curl concentrado","Curl predicador","Curl polea","Curl inverso","Curl alternado","Curl 21s","Zottman"],
+    Tríceps: ["Fondos","Press francés","Extensión polea","Patada tríceps","Press cerrado","Skull crusher","Extensión mancuerna","Dips banco","Extensión máquina","Press polea"],
+    Piernas: ["Sentadilla barra","Sentadilla frontal","Prensa","Zancadas","Peso muerto rumano","Extensión piernas","Curl piernas","Elevación talones","Hip thrust","Step-ups"],
+    Abdominales: ["Crunch","Elevación piernas","Plancha","Plancha lateral","Crunch polea","Ab wheel","Elevación rodillas","Crunch oblicuo","Mountain climbers","Russian twists"]
   };
 
-  useEffect(() => {
-    const arr = FallbackCoach.getLista(coach.dni);
-    setLista(arr);
-    if (!selId && arr.length) setSelId(String(arr[0].id));
-  }, [coach.dni, selId]);
+  const cargar = () => setLista(FallbackCoach.getLista(coach.dni) || []);
+  useEffect(cargar, [coach.dni]);
+
+  const refrescarLista = () => cargar();
+
+  const visibles = (lista || [])
+    .filter(d => {
+      if (!q) return true;
+      const hay = `${d?.nombre || ''} ${d?.apellido || ''} ${d?.username || d?.usuario || ''}`
+        .toLowerCase()
+        .includes(q.toLowerCase());
+      return hay;
+    })
+    .sort((a, b) => (a?.nombre || '').localeCompare(b?.nombre || ''));
 
   const ejerciciosDelGrupo = grupo ? GRUPOS_EJERCICIOS[grupo] : [];
-
-  // Alta rápida por username a la lista del coach
-  const agregarDeportista = () => {
-    const u = usernameNuevo.trim();
-    if (!u) return;
-    if (lista.some(d => (d.username || d.nombre) === u)) return alert('Ese username ya está en tu lista.');
-    const nuevo = FallbackCoach.addPorUsername(coach.dni, u);
-    setUsernameNuevo('');
-    setLista(p => [nuevo, ...p]);
-    setSelId(String(nuevo.id));
-  };
-
-  const seleccionarPorUsername = () => {
-    const u = usernameNuevo.trim();
-    if (!u) return;
-    const encontrado = lista.find(d => (d.username || d.nombre) === u);
-    if (!encontrado) return alert('Ese usuario no está asignado a vos');
-    setSelId(String(encontrado.id));
-    setUsernameNuevo('');
-  };
 
   const agregarEj = () => {
     if (!grupo) return alert('Seleccioná un grupo muscular');
     if (!nombre) return alert('Seleccioná un ejercicio');
     setEjercicios(p => [...p, { id: crypto.randomUUID(), nombre, grupo }]);
     setNombre('');
-    // dejo el grupo para cargar varios del mismo
   };
 
   const eliminarEj = (id) => setEjercicios(p => p.filter(e => e.id !== id));
@@ -110,23 +98,19 @@ export function AsignarEntrenamiento({ onVolver }) {
     if (ejercicios.length === 0) return alert('Agregá al menos un ejercicio');
     if (!coach?.dni) return alert('No se encontró tu DNI de entrenador en la sesión');
 
-    // Busco el seleccionado de la lista del coach
     const seleccionado = lista.find(d => String(d.id) === String(selId));
-    const deportistaDni = seleccionado?.dni || seleccionado?.id || null; // FallbackCoach suele tener dni, si no uso id
+    const deportistaDni = seleccionado?.dni || seleccionado?.id || null;
     const deportistaUsername = seleccionado?.username || seleccionado?.nombre || null;
 
-    if (!deportistaDni) {
-      return alert('No encuentro el DNI/ID del deportista seleccionado. Revisá tu lista.');
-    }
+    if (!deportistaDni) return alert('No encuentro el DNI/ID del deportista seleccionado.');
 
-    // El backend espera: { deportista: "<dni>", entrenador, fechaEntrenamiento, horaEntrenamiento, ejercicios: [...] }
     const payload = {
       deportista: deportistaDni,
       entrenador: coach.dni,
       fechaEntrenamiento: fecha,
-      horaEntrenamiento: hora,
+      ...(hora ? { horaEntrenamiento: hora } : {}), // HORA OPCIONAL
       ejercicios: ejercicios.map(e => ({ nombre: e.nombre, grupo: e.grupo })),
-      ...(deportistaUsername ? { deportistaUsername } : {}), // opcional, por si después lo usan
+      ...(deportistaUsername ? { deportistaUsername } : {}),
     };
 
     try {
@@ -155,31 +139,43 @@ export function AsignarEntrenamiento({ onVolver }) {
       <Back onClick={onVolver} />
       <h3>Asignar entrenamiento</h3>
 
+      {/* Toolbar: buscar + refrescar */}
+      <div className="row gap wrap">
+        <input
+          className="input"
+          placeholder="Buscar deportista (nombre o @username)…"
+          value={q}
+          onChange={e => setQ(e.target.value)}
+          style={{ minWidth: 240 }}
+        />
+        <button className="btn btn-outline" onClick={refrescarLista}>Actualizar lista</button>
+      </div>
+
+      {/* Selector de deportista (solo desde lista existente) */}
       <div className="row gap wrap">
         <select className="input" value={selId} onChange={e => setSelId(e.target.value)}>
           <option value="">— Elegí un deportista —</option>
-          {lista.map(d => (
+          {visibles.map(d => (
             <option key={d.id} value={d.id}>
               {d.nombre || d.username || d.id}
             </option>
           ))}
         </select>
-
-        <input
-          className="input"
-          placeholder="Agregar / buscar por username…"
-          value={usernameNuevo}
-          onChange={e => setUsernameNuevo(e.target.value)}
-        />
-        <button className="btn" onClick={agregarDeportista}>Agregar</button>
-        <button className="btn" onClick={seleccionarPorUsername}>Seleccionar</button>
       </div>
 
+      {/* Fecha y hora (hora opcional) */}
       <div className="row gap wrap">
-        <input className="input" type="date" value={fecha} onChange={e => setFecha(e.target.value)} />
-        <input className="input" type="time" value={hora} onChange={e => setHora(e.target.value)} />
+        <div>
+          <label className="muted" style={{ display: 'block', marginBottom: 4 }}>Fecha</label>
+          <input className="input" type="date" value={fecha} onChange={e => setFecha(e.target.value)} />
+        </div>
+        <div>
+          <label className="muted" style={{ display: 'block', marginBottom: 4 }}>Hora (opcional)</label>
+          <input className="input" type="time" value={hora} onChange={e => setHora(e.target.value)} placeholder="hh:mm" />
+        </div>
       </div>
 
+      {/* Ejercicios */}
       <div className="row gap wrap">
         <select className="input" value={grupo} onChange={e => { setGrupo(e.target.value); setNombre(''); }}>
           <option value="">— Seleccioná grupo muscular —</option>
@@ -188,7 +184,7 @@ export function AsignarEntrenamiento({ onVolver }) {
 
         <select className="input" value={nombre} onChange={e => setNombre(e.target.value)} disabled={!grupo}>
           <option value="">— Seleccioná ejercicio —</option>
-          { (grupo ? GRUPOS_EJERCICIOS[grupo] : []).map(ej => <option key={ej} value={ej}>{ej}</option>) }
+          {(ejerciciosDelGrupo).map(ej => <option key={ej} value={ej}>{ej}</option>)}
         </select>
 
         <button className="btn btn-primary" onClick={agregarEj} disabled={!nombre}>Agregar</button>
@@ -218,6 +214,7 @@ export function AsignarEntrenamiento({ onVolver }) {
     </section>
   );
 }
+
 
 /* ---------- Historial ---------- */
 function HistorialEntrenador({ onVolver }) {
@@ -274,18 +271,17 @@ function HistorialEntrenador({ onVolver }) {
 function TusDeportistas({ onVolver }) {
   const coach = JSON.parse(localStorage.getItem('usuario') || '{}');
   const [lista, setLista] = useState([]);
-  const [username, setUsername] = useState('');
+  const [q, setQ] = useState('');
+  const [soloConNotas, setSoloConNotas] = useState(false);
 
-  const cargar = () => setLista(FallbackCoach.getLista(coach.dni));
+  const cargar = () => setLista(FallbackCoach.getLista(coach.dni) || []);
   useEffect(cargar, [coach.dni]);
 
-  const agregar = () => {
-    const u = username.trim();
-    if (!u) return;
-    if (lista.some(d => (d.username || d.nombre) === u)) return alert('Ese username ya está en tu lista.');
-    FallbackCoach.addPorUsername(coach.dni, u);
-    setUsername('');
-    cargar();
+  const refrescar = () => cargar();
+
+  const fmt = (iso) => {
+    try { const d = new Date(iso); return d.toLocaleDateString() + ' ' + d.toLocaleTimeString().slice(0,5); }
+    catch { return ''; }
   };
 
   const baja = (id) => {
@@ -294,25 +290,49 @@ function TusDeportistas({ onVolver }) {
     cargar();
   };
 
-  const fmt = (iso) => {
-    try { const d = new Date(iso); return d.toLocaleDateString() + ' ' + d.toLocaleTimeString().slice(0,5); }
-    catch { return ''; }
-  };
+  const visibles = (lista || [])
+    .filter(d => {
+      if (!q) return true;
+      const hay = `${d?.nombre || ''} ${d?.apellido || ''} ${d?.username || d?.usuario || ''}`
+        .toLowerCase()
+        .includes(q.toLowerCase());
+      return hay;
+    })
+    .filter(d => {
+      if (!soloConNotas) return true;
+      try {
+        const ult = FallbackCoach.getUltimaNota(coach.dni, d.dni || d.id);
+        return !!ult;
+      } catch { return false; }
+    })
+    .sort((a, b) => (a?.nombre || '').localeCompare(b?.nombre || ''));
 
   return (
     <section className="panel">
       <Back onClick={onVolver} />
       <h3>Tus deportistas</h3>
 
-      <div className="row gap wrap">
-        <input className="input" placeholder="Agregar por username…" value={username} onChange={e => setUsername(e.target.value)} />
-        <button className="btn btn-primary" onClick={agregar}>Agregar</button>
-        <button className="btn btn-outline" onClick={cargar}>Actualizar</button>
+      {/* Barra de herramientas */}
+      <div className="row gap wrap" style={{ marginBottom: 12 }}>
+        <input
+          className="input"
+          placeholder="Buscar (nombre o @username)…"
+          value={q}
+          onChange={e => setQ(e.target.value)}
+          style={{ minWidth: 240 }}
+        />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <input type="checkbox" checked={soloConNotas} onChange={e => setSoloConNotas(e.target.checked)} />
+          <small className="muted">Solo con notas</small>
+        </label>
+        <button className="btn btn-outline" onClick={refrescar}>Actualizar lista</button>
       </div>
 
-      {lista.length === 0 ? <p className="muted">No tenés deportistas asignados.</p> : (
+      {visibles.length === 0 ? (
+        <p className="muted">No hay deportistas para mostrar.</p>
+      ) : (
         <ul className="list">
-          {lista.map(d=>{
+          {visibles.map(d => {
             const ultima = FallbackCoach.getUltimaNota(coach.dni, d.dni || d.id);
             return (
               <li key={d.id} className="item">
@@ -326,7 +346,7 @@ function TusDeportistas({ onVolver }) {
                     </div>
                   )}
                 </div>
-                <button className="btn btn-outline" onClick={()=>baja(d.id)}>Dar de baja</button>
+                <button className="btn btn-outline" onClick={() => baja(d.id)}>Dar de baja</button>
               </li>
             );
           })}
@@ -335,6 +355,7 @@ function TusDeportistas({ onVolver }) {
     </section>
   );
 }
+
 
 /* ---------- Perfil ---------- */
 function Perfil({ onVolver }) {

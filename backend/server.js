@@ -34,6 +34,8 @@ async function start() {
   app.use('/api/deportistas', require('./routes/deportista.routes'));
   app.use('/api/entrenamientos', require('./routes/entrenamiento.routes'));
   app.use('/login', require('./routes/login.routes'));
+  app.use('/api/asignaciones-entrenamientos', require('./routes/asignacionEntrenamiento.routes'));
+
 
   // Test
   app.get('/test', (_req, res) => res.send('Funciona el servidor!'));

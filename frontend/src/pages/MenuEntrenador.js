@@ -93,46 +93,72 @@ export function AsignarEntrenamiento({ onVolver }) {
 
   const eliminarEj = (id) => setEjercicios(p => p.filter(e => e.id !== id));
 
-  const terminar = async () => {
-    if (!selId) return alert('Elegí un deportista');
-    if (ejercicios.length === 0) return alert('Agregá al menos un ejercicio');
-    if (!coach?.dni) return alert('No se encontró tu DNI de entrenador en la sesión');
+  // Reemplaza COMPLETO tu función terminar por esta
+const terminar = async () => {
+  if (!selId) return alert('Elegí un deportista');
+  if (ejercicios.length === 0) return alert('Agregá al menos un ejercicio');
+  if (!coach?.dni) return alert('No se encontró tu DNI de entrenador en la sesión');
 
-    const seleccionado = lista.find(d => String(d.id) === String(selId));
-    const deportistaDni = seleccionado?.dni || seleccionado?.id || null;
-    const deportistaUsername = seleccionado?.username || seleccionado?.nombre || null;
+  const seleccionado = lista.find(d => String(d.id) === String(selId));
+  const deportistaDni = seleccionado?.dni || seleccionado?.id || null;
 
-    if (!deportistaDni) return alert('No encuentro el DNI/ID del deportista seleccionado.');
+  if (!deportistaDni) return alert('No encuentro el DNI/ID del deportista seleccionado.');
 
-    const payload = {
-      deportista: deportistaDni,
-      entrenador: coach.dni,
-      fechaEntrenamiento: fecha,
-      ...(hora ? { horaEntrenamiento: hora } : {}), // HORA OPCIONAL
-      ejercicios: ejercicios.map(e => ({ nombre: e.nombre, grupo: e.grupo })),
-      ...(deportistaUsername ? { deportistaUsername } : {}),
-    };
+  const base = API_URL || 'http://localhost:3000/api';
 
-    try {
-      setEnviando(true);
-      const res = await fetch(`${API_URL}/deportistas/asignarEjercicio`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) {
-        const txt = await res.text().catch(() => '');
-        throw new Error(`HTTP ${res.status} ${txt}`);
-      }
-      alert('Entrenamiento asignado');
-      onVolver();
-    } catch (e) {
-      console.error(e);
-      alert('No se pudo guardar en el backend');
-    } finally {
-      setEnviando(false);
+  try {
+    setEnviando(true);
+
+    // 1) Crear el Entrenamiento en backend
+    const r1 = await fetch(`${base}/entrenamientos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fechaEntrenamiento: fecha,
+        ...(hora ? { horaEntrenamiento: hora } : {}),
+        deportista: { dni: String(deportistaDni) },
+        // AJUSTAR si tu /entrenamientos acepta más campos como ejercicios
+        // ejercicios,
+      }),
+    });
+    if (!r1.ok) {
+      const txt = await r1.text().catch(() => '');
+      throw new Error(`No se pudo crear el entrenamiento. ${txt}`);
     }
-  };
+    const data1 = await r1.json().catch(() => ({}));
+    const entrenamientoId = data1?.data?.id ?? data1?.id; // AJUSTAR si tu API responde distinto
+    if (!entrenamientoId) {
+      throw new Error('El backend no devolvió id del entrenamiento.');
+    }
+
+    // 2) Crear la Asignación en backend
+    // Requiere que tengas el módulo nuevo de asignaciones montado en /api/asignaciones-entrenamientos
+    const r2 = await fetch(`${base}/asignaciones-entrenamientos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        entrenadorDni: String(coach.dni),
+        deportistaDni: String(deportistaDni),
+        entrenamientoId: Number(entrenamientoId),
+        fecha, // opcional
+        notas: ejercicios.map(e => `${e.grupo}: ${e.nombre}`).join(' | ') || undefined, // opcional
+      }),
+    });
+    if (!r2.ok) {
+      const txt = await r2.text().catch(() => '');
+      throw new Error(`No se pudo crear la asignación. ${txt}`);
+    }
+
+    alert('Entrenamiento asignado con éxito');
+    onVolver();
+  } catch (e) {
+    console.error(e);
+    alert(e.message || 'No se pudo guardar en el backend');
+  } finally {
+    setEnviando(false);
+  }
+};
+
 
   return (
     <section className="panel">
@@ -227,45 +253,65 @@ function HistorialEntrenador({ onVolver }) {
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${API_URL}/entrenamientos`);
+        const res = await fetch(`${API_URL}/asignaciones-entrenamientos/entrenadores/${coach.dni}`);
         const json = await res.json().catch(() => ({}));
-        const todos = json?.data || [];
-        setItems(todos.filter(e => e?.entrenador?.dni === coach.dni));
+        const arr = Array.isArray(json?.data) ? json.data : [];
+        // el backend ya ordena DESC por createdAt
+        setItems(arr);
       } catch (e) {
         console.error(e);
         setItems([]);
-      } finally { setLoading(false); }
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [coach.dni]);
 
-  const filtrados = items
-    .filter(it => q ? ((it?.deportista?.nombre || '').toLowerCase().includes(q.toLowerCase())) : true)
-    .sort((a, b) =>
-      new Date(`${b.fechaEntrenamiento}T${b.horaEntrenamiento || '00:00'}`) -
-      new Date(`${a.fechaEntrenamiento}T${a.horaEntrenamiento || '00:00'}`)
-    );
+  const filtrados = (items || [])
+    .filter(it => q ? ((it?.deportista?.nombre || '').toLowerCase().includes(q.toLowerCase())) : true);
 
   return (
     <section className="panel">
       <Back onClick={onVolver} />
       <h3>Historial de entrenamientos asignados</h3>
-      <input className="input" placeholder="Filtrar por deportista…" value={q} onChange={e => setQ(e.target.value)} />
-      {loading ? <p className="muted">Cargando…</p> :
-        filtrados.length === 0 ? <p className="muted">No asignaste entrenamientos todavía.</p> :
-          <ul className="list">
-            {filtrados.map(it => (
-              <li key={it.id} className="item">
-                <div>
-                  <strong>{it.fechaEntrenamiento} {it.horaEntrenamiento || ''}</strong><br />
-                  <small className="muted">Deportista: {it?.deportista?.nombre || '—'}</small>
-                </div>
-              </li>
-            ))}
-          </ul>
-      }
+
+      <input
+        className="input"
+        placeholder="Filtrar por deportista…"
+        value={q}
+        onChange={e => setQ(e.target.value)}
+      />
+
+      {loading ? (
+        <p className="muted">Cargando…</p>
+      ) : filtrados.length === 0 ? (
+        <p className="muted">No asignaste entrenamientos todavía.</p>
+      ) : (
+        <ul className="list">
+          {filtrados.map(it => (
+            <li key={it.id} className="item">
+              <div>
+                <strong>
+                  {it?.entrenamiento?.fechaEntrenamiento || it?.fecha || '—'}
+                  {' '}
+                  {it?.entrenamiento?.horaEntrenamiento || ''}
+                </strong><br />
+                <small className="muted">
+                  Deportista: {it?.deportista?.nombre || it?.deportista?.dni || '—'}
+                </small>
+                {it?.notas ? (
+                  <div><small className="muted">Notas: {it.notas}</small></div>
+                ) : null}
+                <div><small className="muted">Estado: {it?.estado}</small></div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
+
 
 /* ---------- TusDeportistas ---------- */
 function TusDeportistas({ onVolver }) {

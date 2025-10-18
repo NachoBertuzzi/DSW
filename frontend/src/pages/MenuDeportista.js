@@ -39,7 +39,7 @@ function MenuDeportista({ onLogout }) {
   );
 }
 
-/* ---------- Subvista: AGREGAR (UI renovada) ---------- */
+/* ---------- Subvista: AGREGAR (actualizada: modo "asignado" lee del backend) ---------- */
 function Agregar({ onVolver }) {
   const usuario = useMemo(() => JSON.parse(localStorage.getItem('usuario') || '{}'), []);
 
@@ -47,11 +47,11 @@ function Agregar({ onVolver }) {
   const [enCurso, setEnCurso] = useState(false); // al entrar: false → sólo botón
   const [modo, setModo] = useState('propio');    // propio | asignado
 
-  // Datos del entrenamiento
+  // Datos del entrenamiento (modo propio)
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
   const [hora, setHora] = useState(() => new Date().toTimeString().slice(0, 5));
 
-  // Builder
+  // Builder (modo propio)
   const GRUPOS_EJERCICIOS = {
     Pecho: ["Press de banca","Press inclinado","Aperturas con mancuernas","Fondos","Pullover","Pec deck","Press declinado","Flexiones","Press máquina","Cruce de cables"],
     Espalda: ["Dominadas","Remo barra","Remo mancuerna","Peso muerto","Jalón al pecho","Pull-over polea","Remo máquina","Hiperextensiones","Encogimientos","Remo al mentón"],
@@ -61,22 +61,40 @@ function Agregar({ onVolver }) {
     Piernas: ["Sentadilla barra","Sentadilla frontal","Prensa","Zancadas","Peso muerto rumano","Extensión piernas","Curl piernas","Elevación talones","Hip thrust","Step-ups"],
     Abdominales: ["Crunch","Elevación piernas","Plancha","Plancha lateral","Crunch polea","Ab wheel","Elevación rodillas","Crunch oblicuo","Mountain climbers","Russian twists"]
   };
-
   const [ejercicios, setEjercicios] = useState([]);
   const [grupo, setGrupo] = useState('');
   const [nombre, setNombre] = useState('');
   const [cantSeries, setCantSeries] = useState('');
 
-  // Asignados (si existieran)
+  // Asignados (desde backend)
   const [asignados, setAsignados] = useState([]);
+  const [loadingAsignados, setLoadingAsignados] = useState(true);
+  const [qAsignados, setQAsignados] = useState('');
 
-  // Modal éxito
+  // Modal éxito (propio)
   const [okModal, setOkModal] = useState(false);
 
+  // Cargar asignaciones del deportista desde el backend
   useEffect(() => {
-    // Carga “asignados” si usás ese storage (no mostramos último entrenamiento)
-    const key = `assigned:${usuario?.dni}`;
-    setAsignados(JSON.parse(localStorage.getItem(key) || '[]'));
+    if (!usuario?.dni) {
+      setAsignados([]);
+      setLoadingAsignados(false);
+      return;
+    }
+    (async () => {
+      setLoadingAsignados(true);
+      try {
+        const res = await fetch(`${API_URL}/asignaciones-entrenamientos/deportistas/${usuario.dni}`);
+        const json = await res.json().catch(() => ({}));
+        const arr = Array.isArray(json?.data) ? json.data : [];
+        setAsignados(arr);
+      } catch (e) {
+        console.error(e);
+        setAsignados([]);
+      } finally {
+        setLoadingAsignados(false);
+      }
+    })();
   }, [usuario?.dni]);
 
   const nuevoEntrenamiento = () => {
@@ -108,7 +126,7 @@ function Agregar({ onVolver }) {
       eliminado: false,
       series: Array.from({ length: series }, () => ({ peso: '', reps: '' })),
     };
-    setEjercicios((p) => [...p, nuevo]); // 👉 builder queda abajo; agregamos al final
+    setEjercicios((p) => [...p, nuevo]);
     setNombre('');
   };
 
@@ -138,56 +156,62 @@ function Agregar({ onVolver }) {
     setEjercicios((p) => p.filter((e) => e.id !== id));
   };
 
+  // Guardar entrenamiento propio (igual que tenías, hora opcional)
   const terminar = async () => {
-  if (!enCurso) return;
-  if (!fecha) return alert('Completá la fecha');
-  if (!usuario?.dni) return alert('No se encontró tu DNI');
-  if (ejercicios.length === 0) return alert('Agregá al menos un ejercicio');
+    if (!enCurso) return;
+    if (!fecha) return alert('Completá la fecha');
+    if (!usuario?.dni) return alert('No se encontró tu DNI');
+    if (ejercicios.length === 0) return alert('Agregá al menos un ejercicio');
 
-  // payload con hora opcional
-  const payload = {
-    fechaEntrenamiento: fecha,
-    ...(hora ? { horaEntrenamiento: hora } : {}),
-    deportista: { dni: String(usuario.dni) },
-  };
+    const payload = {
+      fechaEntrenamiento: fecha,
+      horaEntrenamiento: (hora && /^\d{2}:\d{2}$/.test(hora)) ? hora : undefined, // opcional en backend
+      deportista: { dni: String(usuario.dni) },
+    };
 
-  try {
-    await Entrenamientos.crear?.(payload);
-  } catch {
     try {
-      const base = (import.meta?.env?.VITE_API_URL) || API_URL || 'http://localhost:3000/api';
-      const r = await fetch(`${base}/entrenamientos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-    } catch (e) {
-      console.error(e);
-      alert('No se pudo guardar en el backend');
-      return;
+      await Entrenamientos.crear?.(payload);
+    } catch {
+      try {
+        const base = (import.meta?.env?.VITE_API_URL) || API_URL || 'http://localhost:3000/api';
+        const r = await fetch(`${base}/entrenamientos`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+      } catch (e) {
+        console.error(e);
+        alert('No se pudo guardar en el backend');
+        return;
+      }
     }
-  }
 
-  // Guardar en historial local (hora puede ir indefinida)
-  const keyHist = `athlete:${usuario?.dni}:historial`;
-  const prev = JSON.parse(localStorage.getItem(keyHist) || '[]');
-  const item = {
-    idLocal: crypto.randomUUID(),
-    backendId: null,
-    fechaEntrenamiento: fecha,
-    horaEntrenamiento: hora || null,
-    entrenadorNombre: null,
-    ejercicios: ejercicios.map((e) => ({ ...e })),
-    createdAt: new Date().toISOString(),
+    // Persistencia local de “propios” (si querés conservarla)
+    const keyHist = `athlete:${usuario?.dni}:historial`;
+    const prev = JSON.parse(localStorage.getItem(keyHist) || '[]');
+    const item = {
+      idLocal: crypto.randomUUID(),
+      backendId: null,
+      fechaEntrenamiento: fecha,
+      horaEntrenamiento: hora || null,
+      entrenadorNombre: null,
+      ejercicios: ejercicios.map((e) => ({ ...e })),
+      createdAt: new Date().toISOString(),
+    };
+    localStorage.setItem(keyHist, JSON.stringify([item, ...prev]));
+
+    setOkModal(true);
   };
-  localStorage.setItem(keyHist, JSON.stringify([item, ...prev]));
-
-  setOkModal(true);
-};
-
 
   const disabledAll = !enCurso;
+
+  // Filtro simple para “asignados”
+  const asignadosFiltrados = (asignados || []).filter(a => {
+    if (!qAsignados) return true;
+    const txt = `${a?.entrenador?.nombre || ''} ${a?.entrenamiento?.fechaEntrenamiento || ''} ${a?.notas || ''}`.toLowerCase();
+    return txt.includes(qAsignados.toLowerCase());
+  });
 
   return (
     <section className="panel">
@@ -204,240 +228,256 @@ function Agregar({ onVolver }) {
           <button className="btn btn-hero" onClick={nuevoEntrenamiento}>
             <span className="btn-hero-glow" />
             <span className="btn-hero-icon">＋</span>
-                Crear nuevo entrenamiento
+            Crear nuevo entrenamiento
           </button>
         </div>
       </div>
 
-      {/* Resto del formulario solo si está enCurso */}
-      {enCurso && (
+      {/* Contenido por modo */}
+      <div className="row gap" style={{ marginBottom: 8 }}>
+        <button
+          type="button"
+          className={`btn ${modo === 'propio' ? 'btn-primary' : ''}`}
+          onClick={() => setModo('propio')}
+        >
+          Opción 1: Propio
+        </button>
+        <button
+          type="button"
+          className={`btn ${modo === 'asignado' ? 'btn-primary' : ''}`}
+          onClick={() => setModo('asignado')}
+        >
+          Opción 2: Asignado
+        </button>
+      </div>
+
+      {modo === 'propio' ? (
         <>
-          {/* Modo propio | asignado */}
-          <div className="row gap" style={{ marginBottom: 8 }}>
-            <button
-              type="button"
-              className={`btn ${modo === 'propio' ? 'btn-primary' : ''}`}
-              onClick={() => setModo('propio')}
-            >
-              Opción 1: Propio
-            </button>
-            <button
-              type="button"
-              className={`btn ${modo === 'asignado' ? 'btn-primary' : ''}`}
-              onClick={() => setModo('asignado')}
-            >
-              Opción 2: Asignado
-            </button>
+          {/* Fecha y hora */}
+          <div className="row gap">
+            <div className="col">
+              <label className="muted" style={{ display: 'block', marginBottom: 4 }}>Fecha</label>
+              <input
+                className="input"
+                type="date"
+                value={fecha}
+                onChange={(e) => setFecha(e.target.value)}
+                disabled={disabledAll}
+              />
+            </div>
+
+            <div className="col">
+              <label className="muted" style={{ display: 'block', marginBottom: 4 }}>Hora (opcional)</label>
+              <input
+                className="input"
+                type="time"
+                value={hora}
+                onChange={(e) => setHora(e.target.value)}
+                placeholder="hh:mm"
+                disabled={disabledAll}
+              />
+            </div>
           </div>
 
-          {/* Fecha y hora */}
-<div className="row gap">
-  <div className="col">
-    <label className="muted" style={{ display: 'block', marginBottom: 4 }}>Fecha</label>
-    <input
-      className="input"
-      type="date"
-      value={fecha}
-      onChange={(e) => setFecha(e.target.value)}
-      disabled={disabledAll}
-    />
-  </div>
-
-  <div className="col">
-    <label className="muted" style={{ display: 'block', marginBottom: 4 }}>Hora (opcional)</label>
-    <input
-      className="input"
-      type="time"
-      value={hora}
-      onChange={(e) => setHora(e.target.value)}
-      placeholder="hh:mm"
-      disabled={disabledAll}
-    />
-  </div>
-</div>
-
-
-          {/* Contenido por modo */}
-          {modo === 'propio' ? (
-            <>
-              {/* Lista de ejercicios agregados */}
-              {ejercicios.length === 0 ? (
-                <p className="muted" style={{ marginTop: 8 }}>Aún no agregaste ejercicios.</p>
-              ) : (
-                <ul className="list" style={{ marginTop: 8 }}>
-                  {ejercicios.map((e) => (
-                    <li key={e.id} className="item">
-                      <div className="item-head">
-                        <div>
-                          <strong>{e.nombre}</strong><br />
-                          <small className="muted">{e.grupo || '—'}</small>
-                        </div>
-                        <button className="btn btn-outline" onClick={() => eliminarEjercicio(e.id)}>
-                          Eliminar
-                        </button>
-                      </div>
-
-                      <div className="series" style={{ marginTop: 6 }}>
-                        {e.series.map((s, i) => (
-                          <div key={i} className="series-row">
-                            <span>Serie #{i + 1}</span>
-                            <input
-                              className="input tiny"
-                              type="number"
-                              min={0}
-                              step="any"
-                              placeholder="Peso"
-                              value={s.peso}
-                              onChange={(ev) => setSerieValor(e.id, i, 'peso', ev.target.value)}
-                            />
-                            <input
-                              className="input tiny"
-                              type="number"
-                              min={0}
-                              placeholder="Reps"
-                              value={s.reps}
-                              onChange={(ev) => setSerieValor(e.id, i, 'reps', ev.target.value)}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-{/* Builder ABAJO de todo */}
-<div className="card-box" style={{ marginTop: 12 }}>
-  <div className="row gap wrap align-end">
-    <select
-      className="input"
-      value={grupo}
-      onChange={(e) => { setGrupo(e.target.value); setNombre(''); }}
-    >
-      <option value="">— Seleccioná grupo muscular —</option>
-      {Object.keys(GRUPOS_EJERCICIOS).map((g) => (
-        <option key={g} value={g}>{g}</option>
-      ))}
-      <option value="Otros">Otros</option>
-    </select>
-
-    {grupo === 'Otros' ? (
-      <input
-        className="input"
-        placeholder="Escribí el ejercicio…"
-        value={nombre}
-        onChange={(e) => setNombre(e.target.value)}
-      />
-    ) : (
-      <select
-        className="input"
-        value={nombre}
-        onChange={(e) => setNombre(e.target.value)}
-        disabled={!grupo}
-      >
-        <option value="">— Seleccioná ejercicio —</option>
-        {(grupo ? GRUPOS_EJERCICIOS[grupo] || [] : []).map((ej) => (
-          <option key={ej} value={ej}>{ej}</option>
-        ))}
-      </select>
-    )}
-
-    {/* Campo de series: input + ayuda, apilados y alineados abajo */}
-    <div className="field">
-      <input
-        className="input small"
-        type="number"
-        min={1}
-        value={cantSeries === '' ? '' : String(cantSeries)}
-        onChange={(e) => {
-          const val = e.target.value;
-          if (val === '') {
-            setCantSeries('');        // deja borrar
-          } else {
-            const n = parseInt(val, 10);
-            if (!isNaN(n) && n > 0) setCantSeries(n);
-          }
-        }}
-        placeholder="Cantidad de series (ej. 3)"
-        aria-label="Cantidad de series"
-        title="Ingresá la cantidad de series"
-      />
-      <small className="help">Indicá cuántas series hiciste para este ejercicio.</small>
-    </div>
-
-    <button className="btn btn-primary" type="button" onClick={agregarEjercicio}>
-      Agregar
-    </button>
-  </div>
-</div>
-
- 
-
-
-
-              <div className="row gap" style={{ marginTop: 12 }}>
-                <button
-                  className="btn btn-primary"
-                  disabled={ejercicios.length === 0}
-                  onClick={terminar}
-                >
-                  Terminar entrenamiento
-                </button>
-                <button className="btn btn-outline" onClick={onVolver}>Volver</button>
-              </div>
-            </>
+          {/* Lista de ejercicios agregados */}
+          {ejercicios.length === 0 ? (
+            <p className="muted" style={{ marginTop: 8 }}>Aún no agregaste ejercicios.</p>
           ) : (
-            <>
-              {/* Modo asignado (placeholder/tu fuente real) */}
-              {asignados.length === 0 ? (
-                <div className="placeholder" style={{ marginTop: 8 }}>(No hay ejercicios asignados todavía.)</div>
-              ) : (
-                <ul className="list" style={{ marginTop: 8 }}>
-                  {asignados.map((e) => (
-                    <li key={e.id} className="item">
-                      <div className="item-head"><strong>{e.nombre}</strong></div>
+            <ul className="list" style={{ marginTop: 8 }}>
+              {ejercicios.map((e) => (
+                <li key={e.id} className="item">
+                  <div className="item-head">
+                    <div>
+                      <strong>{e.nombre}</strong><br />
                       <small className="muted">{e.grupo || '—'}</small>
-                    </li>
+                    </div>
+                    <button className="btn btn-outline" onClick={() => eliminarEjercicio(e.id)}>
+                      Eliminar
+                    </button>
+                  </div>
+
+                  <div className="series" style={{ marginTop: 6 }}>
+                    {e.series.map((s, i) => (
+                      <div key={i} className="series-row">
+                        <span>Serie #{i + 1}</span>
+                        <input
+                          className="input tiny"
+                          type="number"
+                          min={0}
+                          step="any"
+                          placeholder="Peso"
+                          value={s.peso}
+                          onChange={(ev) => setSerieValor(e.id, i, 'peso', ev.target.value)}
+                        />
+                        <input
+                          className="input tiny"
+                          type="number"
+                          min={0}
+                          placeholder="Reps"
+                          value={s.reps}
+                          onChange={(ev) => setSerieValor(e.id, i, 'reps', ev.target.value)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Builder */}
+          <div className="card-box" style={{ marginTop: 12 }}>
+            <div className="row gap wrap align-end">
+              <select
+                className="input"
+                value={grupo}
+                onChange={(e) => { setGrupo(e.target.value); setNombre(''); }}
+              >
+                <option value="">— Seleccioná grupo muscular —</option>
+                {Object.keys(GRUPOS_EJERCICIOS).map((g) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+                <option value="Otros">Otros</option>
+              </select>
+
+              {grupo === 'Otros' ? (
+                <input
+                  className="input"
+                  placeholder="Escribí el ejercicio…"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                />
+              ) : (
+                <select
+                  className="input"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  disabled={!grupo}
+                >
+                  <option value="">— Seleccioná ejercicio —</option>
+                  {(grupo ? GRUPOS_EJERCICIOS[grupo] || [] : []).map((ej) => (
+                    <option key={ej} value={ej}>{ej}</option>
                   ))}
-                </ul>
+                </select>
               )}
 
-              <div className="row gap" style={{ marginTop: 12 }}>
-                <button className="btn btn-primary" onClick={terminar}>Terminar entrenamiento</button>
-                <button className="btn btn-outline" onClick={onVolver}>Volver</button>
+              <div className="field">
+                <input
+                  className="input small"
+                  type="number"
+                  min={1}
+                  value={cantSeries === '' ? '' : String(cantSeries)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '') {
+                      setCantSeries('');
+                    } else {
+                      const n = parseInt(val, 10);
+                      if (!isNaN(n) && n > 0) setCantSeries(n);
+                    }
+                  }}
+                  placeholder="Cantidad de series (ej. 3)"
+                  aria-label="Cantidad de series"
+                  title="Ingresá la cantidad de series"
+                />
+                <small className="help">Indicá cuántas series hiciste para este ejercicio.</small>
               </div>
-            </>
+
+              <button className="btn btn-primary" type="button" onClick={agregarEjercicio}>
+                Agregar
+              </button>
+            </div>
+          </div>
+
+          <div className="row gap" style={{ marginTop: 12 }}>
+            <button
+              className="btn btn-primary"
+              disabled={ejercicios.length === 0}
+              onClick={terminar}
+            >
+              Terminar entrenamiento
+            </button>
+            <button className="btn btn-outline" onClick={onVolver}>Volver</button>
+          </div>
+        </>
+      ) : (
+        /* Modo ASIGNADO: ahora renderiza lo que viene del backend */
+        <>
+          <div className="row gap wrap" style={{ marginBottom: 8 }}>
+            <input
+              className="input"
+              placeholder="Buscar por fecha/entrenador/notas…"
+              value={qAsignados}
+              onChange={(e) => setQAsignados(e.target.value)}
+              style={{ minWidth: 240 }}
+            />
+          </div>
+
+          {loadingAsignados ? (
+            <p className="muted">Cargando asignaciones…</p>
+          ) : asignadosFiltrados.length === 0 ? (
+            <div className="placeholder" style={{ marginTop: 8 }}>
+              (No hay entrenamientos asignados todavía.)
+            </div>
+          ) : (
+            <ul className="list" style={{ marginTop: 8 }}>
+              {asignadosFiltrados.map((a) => (
+                <li key={a.id} className="item">
+                  <div className="item-head">
+                    <div>
+                      <strong>
+                        {a?.entrenamiento?.fechaEntrenamiento || a?.fecha || '—'}
+                        {' '}
+                        {a?.entrenamiento?.horaEntrenamiento || ''}
+                      </strong><br />
+                      <small className="muted">
+                        Entrenador: {a?.entrenador?.nombre || a?.entrenador?.dni || '—'}
+                        {' · '}Estado: {a?.estado || 'pendiente'}
+                      </small>
+                    </div>
+                  </div>
+                  {a?.notas && (
+                    <div style={{ marginTop: 6 }}>
+                      <small className="muted">Notas:</small>
+                      <div>{a.notas}</div>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
           )}
+
+          <div className="row gap" style={{ marginTop: 12 }}>
+            <button className="btn btn-outline" onClick={onVolver}>Volver</button>
+          </div>
         </>
       )}
 
-      {/* Modal éxito */}
+      {/* Modal éxito (propio) */}
       {okModal && (
-  <div className="modal-overlay">
-    <div className="modal-success">
-      <div className="modal-success-badge">✔</div>
-      <h4>¡Entrenamiento creado con éxito!</h4>
-      <p className="muted">
-        Tu entrenamiento fue guardado correctamente.
-      </p>
-      <div className="modal-actions">
-        <button
-          className="btn btn-primary"
-          onClick={() => { setOkModal(false); onVolver(); }}
-        >
-          Continuar
-        </button>
-      </div>
-      {/* Brillos decorativos */}
-      <span className="spark s1" />
-      <span className="spark s2" />
-      <span className="spark s3" />
-    </div>
-  </div>
-)}
+        <div className="modal-overlay">
+          <div className="modal-success">
+            <div className="modal-success-badge">✔</div>
+            <h4>¡Entrenamiento creado con éxito!</h4>
+            <p className="muted">Tu entrenamiento fue guardado correctamente.</p>
+            <div className="modal-actions">
+              <button
+                className="btn btn-primary"
+                onClick={() => { setOkModal(false); onVolver(); }}
+              >
+                Continuar
+              </button>
+            </div>
+            <span className="spark s1" />
+            <span className="spark s2" />
+            <span className="spark s3" />
+          </div>
+        </div>
+      )}
     </section>
   );
 }
+
 
 
 /* ================== Subvista: HISTORIAL ================== */

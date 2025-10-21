@@ -3,7 +3,6 @@ const ctrl = require('../controllers/localidad.controller');
 
 const router = Router();
 
-// PK = codPostal
 router.get('/', ctrl.findAll);
 router.get('/:codPostal', ctrl.findOne);
 router.post('/', ctrl.sanitizeLocalidadInput, ctrl.add);

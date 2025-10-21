@@ -8,12 +8,11 @@ function sanitizeEntrenadorInput(req, _res, next) {
     usuario,
     contrasena,
     especialidad,
-    mail,     // puede venir como "mail"
-    email,    // o como "email"
+    mail,     
+    email,    
     tel,
   } = req.body;
 
-  // Normalizo: si viene "mail" lo copio a "email"
   const normalizedEmail = email ?? mail;
 
   req.body.sanitizedInput = {
@@ -23,7 +22,7 @@ function sanitizeEntrenadorInput(req, _res, next) {
     usuario,
     contrasena,
     especialidad,
-    email: normalizedEmail, // <- la entidad Entrenador espera "email"
+    email: normalizedEmail, 
     tel,
   };
 
@@ -84,13 +83,13 @@ async function remove(req, res) {
 }
 
 
-// === LOGIN (nuevo) ===
+
 async function login(req, res) {
   try {
     const {
       usuario,
-      email,   // por si te llega como email
-      mail,    // por si te llega como mail
+      email,   
+      mail,    
       contraseña,
       contrasena,
     } = req.body;

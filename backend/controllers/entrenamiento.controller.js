@@ -4,8 +4,8 @@ function sanitizeEntrenamientoInput(req, _res, next) {
   const {
     fechaEntrenamiento,
     horaEntrenamiento,
-    deportista,   // <- puede venir como dni o { dni }
-    entrenador,   // <- opcional en flujo “deportista”
+    deportista,   
+    entrenador,  
   } = req.body;
 
   req.body.sanitizedInput = {

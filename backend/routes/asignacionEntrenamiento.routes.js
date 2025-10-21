@@ -1,4 +1,4 @@
-// backend/routes/asignacionEntrenamiento.routes.js
+
 const express = require('express');
 const ctrl = require('../controllers/asignacionEntrenamiento.controller');
 

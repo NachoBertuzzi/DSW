@@ -1,5 +1,5 @@
-// server.js (CommonJS limpio)
-require('reflect-metadata'); // cargar antes que MikroORM
+
+require('reflect-metadata'); 
 const express = require('express');
 const cors = require('cors');
 const { RequestContext } = require('@mikro-orm/core');
@@ -7,7 +7,7 @@ const { RequestContext } = require('@mikro-orm/core');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middlewares globales
+
 app.use(cors({
   origin: [
     'http://localhost:3000',
@@ -22,10 +22,10 @@ app.use(cors({
 app.use(express.json());
 
 async function start() {
-  // import dinámico (ESM) del ORM
+  
   const { orm, syncSchema } = await import('./db/orm.mjs');
 
-  // Contexto por request (antes de rutas)
+ 
   app.use((req, res, next) => RequestContext.create(orm.em, next));
 
   // Rutas

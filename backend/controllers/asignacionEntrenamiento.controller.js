@@ -1,6 +1,3 @@
-// backend/controllers/asignacionEntrenamiento.controller.js
-// Controlador CommonJS con RequestContext para MikroORM.
-
 const { RequestContext } = require('@mikro-orm/core');
 
 const ESTADOS_VALIDOS = ['pendiente', 'en_progreso', 'completado', 'cancelado'];
@@ -16,7 +13,7 @@ function em() {
 }
 
 module.exports = {
-  // POST /
+
   crearAsignacion: async (req, res) => {
     try {
       const { entrenadorDni, deportistaDni, entrenamientoId, fecha, notas } = req.body || {};
@@ -64,7 +61,7 @@ module.exports = {
     }
   },
 
-  // GET /entrenadores/:dni
+  
   listarPorEntrenador: async (req, res) => {
     try {
       const manager = em();
@@ -80,7 +77,7 @@ module.exports = {
     }
   },
 
-  // GET /deportistas/:dni
+
   listarPorDeportista: async (req, res) => {
     try {
       const manager = em();
@@ -96,7 +93,7 @@ module.exports = {
     }
   },
 
-  // GET /:id
+  
   obtenerPorId: async (req, res) => {
     try {
       const manager = em();
@@ -109,7 +106,7 @@ module.exports = {
     }
   },
 
-  // PATCH /:id/estado
+ 
   actualizarEstado: async (req, res) => {
     try {
       const manager = em();
@@ -130,7 +127,7 @@ module.exports = {
     }
   },
 
-  // DELETE /:id
+  
   eliminarAsignacion: async (req, res) => {
     try {
       const manager = em();

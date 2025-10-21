@@ -9,12 +9,12 @@ function em() {
   return _em;
 }
 
-// Helper: convierte string/objeto a referencia de entidad
+
 function toRef(_em, entity, value, keyForObject) {
   if (!value) return undefined;
   if (typeof value === 'string' || typeof value === 'number') return _em.getReference(entity, value);
   if (typeof value === 'object' && value[keyForObject]) return _em.getReference(entity, value[keyForObject]);
-  return value; // ya vino como entidad/ref
+  return value; 
 }
 
 module.exports = {
@@ -44,14 +44,12 @@ module.exports = {
   async create(data) {
     const _em = em();
 
-    // convertir FKs si vienen como DNI string u objeto { dni: '...' }
     if (data.deportista) data.deportista = toRef(_em, Deportista, data.deportista, 'dni');
     if (data.entrenador) data.entrenador = toRef(_em, Entrenador, data.entrenador, 'dni');
 
     const ent = _em.create(Entrenamiento, data);
     await _em.persistAndFlush(ent);
 
-    // devolvé con populate para el front
     return await _em.findOne(Entrenamiento, { id: ent.id }, { populate: ['deportista', 'entrenador'] });
   },
 

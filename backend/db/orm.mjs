@@ -8,7 +8,7 @@ export const orm = await MikroORM.init({
     clientUrl: 'mysql://dsw:dsw123@127.0.0.1:3306/entrenamiento_db',
     highlighter: new SqlHighlighter(),
     debug: true,
-    schemaGenerator: {  //never in production, solo para desarrollo
+    schemaGenerator: {  
         disableForeignKeys: true,
         createForeignKeyConstraints: true,
         ignoreSchema: [],
@@ -18,9 +18,5 @@ export const orm = await MikroORM.init({
 export const syncSchema = async () => {
   const generator = orm.getSchemaGenerator();
   await generator.updateSchema();
-  console.log('✅ Esquema sincronizado con la base de datos');
-  // ⚠️ NADA de drop/create acá.
+  console.log('Esquema sincronizado con la base de datos');
 };
-
-//esta funcion va a generar la base de datos si no existe y anlaliza si existe 
-// si necesita cambios contra el esquema.

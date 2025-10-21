@@ -22,7 +22,6 @@ exports.getDeportistasDeEntrenador = async (req, res) => {
   try {
     const coachDni = req.params.dni;
     const dnis = listDeportistasDeCoach(coachDni);
-    // si necesitás más datos de deportistas, después lo cruzamos con tu base
     return res.json({ data: dnis.map(dni => ({ dni })) });
   } catch (e) {
     console.error(e);

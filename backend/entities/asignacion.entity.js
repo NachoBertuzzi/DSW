@@ -1,5 +1,4 @@
-// backend/entities/asignacion.entity.js
-// EntitySchema en CommonJS, relaciones usando `kind: 'm:1'` (compatibles con ReflectMetadataProvider)
+
 
 const { EntitySchema } = require('@mikro-orm/core');
 const { randomUUID } = require('crypto');
@@ -18,9 +17,9 @@ module.exports = {
         onCreate: () => randomUUID(),
       },
 
-      // Relaciones m:1 (todas NOT NULL)
+      
       entrenador: {
-        kind: 'm:1',               // <- clave importante
+        kind: 'm:1',             
         entity: 'Entrenador',
         nullable: false,
         index: true,
@@ -41,14 +40,14 @@ module.exports = {
         nullable: false,
         index: true,
         fieldName: 'entrenamiento_id',
-        // AJUSTAR si el PK de Entrenamiento no es 'id' (number) en tu entidad original.
+       
       },
 
-      // Opcionales
+      
       fecha: { type: 'date', nullable: true },
       notas: { type: 'string', length: 1000, nullable: true },
 
-      // Estado
+      
       estado: {
         type: 'string',
         enum: true,
@@ -57,7 +56,7 @@ module.exports = {
         index: true,
       },
 
-      // Timestamps
+      
       createdAt: { type: 'datetime', onCreate: () => new Date(), nullable: false, index: true },
       updatedAt: { type: 'datetime', onCreate: () => new Date(), onUpdate: () => new Date(), nullable: false },
     },

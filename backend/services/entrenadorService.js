@@ -45,7 +45,6 @@ module.exports = {
     return ent;
   },
 
-  // ====== LOGIN (nuevo) ======
   async login(usuarioOrEmail, contraseñaPlano) {
     const e = await em().findOne(
       Entrenador,
@@ -54,7 +53,7 @@ module.exports = {
     if (!e) return null;
 
     const guardado = e.contrasena ?? e['contraseña'];
-    const ok = contraseñaPlano === guardado; // si usás bcrypt, cambiá por bcrypt.compare
+    const ok = contraseñaPlano === guardado; 
 
     if (!ok) return null;
 

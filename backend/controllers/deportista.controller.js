@@ -1,6 +1,7 @@
 
 const service = require('../services/deportistaService.js');
 const localidadService = require('../services/localidadService.js');
+const bcrypt = require('bcrypt');
 
 function sanitizeDeportistaInput(req, _res, next) {
   const {
@@ -102,29 +103,22 @@ async function update(req, res) {
 
 
 async function remove(req, res) {
-  
   const dni = req.body?.dni ?? req.params?.dni;
   const { contrasena } = req.body || {};
 
   if (!dni) return res.status(400).json({ mensaje: 'Falta DNI' });
-
-  
-  if (!contrasena) {
-    return res.status(400).json({ mensaje: 'Se requiere contraseña' });
-  }
+  if (!contrasena) return res.status(400).json({ mensaje: 'Se requiere contraseña' });
 
   const deportista = await service.getById({ dni });
   if (!deportista) return res.status(404).json({ mensaje: 'Deportista no encontrado' });
 
-  
-  const guardada = deportista.contrasena ?? deportista['contraseña'];
-  if (String(contrasena) !== String(guardada)) {
-    return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
-  }
+  const ok = await bcrypt.compare(contrasena, deportista.contrasena);
+  if (!ok) return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
 
   await service.remove({ dni });
   return res.status(200).json({ mensaje: 'Cuenta eliminada correctamente' });
 }
+
 
 async function login(req, res) {
   try {

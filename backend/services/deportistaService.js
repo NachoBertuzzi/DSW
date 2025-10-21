@@ -1,5 +1,6 @@
 const { RequestContext, wrap } = require('@mikro-orm/core');
 const { Deportista } = require('../entities/deportista.entity');
+const bcrypt = require('bcrypt');
 
 function em() {
   const _em = RequestContext.getEntityManager();
@@ -18,6 +19,9 @@ module.exports = {
 
   async create(data) {
     const _em = em();
+    if (data.contrasena) {
+      data.contrasena = await bcrypt.hash(data.contrasena, 10);
+    }
     const deportista = _em.create(Deportista, data);
     await _em.persistAndFlush(deportista);
     return deportista;
@@ -27,6 +31,9 @@ module.exports = {
     const _em = em();
     const deportista = await _em.findOne(Deportista, { dni });
     if (!deportista) return null;
+    if (data.contrasena) {
+      data.contrasena = await bcrypt.hash(data.contrasena, 10);
+    }
     _em.assign(deportista, data);
     await _em.persistAndFlush(deportista);
     return deportista;
@@ -47,15 +54,13 @@ module.exports = {
     );
     if (!d) return null;
 
-    const guardada = d.contrasena ?? d['contraseña'];
-    if (guardada == null) return null;
+    if (!d.contrasena) return null;
 
-    const ok = String(passPlano) === String(guardada);
+    const ok = await bcrypt.compare(passPlano, d.contrasena);
     if (!ok) return null;
 
     const plano = wrap(d).toObject();
     delete plano.contrasena;
-    delete plano['contraseña'];
     return plano;
   },
 

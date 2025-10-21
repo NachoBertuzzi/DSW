@@ -327,7 +327,7 @@ function Agregar({ onVolver }) {
 
           {/* Builder */}
           <div className="card-box" style={{ marginTop: 12 }}>
-            <div className="row gap wrap align-end">
+            <div className="row gap wrap align-start">
               <select
                 className="input"
                 value={grupo}
@@ -361,27 +361,27 @@ function Agregar({ onVolver }) {
                 </select>
               )}
 
-              <div className="field">
+              <div className="series-wrap">
                 <input
-                  className="input small"
+                  className="input small series-input"
                   type="number"
                   min={1}
                   value={cantSeries === '' ? '' : String(cantSeries)}
                   onChange={(e) => {
                     const val = e.target.value;
-                    if (val === '') {
-                      setCantSeries('');
-                    } else {
+                    if (val === '') setCantSeries('');
+                    else {
                       const n = parseInt(val, 10);
                       if (!isNaN(n) && n > 0) setCantSeries(n);
                     }
                   }}
-                  placeholder="Cantidad de series (ej. 3)"
+                  placeholder="1"
                   aria-label="Cantidad de series"
-                  title="Ingresá la cantidad de series"
+                  title="Cantidad de series"
                 />
-                <small className="help">Indicá cuántas series hiciste para este ejercicio.</small>
+                <small className="series-help">Indicá cantidad de series</small>
               </div>
+
 
               <button className="btn btn-primary" type="button" onClick={agregarEjercicio}>
                 Agregar
@@ -389,7 +389,7 @@ function Agregar({ onVolver }) {
             </div>
           </div>
 
-          <div className="row gap" style={{ marginTop: 12 }}>
+          <div className="row gap wrap align-center" style={{ marginTop: 12 }}>
             <button
               className="btn btn-primary"
               disabled={ejercicios.length === 0}

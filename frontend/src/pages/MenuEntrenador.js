@@ -318,12 +318,9 @@ function TusDeportistas({ onVolver }) {
   const coach = JSON.parse(localStorage.getItem('usuario') || '{}');
   const [lista, setLista] = useState([]);
   const [q, setQ] = useState('');
-  const [soloConNotas, setSoloConNotas] = useState(false);
 
   const cargar = () => setLista(FallbackCoach.getLista(coach.dni) || []);
   useEffect(cargar, [coach.dni]);
-
-  const refrescar = () => cargar();
 
   const fmt = (iso) => {
     try { const d = new Date(iso); return d.toLocaleDateString() + ' ' + d.toLocaleTimeString().slice(0,5); }
@@ -333,7 +330,7 @@ function TusDeportistas({ onVolver }) {
   const baja = (id) => {
     if (!window.confirm('¿Dar de baja a este deportista?')) return;
     FallbackCoach.quitar(coach.dni, id);
-    cargar();
+    cargar(); // se refresca sin botón
   };
 
   const visibles = (lista || [])
@@ -344,13 +341,6 @@ function TusDeportistas({ onVolver }) {
         .includes(q.toLowerCase());
       return hay;
     })
-    .filter(d => {
-      if (!soloConNotas) return true;
-      try {
-        const ult = FallbackCoach.getUltimaNota(coach.dni, d.dni || d.id);
-        return !!ult;
-      } catch { return false; }
-    })
     .sort((a, b) => (a?.nombre || '').localeCompare(b?.nombre || ''));
 
   return (
@@ -358,7 +348,7 @@ function TusDeportistas({ onVolver }) {
       <Back onClick={onVolver} />
       <h3>Tus deportistas</h3>
 
-      {/* Barra de herramientas */}
+      {/* Sólo buscador */}
       <div className="row gap wrap" style={{ marginBottom: 12 }}>
         <input
           className="input"
@@ -367,11 +357,6 @@ function TusDeportistas({ onVolver }) {
           onChange={e => setQ(e.target.value)}
           style={{ minWidth: 240 }}
         />
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <input type="checkbox" checked={soloConNotas} onChange={e => setSoloConNotas(e.target.checked)} />
-          <small className="muted">Solo con notas</small>
-        </label>
-        <button className="btn btn-outline" onClick={refrescar}>Actualizar lista</button>
       </div>
 
       {visibles.length === 0 ? (
@@ -401,6 +386,7 @@ function TusDeportistas({ onVolver }) {
     </section>
   );
 }
+
 
 
 /* ---------- Perfil ---------- */

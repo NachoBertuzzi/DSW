@@ -70,7 +70,7 @@
   right:0;
   background-color:#222;
   min-width:150px;
-  z-index:10;
+  z-index:9999999;
   flex-direction:column;
   border-radius:5px;
   padding:5px 0;

@@ -8,26 +8,33 @@ import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 function MenuDeportista({ onLogout }) {
   const [vista, setVista] = useState('home'); // home | agregar | historial | entrenador | perfil
   const usuario = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem('usuario')) ?? {}; }
-    catch { return {}; }
+    try { return JSON.parse(localStorage.getItem('usuario')) ?? {}; } catch { return {}; }
   }, []);
 
   return (
     <div className="menu-screen">
-      <SuccessCreated />
-      <header className="menu-header">
-        <h2>Menú del Deportista</h2>
-        <div className="header-actions">
-          <small>{usuario?.nombre ? `Hola, ${usuario.nombre}` : ''}</small>
-          <button className="btn btn-outline" onClick={onLogout}>Cerrar sesión</button>
+      {/* Wrappée SuccessCreated para evitar que su overlay bloquee clicks (temporal) */}
+      <h2>Menú principal</h2>
+      <div className="success-block" style={{ pointerEvents: 'none' }}>
+        <SuccessCreated />
+      </div>
+
+      <div className="header-actions">
+        <small>{usuario?.nombre ? `Hola, ${usuario.nombre}` : ''}</small>
+        <div className="dropdown-header">
+          <button type="button" className="hamburger-header">&#9776;</button>
+          <div className="dropdown-content-header">
+            <button type="button" className="btn" onClick={() => setVista('perfil')}>Ver mi perfil</button>
+            <button type="button" className="btn btn-outline" onClick={onLogout}>Cerrar sesión</button>
+          </div>
         </div>
-      </header>
+      </div>
 
       {vista === 'home' && (
         <div className="menu-grid">
           <Card title="Agregar entrenamiento" desc="Crear entrenamiento (propio o asignado)" onClick={() => setVista('agregar')} />
           <Card title="Historial de entrenamientos" desc="Ver entrenamientos anteriores" onClick={() => setVista('historial')} />
-          <Card title="Tu entrenador" desc="Ver o Agregar entrenador" onClick={() => setVista('entrenador')} />
+          <Card title="Tu entrenador" desc="Ver/Agregar/Cambiar entrenador" onClick={() => setVista('entrenador')} />
         </div>
       )}
 
@@ -38,6 +45,7 @@ function MenuDeportista({ onLogout }) {
     </div>
   );
 }
+
 
 /* ---------- Subvista: AGREGAR (actualizada: “Asignado” permite cargar series/peso/reps) ---------- */
 function Agregar({ onVolver }) {

@@ -1,4 +1,3 @@
-// MenuDeportista.js
 import React, { useState, useMemo, useEffect } from 'react';
 import SuccessCreated from './SuccessCreated';
 import { Entrenamientos, FallbackCoach, API_URL } from '../services/api';
@@ -6,14 +5,13 @@ import './styles/MenuDeportista.css';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 
 function MenuDeportista({ onLogout }) {
-  const [vista, setVista] = useState('home'); // home | agregar | historial | entrenador | perfil
+  const [vista, setVista] = useState('home'); 
   const usuario = useMemo(() => {
     try { return JSON.parse(localStorage.getItem('usuario')) ?? {}; } catch { return {}; }
   }, []);
 
   return (
     <div className="menu-screen">
-      {/* Wrappée SuccessCreated para evitar que su overlay bloquee clicks (temporal) */}
       <h2>Menú principal</h2>
       <div className="success-block" style={{ pointerEvents: 'none' }}>
         <SuccessCreated />
@@ -47,14 +45,11 @@ function MenuDeportista({ onLogout }) {
 }
 
 
-/* ---------- Subvista: AGREGAR (actualizada: “Asignado” permite cargar series/peso/reps) ---------- */
 function Agregar({ onVolver }) {
   const usuario = useMemo(() => JSON.parse(localStorage.getItem('usuario') || '{}'), []);
 
-  // Estado general
   const [modo, setModo] = useState('propio');    // propio | asignado
 
-  // ======================= MODO PROPIO =======================
   const [enCursoPropio, setEnCursoPropio] = useState(false);
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
   const [hora, setHora] = useState(() => new Date().toTimeString().slice(0, 5));
@@ -74,26 +69,21 @@ function Agregar({ onVolver }) {
   const [nombre, setNombre] = useState('');
   const [cantSeries, setCantSeries] = useState('');
 
-  // Modal éxito (propio)
   const [okModal, setOkModal] = useState(false);
 
-  // ======================= MODO ASIGNADO =======================
   const [asignados, setAsignados] = useState([]);
   const [loadingAsignados, setLoadingAsignados] = useState(true);
   const [qAsignados, setQAsignados] = useState('');
 
-  // builder para una asignación
   const [enCursoAsig, setEnCursoAsig] = useState(false);
-  const [asigActiva, setAsigActiva] = useState(null);         // objeto asignación seleccionado
-  const [ejerciciosAsig, setEjerciciosAsig] = useState([]);   // ejercicios con series
+  const [asigActiva, setAsigActiva] = useState(null);         
+  const [ejerciciosAsig, setEjerciciosAsig] = useState([]);   
 
-  // ========= helpers =========
   const clampNonNeg = (val) => {
     const n = Number(val);
     return Number.isFinite(n) ? Math.max(0, n) : 0;
   };
 
-  // ========= cargar asignaciones del deportista desde backend =========
   useEffect(() => {
     if (!usuario?.dni) {
       setAsignados([]);
@@ -116,7 +106,6 @@ function Agregar({ onVolver }) {
     })();
   }, [usuario?.dni]);
 
-  // ======================= Acciones: PROPIO =======================
   const nuevoEntrenamientoPropio = () => {
     setEnCursoPropio(true);
     setModo('propio');
@@ -231,9 +220,7 @@ function Agregar({ onVolver }) {
     setOkModal(true);
   };
 
-  // ======================= Acciones: ASIGNADO =======================
 
-  // parsea a.notas -> lista de ejercicios [{grupo, nombre}]
   const parseNotas = (notas) => {
     if (!notas) return [];
     return String(notas)
@@ -241,22 +228,18 @@ function Agregar({ onVolver }) {
       .map(s => s.trim())
       .filter(Boolean)
       .map(txt => {
-        // formato esperado "Grupo: Nombre"
         const [g, ...rest] = txt.split(':');
         const nom = rest.join(':').trim();
         return {
           id: crypto.randomUUID(),
           grupo: (g || '').trim() || '—',
           nombre: nom || txt,
-          series: Array.from({ length: 3 }, () => ({ peso: '', reps: '' })), // default 3 series
+          series: Array.from({ length: 3 }, () => ({ peso: '', reps: '' })), 
         };
       });
   };
 
 
-
-
-  // Al tocar “Empezar”
   const empezarAsignado = (a) => {
     setModo('asignado');
     setAsigActiva(a);
@@ -264,7 +247,6 @@ function Agregar({ onVolver }) {
     setEnCursoAsig(true);
   };
 
-    // Cambiar la cantidad de series de un ejercicio asignado
 const setCantidadSeriesAsig = (idEj, val) => {
   const n = Math.max(1, parseInt(val, 10) || 1);
   setEjerciciosAsig(prev =>
@@ -273,13 +255,11 @@ const setCantidadSeriesAsig = (idEj, val) => {
       let series = e.series;
 
       if (n > series.length) {
-        // agrego series vacías
         series = [
           ...series,
           ...Array.from({ length: n - series.length }, () => ({ peso: '', reps: '' })),
         ];
       } else if (n < series.length) {
-        // corto a n
         series = series.slice(0, n);
       }
       return { ...e, series };
@@ -287,7 +267,6 @@ const setCantidadSeriesAsig = (idEj, val) => {
   );
 };
 
-  // editar valores en builder asignado
   const setSerieValorAsig = (idEj, idx, campo, valor) => {
     setEjerciciosAsig((prev) =>
       prev.map((e) =>
@@ -309,7 +288,6 @@ const setCantidadSeriesAsig = (idEj, val) => {
     if (!enCursoAsig || !asigActiva) return;
     if (ejerciciosAsig.length === 0) return alert('No hay ejercicios para cargar');
 
-    // 1) Guardar detalle en historial local (como “propio”, pero con entrenador y link a asignación)
     const keyHist = `athlete:${usuario?.dni}:historial`;
     const prev = JSON.parse(localStorage.getItem(keyHist) || '[]');
 
@@ -328,7 +306,6 @@ const setCantidadSeriesAsig = (idEj, val) => {
     };
     localStorage.setItem(keyHist, JSON.stringify([item, ...prev]));
 
-    // 2) Marcar la asignación como completada en backend
     try {
       await fetch(`${API_URL}/asignaciones-entrenamientos/${asigActiva.id}/estado`, {
         method: 'PATCH',
@@ -338,15 +315,12 @@ const setCantidadSeriesAsig = (idEj, val) => {
     } catch {}
 
     alert('¡Entrenamiento asignado registrado!');
-    // limpiar estado de builder asignado y recargar lista
     setEnCursoAsig(false);
     setAsigActiva(null);
     setEjerciciosAsig([]);
-    // refresco suave: saco esa asignación de la lista local
     setAsignados(prev => prev.map(x => x.id === item.asignacionId ? { ...x, estado: 'completado' } : x));
   };
 
-  // ========= renders auxiliares =========
   const renderListaSeries = (lista, onChange) => (
     <div className="series" style={{ marginTop: 6 }}>
       {lista.map((s, i) => (
@@ -374,7 +348,6 @@ const setCantidadSeriesAsig = (idEj, val) => {
     </div>
   );
 
-  // ========= filtros =========
   const asignadosFiltrados = (asignados || []).filter(a => {
     if (!qAsignados) return true;
     const txt = `${a?.entrenador?.nombre || ''} ${a?.entrenamiento?.fechaEntrenamiento || ''} ${a?.notas || ''} ${a?.estado || ''}`.toLowerCase();
@@ -386,7 +359,6 @@ const setCantidadSeriesAsig = (idEj, val) => {
       <Back onClick={onVolver} />
       <h3>Agregar entrenamiento</h3>
 
-      {/* Selector de modo */}
       <div className="row gap" style={{ marginBottom: 8 }}>
         <button
           type="button"
@@ -406,7 +378,6 @@ const setCantidadSeriesAsig = (idEj, val) => {
 
       {modo === 'propio' ? (
         <>
-          {/* Banner + botón crear propio */}
           <div className="card-box" style={{ background: '#10223b', marginBottom: 12 }}>
             <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <div>
@@ -421,7 +392,6 @@ const setCantidadSeriesAsig = (idEj, val) => {
             </div>
           </div>
 
-          {/* Form propio */}
           {enCursoPropio && (
             <>
               <div className="row gap">
@@ -448,7 +418,6 @@ const setCantidadSeriesAsig = (idEj, val) => {
                         </div>
                         <button className="btn btn-outline" onClick={() => eliminarEjercicio(e.id)}>Eliminar</button>
                       </div>
-                      {/* NUEVO: selector de cantidad de series */}
 <div className="row gap align-center" style={{ marginTop: 6 }}>
   <label className="muted">Cantidad de series</label>
   <input
@@ -469,7 +438,6 @@ const setCantidadSeriesAsig = (idEj, val) => {
                 </ul>
               )}
 
-              {/* Builder */}
               <div className="card-box" style={{ marginTop: 12 }}>
                 <div className="row gap wrap align-end">
                   <select className="input" value={grupo} onChange={(e) => { setGrupo(e.target.value); setNombre(''); }}>
@@ -522,9 +490,7 @@ const setCantidadSeriesAsig = (idEj, val) => {
           )}
         </>
       ) : (
-        // ======================= UI: ASIGNADO =======================
         <>
-          {/* Listado de asignaciones o builder de la activa */}
           {!enCursoAsig ? (
             <>
               <div className="row gap wrap" style={{ marginBottom: 8 }}>
@@ -577,7 +543,6 @@ const setCantidadSeriesAsig = (idEj, val) => {
               )}
             </>
           ) : (
-            // Builder para la asignación activa
             <>
               <div className="card-box" style={{ background: '#10223b', marginBottom: 12 }}>
                 <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -606,7 +571,6 @@ const setCantidadSeriesAsig = (idEj, val) => {
                           <small className="muted">{e.grupo || '—'}</small>
                         </div>
                       </div>
-                          {/* Selector de cantidad de series (ASIGNADO) */}
     <div className="row gap align-center" style={{ marginTop: 6 }}>
       <label className="muted">Cantidad de series</label>
       <input
@@ -642,7 +606,6 @@ const setCantidadSeriesAsig = (idEj, val) => {
         </>
       )}
 
-      {/* Modal éxito (propio) */}
       {okModal && (
         <div className="modal-overlay">
           <div className="modal-success">
@@ -667,7 +630,6 @@ const setCantidadSeriesAsig = (idEj, val) => {
 
 
 
-/* ================== Subvista: HISTORIAL ================== */
 function Historial({ onVolver }) {
   const usuario = useMemo(() => JSON.parse(localStorage.getItem('usuario') || '{}'), []);
   const [items, setItems] = useState([]);
@@ -760,7 +722,6 @@ function Historial({ onVolver }) {
   );
 }
 
-/* ================== Tu Entrenador ================== */
 function TuEntrenador({ onVolver }) {
   const usuario = useMemo(() => {
     try { return JSON.parse(localStorage.getItem('usuario')) ?? {}; } catch { return {}; }
@@ -775,13 +736,12 @@ function TuEntrenador({ onVolver }) {
   const [lista, setLista] = useState([]);
   const [qEsp, setQEsp] = useState('');
   const [loading, setLoading] = useState(true);
-  const [modo, setModo] = useState(coach ? 'ver' : 'elegir'); // ver | elegir
+  const [modo, setModo] = useState(coach ? 'ver' : 'elegir'); 
 
-  // notas
   const [nota, setNota] = useState('');
   const [notas, setNotas] = useState([]);
 
-  // 1) Traer entrenadores (API -> fallback)
+  
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -799,7 +759,6 @@ function TuEntrenador({ onVolver }) {
     })();
   }, []);
 
-  // Si ya había vínculo previo, me aseguro en fallback y traigo notas
   useEffect(() => {
     if (!coach?.dni || !usuario?.dni) return;
     try {
@@ -1113,7 +1072,6 @@ function Perfil({ onVolver }) {
   );
 }
 
-/* ================== UI ================== */
 function Card({ title, desc, onClick }) {
   return (
     <button

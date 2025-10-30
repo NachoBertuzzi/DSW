@@ -4,7 +4,7 @@ import SuccessCreated from './SuccessCreated';
 import './styles/MenuEntrenador.css';
 
 function MenuEntrenador({ onLogout }) {
-  const [vista, setVista] = useState('home'); // home | asignar | historial | deportistas | perfil
+  const [vista, setVista] = useState('home'); 
   const usuario = useMemo(() => {
     try { return JSON.parse(localStorage.getItem('usuario')) ?? {}; } catch { return {}; }
   }, []);
@@ -43,15 +43,14 @@ function MenuEntrenador({ onLogout }) {
   );
 }
 
-/* ---------- Asignar ---------- */
 export function AsignarEntrenamiento({ onVolver }) {
   const coach = JSON.parse(localStorage.getItem('usuario') || '{}');
 
   const [lista, setLista] = useState([]);
   const [q, setQ] = useState('');
-  const [selId, setSelId] = useState(''); // id interno de FallbackCoach
+  const [selId, setSelId] = useState(''); 
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
-  const [hora, setHora] = useState('');   // OPCIONAL
+  const [hora, setHora] = useState('');   
   const [ejercicios, setEjercicios] = useState([]);
   const [grupo, setGrupo] = useState('');
   const [nombre, setNombre] = useState('');
@@ -93,7 +92,6 @@ export function AsignarEntrenamiento({ onVolver }) {
 
   const eliminarEj = (id) => setEjercicios(p => p.filter(e => e.id !== id));
 
-  // Reemplaza COMPLETO tu función terminar por esta
 const terminar = async () => {
   if (!selId) return alert('Elegí un deportista');
   if (ejercicios.length === 0) return alert('Agregá al menos un ejercicio');
@@ -109,7 +107,6 @@ const terminar = async () => {
   try {
     setEnviando(true);
 
-    // 1) Crear el Entrenamiento en backend
     const r1 = await fetch(`${base}/entrenamientos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -117,8 +114,6 @@ const terminar = async () => {
         fechaEntrenamiento: fecha,
         ...(hora ? { horaEntrenamiento: hora } : {}),
         deportista: { dni: String(deportistaDni) },
-        // AJUSTAR si tu /entrenamientos acepta más campos como ejercicios
-        // ejercicios,
       }),
     });
     if (!r1.ok) {
@@ -126,13 +121,11 @@ const terminar = async () => {
       throw new Error(`No se pudo crear el entrenamiento. ${txt}`);
     }
     const data1 = await r1.json().catch(() => ({}));
-    const entrenamientoId = data1?.data?.id ?? data1?.id; // AJUSTAR si tu API responde distinto
+    const entrenamientoId = data1?.data?.id ?? data1?.id; 
     if (!entrenamientoId) {
       throw new Error('El backend no devolvió id del entrenamiento.');
     }
 
-    // 2) Crear la Asignación en backend
-    // Requiere que tengas el módulo nuevo de asignaciones montado en /api/asignaciones-entrenamientos
     const r2 = await fetch(`${base}/asignaciones-entrenamientos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -140,8 +133,8 @@ const terminar = async () => {
         entrenadorDni: String(coach.dni),
         deportistaDni: String(deportistaDni),
         entrenamientoId: Number(entrenamientoId),
-        fecha, // opcional
-        notas: ejercicios.map(e => `${e.grupo}: ${e.nombre}`).join(' | ') || undefined, // opcional
+        fecha, 
+        notas: ejercicios.map(e => `${e.grupo}: ${e.nombre}`).join(' | ') || undefined, 
       }),
     });
     if (!r2.ok) {
@@ -165,7 +158,6 @@ const terminar = async () => {
       <Back onClick={onVolver} />
       <h3>Asignar entrenamiento</h3>
 
-      {/* Toolbar: buscar + refrescar */}
       <div className="row gap wrap">
         <input
           className="input"
@@ -177,7 +169,6 @@ const terminar = async () => {
         <button className="btn btn-outline" onClick={refrescarLista}>Actualizar lista</button>
       </div>
 
-      {/* Selector de deportista (solo desde lista existente) */}
       <div className="row gap wrap">
         <select className="input" value={selId} onChange={e => setSelId(e.target.value)}>
           <option value="">— Elegí un deportista —</option>
@@ -189,7 +180,6 @@ const terminar = async () => {
         </select>
       </div>
 
-      {/* Fecha y hora (hora opcional) */}
       <div className="row gap wrap">
         <div>
           <label className="muted" style={{ display: 'block', marginBottom: 4 }}>Fecha</label>
@@ -201,7 +191,6 @@ const terminar = async () => {
         </div>
       </div>
 
-      {/* Ejercicios */}
       <div className="row gap wrap">
         <select className="input" value={grupo} onChange={e => { setGrupo(e.target.value); setNombre(''); }}>
           <option value="">— Seleccioná grupo muscular —</option>
@@ -242,7 +231,6 @@ const terminar = async () => {
 }
 
 
-/* ---------- Historial ---------- */
 function HistorialEntrenador({ onVolver }) {
   const coach = JSON.parse(localStorage.getItem('usuario') || '{}');
   const [items, setItems] = useState([]);
@@ -256,7 +244,6 @@ function HistorialEntrenador({ onVolver }) {
         const res = await fetch(`${API_URL}/asignaciones-entrenamientos/entrenadores/${coach.dni}`);
         const json = await res.json().catch(() => ({}));
         const arr = Array.isArray(json?.data) ? json.data : [];
-        // el backend ya ordena DESC por createdAt
         setItems(arr);
       } catch (e) {
         console.error(e);
@@ -313,7 +300,6 @@ function HistorialEntrenador({ onVolver }) {
 }
 
 
-/* ---------- TusDeportistas ---------- */
 function TusDeportistas({ onVolver }) {
   const coach = JSON.parse(localStorage.getItem('usuario') || '{}');
   const [lista, setLista] = useState([]);
@@ -330,7 +316,7 @@ function TusDeportistas({ onVolver }) {
   const baja = (id) => {
     if (!window.confirm('¿Dar de baja a este deportista?')) return;
     FallbackCoach.quitar(coach.dni, id);
-    cargar(); // se refresca sin botón
+    cargar(); 
   };
 
   const visibles = (lista || [])
@@ -348,7 +334,6 @@ function TusDeportistas({ onVolver }) {
       <Back onClick={onVolver} />
       <h3>Tus deportistas</h3>
 
-      {/* Sólo buscador */}
       <div className="row gap wrap" style={{ marginBottom: 12 }}>
         <input
           className="input"
@@ -389,7 +374,6 @@ function TusDeportistas({ onVolver }) {
 
 
 
-/* ---------- Perfil ---------- */
 function Perfil({ onVolver }) {
   const usuario = useMemo(() => {
     try {
@@ -441,7 +425,6 @@ function Perfil({ onVolver }) {
   );
 }
 
-/* ---------- UI ---------- */
 function Card({ title, desc, onClick }) {
   return (
     <button className="menu-card" onClick={onClick}>

@@ -28,7 +28,7 @@ async function start() {
  
   app.use((req, res, next) => RequestContext.create(orm.em, next));
 
-  // Rutas
+  
   app.use('/api/localidades', require('./routes/localidad.routes'));
   app.use('/api/entrenadores', require('./routes/entrenador.routes'));
   app.use('/api/deportistas', require('./routes/deportista.routes'));
@@ -37,10 +37,10 @@ async function start() {
   app.use('/api/asignaciones-entrenamientos', require('./routes/asignacionEntrenamiento.routes'));
 
 
-  // Test
+  
   app.get('/test', (_req, res) => res.send('Funciona el servidor!'));
 
-  // 404
+
   app.use((_, res) => res.status(404).send({ message: 'Resource not found' }));
 
   await syncSchema();

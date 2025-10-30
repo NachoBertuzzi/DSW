@@ -2,42 +2,33 @@ import React, { useState } from 'react';
 import './styles/RegistroPage.css';
 import logo from '../assets/logo.png';
 
-// Validación de email
 const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 const RegistroPage = ({ onVolver }) => {
-  // Tipo de usuario: 'deportista' o 'entrenador'
   const [regTipo, setRegTipo] = useState('deportista');
 
-  // Control de “pasos”: 1, 2, 3 y 4 (éxito)
   const [step, setStep] = useState(1);
 
-  // Página 1
   const [regUsuario, setRegUsuario] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
 
-  // Página 2
   const [regDni, setRegDni] = useState('');
   const [regNombre, setRegNombre] = useState('');
   const [regApellido, setRegApellido] = useState('');
   const [regFechaNacimiento, setRegFechaNacimiento] = useState('');
 
-  // Deportista extra (página 2)
   const [regAltura, setRegAltura] = useState('');
   const [regPeso, setRegPeso] = useState('');
 
-  // Página 3 – Localidad (deportista) o Especialidad (entrenador)
   const [regLocalidadCodPostal, setRegLocalidadCodPostal] = useState('');
   const [regLocalidadNombre, setRegLocalidadNombre] = useState('');
   const [regLocalidadProvincia, setRegLocalidadProvincia] = useState('');
   const [regEspecialidad, setRegEspecialidad] = useState('');
 
-  // Mensaje de error / info
   const [mensajeRegistro, setMensajeRegistro] = useState('');
 
-  // Datos para la pantalla de éxito (step 4)
-  const [successInfo, setSuccessInfo] = useState(null); // { tipo, nombre, email }
+  const [successInfo, setSuccessInfo] = useState(null); 
 
   const handleNext = (e) => {
     e.preventDefault();
@@ -98,7 +89,7 @@ const RegistroPage = ({ onVolver }) => {
 
       if (res.ok) {
         const creado = json?.data || {};
-        // Mostramos pantalla de éxito (antes del login)
+        
         setSuccessInfo({
           tipo: regTipo,
           nombre: creado?.nombre || regNombre || '',
@@ -106,13 +97,7 @@ const RegistroPage = ({ onVolver }) => {
         });
         setStep(4);
 
-        // Si además querés mostrar un cartel en el menú después del login,
-        // descomentá esto:
-        // localStorage.setItem('justCreated', JSON.stringify({
-        //   tipo: regTipo,
-        //   nombre: creado?.nombre || regNombre || '',
-        //   email: creado?.email || creado?.usuario || regEmail || '',
-        // }));
+        
       } else {
         setMensajeRegistro('Error: ' + (json?.mensaje || 'No se pudo registrar'));
       }
@@ -290,7 +275,7 @@ const RegistroPage = ({ onVolver }) => {
       );
     }
 
-    // Step 4: ÉXITO
+    
     if (step === 4) {
       const tipoBonito =
         successInfo?.tipo === 'entrenador' ? 'Entrenador'
@@ -337,7 +322,7 @@ const RegistroPage = ({ onVolver }) => {
         {renderProgress()}
 
         {step === 4 ? (
-          // En el paso 4 solo mostramos la pantalla de éxito
+          
           renderStepFields()
         ) : (
           <form onSubmit={ step === 3 ? handleRegistroSubmit : handleNext }>

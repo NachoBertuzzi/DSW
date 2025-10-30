@@ -13,6 +13,8 @@
   color: var(--ink);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   padding: 32px;
+  display: flex;
+  flex-direction: column; 
 }
 
 .header-actions {
@@ -66,17 +68,22 @@
 }
 
 .menu-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  display: flex;
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: flex-start; 
+  flex-grow: 1; 
   gap: 16px;
+  margin-top: 15vh; 
 }
-
 .menu-card {
   background: #122035;
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 16px;
   padding: 18px;
-  text-align: left;
+  text-align: center; 
+  max-width: 350px; 
+  width: 100%; 
   cursor: pointer;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -88,9 +95,13 @@
 .card-title {
   font-weight: 700;
   margin-bottom: 6px;
+  font-size: 1.1rem; 
+  color:var(--ink)
 }
 .card-desc {
   opacity: 0.85;
+  font-size: 0.8rem; 
+  color:var(--ink)
 }
 
 .panel {
@@ -435,24 +446,23 @@
   font-size: 13px;
   line-height: 1.2;
 }
-/* Alinea todos los items arriba en esa fila */
+
 .align-start { 
   align-items: flex-start; 
 }
 
-/* El contenedor del input + ayuda en columna */
+
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;              /* separa input y texto de ayuda */
-  min-width: 190px;      /* para que no se achique raro al lado del botón */
+  gap: 6px;             
+  min-width: 190px;     
 }
 
 .field .input.small {
   width: 100%;
 }
 
-/* El texto de ayuda bajo el input, discreto y alineado */
 .field .help {
   display: block;
   font-size: 12px;
@@ -460,26 +470,24 @@
   color: #9aa4b2;
   margin: 0;
 }
-/* Evitá que el contenedor obligue a ocupar todo el ancho */
 .field { 
   display: flex; 
   flex-direction: column; 
-  min-width: 0;           /* clave para que no empuje a crecer */
+  min-width: 0;          
   width: auto;
 }
 
-/* Input de series: corto y no crece */
+
 .series-input {
-  width: 50px !important;   /* ancho fijo (ajustá 100–140px a gusto) */
+  width: 50px !important;  
   max-width: 120px;
-  flex: 0 0 20px;           /* no crecer, no encoger */
-  height: 20px;              /* más bajito */
-  padding: 4px 8px;          /* compacto */
+  flex: 0 0 20px;           
+  height: 20px;              
+  padding: 4px 8px;        
   line-height: 22px;
   border-radius: 5px;
 }
 
-/* Texto de ayuda, chiquito y pegado debajo */
 .field .help {
   margin-top: 4px;
   font-size: 12px;
@@ -487,20 +495,20 @@
   color: #9aa4b2;
 }
 
-/* Por si tu fila usa align-items:center, forzá alineación arriba */
+
 .align-start { align-items: flex-start; }
 
-/* centra verticalmente todos los ítems de esa fila */
+
 .align-center { align-items: center; }
 
-/* wrapper del input de series: tamaño fijo y referencia para el help */
+
 .series-wrap {
   position: relative;
-  width: 50px;          /* hacelo cortito; probá 90–120px a gusto */
+  width: 50px;       
   flex: 0 0 80px;
 }
 
-/* input bajito y corto */
+
 .series-input {
   width: 50%;
   height: 17px;
@@ -508,16 +516,16 @@
   border-radius: 8px;
 }
 
-/* el texto de ayuda va ABSOLUTO debajo del input (no desalineará la fila) */
+
 .series-help {
   position: absolute;
   left: 0;
-  top: calc(100% + 6px); /* separadito del input */
+  top: calc(100% + 6px);
   font-size: 12px;
   line-height: 1.2;
   color: #9aa4b2;
   white-space: nowrap;
 }
 
-/* si el help quedara muy cerca del borde del card, dale aire abajo */
+
 .card-box { padding-bottom: 22px; }

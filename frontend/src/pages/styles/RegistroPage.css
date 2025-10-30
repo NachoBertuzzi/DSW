@@ -1,15 +1,15 @@
-/* Fondo general */
+
 .register-container {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #0d1b2a; /* azul oscuro */
+  background-color: #0d1b2a; 
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: white;
 }
 
-/* Caja principal */
+
 .register-box {
   background-color: #1b263b;
   padding: 30px 40px;
@@ -21,21 +21,19 @@
   animation: boxAppear 0.8s ease-out;
 }
 
-/* Logo */
 .register-logo {
   width: 150px;
   margin-bottom: 15px;
   animation: fadeInScale 1s ease-out;
 }
 
-/* Título */
 .register-box h2 {
   margin-bottom: 20px;
-  color: #e63946; /* rojo vibrante */
+  color: #e63946; 
   animation: titleAppear 1s ease-out;
 }
 
-/* Campos */
+
 .register-box label {
   display: block;
   text-align: left;
@@ -53,7 +51,6 @@
   font-size: 0.95rem;
 }
 
-/* Botones */
 .register-box button {
   width: 100%;
   padding: 12px;
@@ -65,7 +62,6 @@
   transition: 0.3s;
 }
 
-/* Botón principal */
 .register-box button[type="submit"] {
   background-color: #e63946;
   color: white;
@@ -75,7 +71,6 @@
   background-color: #c1121f;
 }
 
-/* Botón secundario */
 .register-box .volver-btn {
   background-color: transparent;
   border: 1px solid #e63946;
@@ -87,14 +82,12 @@
   color: white;
 }
 
-/* Mensajes */
 .register-message {
   margin-top: 15px;
   font-size: 0.9rem;
   color: crimson;
 }
 
-/* Animaciones */
 @keyframes fadeInScale {
   0% {
     opacity: 0;
@@ -127,7 +120,6 @@
     transform: translateX(0);
   }
 }
-/* Sección de selección de Tipo de Usuario */
 .user-type-container {
   margin: 20px 0;
   text-align: left;
@@ -147,7 +139,7 @@
 .user-type-buttons button {
   flex: 1;
   padding: 10px;
-  background-color: #1b263b;  /* Fondo igual a la caja principal */
+  background-color: #1b263b;  
   color: #fff;
   border: 2px solid transparent;
   border-radius: 8px;
@@ -159,7 +151,6 @@
   transform: scale(1.05);
 }
 
-/* Opción seleccionada: remarca con el mismo tono rojo vibrante */
 .user-type-buttons button.active {
   border-color: #e63946;
   background-color: #e63946;

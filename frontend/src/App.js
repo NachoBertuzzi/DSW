@@ -8,9 +8,8 @@ import './pages/styles/inicio.css';
 import logo from './assets/logo.png';
 
 function App() {
-  const [pantalla, setPantalla] = useState('login'); // 👈 arranca directamente en login
+  const [pantalla, setPantalla] = useState('login'); 
 
-  // Si el usuario ya tenía sesión guardada, lo mando directo a su menú
   useEffect(() => {
     const tipo = localStorage.getItem('tipo');
     if (tipo === 'deportista') setPantalla('menu-deportista');
@@ -25,20 +24,20 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('tipo');
     localStorage.removeItem('usuario');
-    setPantalla('login'); // 👈 vuelve al login, no al inicio
+    setPantalla('login'); 
   };
 
   return (
     <div className="App" style={{ padding: 20 }}>
       {pantalla === 'login' && (
         <LoginPage
-          onIrRegistro={() => setPantalla('registro')} // 👈 nueva prop
+          onIrRegistro={() => setPantalla('registro')} 
           onLoginSuccess={handleLoginSuccess}
         />
       )}
 
       {pantalla === 'registro' && (
-        <RegistroPage onVolver={() => setPantalla('login')} /> // 👈 vuelve al login
+        <RegistroPage onVolver={() => setPantalla('login')} /> 
       )}
 
       {pantalla === 'menu-deportista' && (

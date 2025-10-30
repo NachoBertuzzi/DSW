@@ -1,10 +1,10 @@
 class Repository {
   /**
-   * Devuelve todos los registros.
+   * 
    * @returns {Promise<Array|undefined>}
    
  
-   * Devuelve un registro por su id.
+  
    * @param {{ id: string }} item
    * @returns {Promise<Object|undefined>}
    */
@@ -13,7 +13,6 @@ class Repository {
   }
 
   /**
-   * Agrega un nuevo registro.
    * @param {Object} item
    * @returns {Promise<Object|undefined>}
    */
@@ -22,7 +21,6 @@ class Repository {
   }
 
   /**
-   * Actualiza un registro por id.
    * @param {string} id
    * @param {Object} item
    * @returns {Promise<Object|undefined>}
@@ -32,7 +30,6 @@ class Repository {
   }
 
   /**
-   * Elimina un registro.
    * @param {{ id: string }} item
    * @returns {Promise<Object|undefined>}
    */

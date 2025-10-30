@@ -1,7 +1,6 @@
-// src/services/api.js
 const API_URL =
   process.env.REACT_APP_API_URL ||
-  process.env.REACT_APP_API_BASE || // por si el Login.js usa BASE
+  process.env.REACT_APP_API_BASE || 
   'http://localhost:3000/api';
 
 async function api(path, { method = 'GET', body } = {}) {
@@ -20,10 +19,9 @@ async function api(path, { method = 'GET', body } = {}) {
 export const Entrenamientos = {
   crear: (payload) => api('/entrenamientos', { method: 'POST', body: payload }),
   listarTodos: () => api('/entrenamientos'),
-  eliminar: (id) => api(`/entrenamientos/${id}`, { method: 'DELETE' }), // ← NUEVO
+  eliminar: (id) => api(`/entrenamientos/${id}`, { method: 'DELETE' }), 
 };
 
-// ---------- Fallback local para UI del entrenador y "mis deportistas"
 const COACHES_KEY = 'coaches:lista';
 const nowISO = () => new Date().toISOString();
 
@@ -48,7 +46,6 @@ function keyDeportistas(entrenadorDni) {
 }
 
 export const FallbackCoach = {
-  // ---- Lista de deportistas por entrenador
   getLista(entrenadorDni) {
     const key = keyDeportistas(entrenadorDni);
     return JSON.parse(localStorage.getItem(key) || '[]');
@@ -97,7 +94,6 @@ export const FallbackCoach = {
     localStorage.setItem(key, JSON.stringify(arr));
   },
 
-  // ---- Entrenadores "semilla" para elegir desde el deportista
   getTodos() {
     return seedCoachesIfEmpty();
   },
@@ -106,7 +102,6 @@ export const FallbackCoach = {
     localStorage.setItem(COACHES_KEY, JSON.stringify(nuevaLista));
   },
 
-  // ---- NOTAS: deportista -> entrenador
   setNota(entrenadorDni, deportistaDni, texto) {
     const t = (texto || '').trim();
     if (!t) return null;
@@ -120,7 +115,6 @@ export const FallbackCoach = {
     );
 
     if (idx < 0) {
-      // si por alguna razón no existe, lo creo mínimo
       arr.unshift({ id: String(deportistaDni || crypto.randomUUID()), dni: deportistaDni || null, nombre: '—', username: null, notas: [] });
       idx = 0;
     }

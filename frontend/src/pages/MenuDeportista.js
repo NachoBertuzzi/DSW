@@ -439,7 +439,7 @@ const setCantidadSeriesAsig = (idEj, val) => {
               )}
 
               <div className="card-box" style={{ marginTop: 12 }}>
-                <div className="row gap wrap align-end">
+                <div className="row gap wrap align-start">
                   <select className="input" value={grupo} onChange={(e) => { setGrupo(e.target.value); setNombre(''); }}>
                     <option value="">— Seleccioná grupo muscular —</option>
                     {Object.keys(GRUPOS_EJERCICIOS).map((g) => (<option key={g} value={g}>{g}</option>))}
@@ -455,24 +455,26 @@ const setCantidadSeriesAsig = (idEj, val) => {
                     </select>
                   )}
 
-                  <div className="field">
-                    <input
-                      className="input small"
-                      type="number"
-                      min={1}
-                      value={cantSeries === '' ? '' : String(cantSeries)}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === '') setCantSeries('');
-                        else {
-                          const n = parseInt(val, 10);
-                          if (!isNaN(n) && n > 0) setCantSeries(n);
-                        }
-                      }}
-                      placeholder="Cantidad de series (ej. 3)"
-                    />
-                    <small className="help">Indicá cuántas series hiciste para este ejercicio.</small>
-                  </div>
+                  <div className="series-wrap">
+  <input
+    className="input series-input"
+    type="number"
+    min={1}
+    value={cantSeries === '' ? '' : String(cantSeries)}
+    onChange={(e) => {
+      const val = e.target.value;
+      if (val === '') setCantSeries('');
+      else {
+        const n = parseInt(val, 10);
+        if (!isNaN(n) && n > 0) setCantSeries(n);
+      }
+    }}
+    placeholder="Series"
+  />
+  <small className="series-help">
+    Indicá cuántas series hiciste para este ejercicio.
+  </small>
+</div>
 
                   <button className="btn btn-primary" type="button" onClick={agregarEjercicio}>
                     Agregar

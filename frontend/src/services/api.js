@@ -51,6 +51,31 @@ export const FallbackCoach = {
     return JSON.parse(localStorage.getItem(key) || '[]');
   },
 
+  desvincularDeportista(entrenadorDni, deportistaIdODni) {
+    const key = keyDeportistas(entrenadorDni);
+    const arr = JSON.parse(localStorage.getItem(key) || '[]');
+
+    const dep = arr.find(d =>
+      (d?.dni && String(d.dni) === String(deportistaIdODni)) ||
+      String(d?.id) === String(deportistaIdODni)
+    );
+
+    const next = arr.filter(d =>
+      !((d?.dni && String(d.dni) === String(deportistaIdODni)) || String(d?.id) === String(deportistaIdODni))
+    );
+
+    localStorage.setItem(key, JSON.stringify(next));
+
+    const atletaDni = dep?.dni || (String(deportistaIdODni).trim() || null);
+    if (atletaDni) {
+      try {
+        localStorage.removeItem(`athlete:${atletaDni}:coach`);
+      } catch {}
+    }
+
+    return next;
+  },
+
   addPorUsername(entrenadorDni, username) {
     const key = keyDeportistas(entrenadorDni);
     const arr = JSON.parse(localStorage.getItem(key) || '[]');

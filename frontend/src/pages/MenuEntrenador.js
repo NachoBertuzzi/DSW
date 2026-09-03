@@ -315,8 +315,10 @@ function TusDeportistas({ onVolver }) {
 
   const baja = (id) => {
     if (!window.confirm('¿Dar de baja a este deportista?')) return;
-    FallbackCoach.quitar(coach.dni, id);
-    cargar(); 
+
+    const dep = (lista || []).find(d => String(d.id) === String(id) || String(d.dni) === String(id));
+    FallbackCoach.desvincularDeportista(coach.dni, dep?.dni || id);
+    cargar();
   };
 
   const visibles = (lista || [])

@@ -1,5 +1,7 @@
 const { RequestContext, wrap } = require('@mikro-orm/core');
 const { Entrenador } = require('../entities/entrenador.entity');
+const { Entrenamiento } = require('../entities/entrenamiento.entity');
+const { Asignacion } = require('../entities/asignacion.entity');
 
 function em() {
   const _em = RequestContext.getEntityManager();
@@ -39,8 +41,16 @@ module.exports = {
 
   async remove({ dni }) {
     const _em = em();
-    const ent = await _em.findOne(Entrenador, { dni });
+    const ent = await _em.findOne(Entrenador, { dni }, { populate: ['entrenamientos'] });
     if (!ent) return undefined;
+
+    const entrenamientos = await _em.find(Entrenamiento, { entrenador: ent });
+    for (const entrenamiento of entrenamientos) {
+      entrenamiento.entrenador = null;
+      _em.persist(entrenamiento);
+    }
+
+    await _em.nativeDelete(Asignacion, { entrenador_dni: dni });
     await _em.removeAndFlush(ent);
     return ent;
   },

@@ -38,7 +38,7 @@ function MenuEntrenador({ onLogout }) {
       {vista === 'asignar' && <AsignarEntrenamiento onVolver={() => setVista('home')} />}
       {vista === 'historial' && <HistorialEntrenador onVolver={() => setVista('home')} />}
       {vista === 'deportistas' && <TusDeportistas onVolver={() => setVista('home')} />}
-      {vista === 'perfil' && <Perfil onVolver={() => setVista('home')} />}
+      {vista === 'perfil' && <Perfil onVolver={() => setVista('home')} onLogout={onLogout} />}
     </div>
   );
 }
@@ -376,7 +376,7 @@ function TusDeportistas({ onVolver }) {
 
 
 
-function Perfil({ onVolver }) {
+function Perfil({ onVolver, onLogout }) {
   const usuario = useMemo(() => {
     try {
       return JSON.parse(localStorage.getItem("usuario")) ?? {};
@@ -401,6 +401,11 @@ function Perfil({ onVolver }) {
       const data = await res.json().catch(()=>({}));
       if (res.ok) {
         alert("Cuenta eliminada correctamente.");
+        if (typeof onLogout === "function") {
+          onLogout();
+          return;
+        }
+        localStorage.removeItem("tipo");
         localStorage.removeItem("usuario");
         window.location.reload();
       } else {

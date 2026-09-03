@@ -78,7 +78,11 @@ async function remove(req, res) {
     return res.status(200).json({ mensaje: 'Cuenta eliminada correctamente' });
   } catch (err) {
     console.error('Error al eliminar cuenta:', err);
-    return res.status(500).json({ mensaje: 'Error interno del servidor' });
+    const detalle = err?.message || 'Error interno del servidor';
+    return res.status(500).json({
+      mensaje: 'Error interno del servidor',
+      detalle,
+    });
   }
 }
 

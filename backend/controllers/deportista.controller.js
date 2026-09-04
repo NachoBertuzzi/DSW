@@ -103,20 +103,27 @@ async function update(req, res) {
 
 
 async function remove(req, res) {
-  const dni = req.body?.dni ?? req.params?.dni;
-  const { contrasena } = req.body || {};
+  try {
+    const dni = req.body?.dni ?? req.params?.dni;
+    const { contrasena } = req.body || {};
 
-  if (!dni) return res.status(400).json({ mensaje: 'Falta DNI' });
-  if (!contrasena) return res.status(400).json({ mensaje: 'Se requiere contraseña' });
+    if (!dni) return res.status(400).json({ mensaje: 'Falta DNI' });
+    if (!contrasena) return res.status(400).json({ mensaje: 'Se requiere contraseña' });
 
-  const deportista = await service.getById({ dni });
-  if (!deportista) return res.status(404).json({ mensaje: 'Deportista no encontrado' });
+    const deportista = await service.getById({ dni });
+    if (!deportista) return res.status(404).json({ mensaje: 'Deportista no encontrado' });
 
-  const ok = await bcrypt.compare(contrasena, deportista.contrasena);
-  if (!ok) return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
+    const ok = await bcrypt.compare(contrasena, deportista.contrasena);
+    if (!ok) return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
 
-  await service.remove({ dni });
-  return res.status(200).json({ mensaje: 'Cuenta eliminada correctamente' });
+    await service.remove({ dni });
+    return res.status(200).json({ mensaje: 'Cuenta eliminada correctamente' });
+    
+  } catch (error) {
+    console.error('[deportista.remove] Error al eliminar:', error);
+    
+    return res.status(500).json({ mensaje: 'Error al eliminar la cuenta. Verifica que no tengas dependencias activas.' });
+  }
 }
 
 

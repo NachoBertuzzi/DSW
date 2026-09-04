@@ -39,11 +39,10 @@ function MenuDeportista({ onLogout }) {
       {vista === 'agregar' && <Agregar onVolver={() => setVista('home')} />}
       {vista === 'historial' && <Historial onVolver={() => setVista('home')} />}
       {vista === 'entrenador' && <TuEntrenador onVolver={() => setVista('home')} />}
-      {vista === 'perfil' && <Perfil onVolver={() => setVista('home')} />}
+      {vista === 'perfil' && <Perfil onVolver={() => setVista('home')} onLogout={onLogout} />}
     </div>
   );
 }
-
 
 function Agregar({ onVolver }) {
   const usuario = useMemo(() => JSON.parse(localStorage.getItem('usuario') || '{}'), []);
@@ -76,8 +75,8 @@ function Agregar({ onVolver }) {
   const [qAsignados, setQAsignados] = useState('');
 
   const [enCursoAsig, setEnCursoAsig] = useState(false);
-  const [asigActiva, setAsigActiva] = useState(null);         
-  const [ejerciciosAsig, setEjerciciosAsig] = useState([]);   
+  const [asigActiva, setAsigActiva] = useState(null);        
+  const [ejerciciosAsig, setEjerciciosAsig] = useState([]);  
 
   const clampNonNeg = (val) => {
     const n = Number(val);
@@ -220,7 +219,6 @@ function Agregar({ onVolver }) {
     setOkModal(true);
   };
 
-
   const parseNotas = (notas) => {
     if (!notas) return [];
     return String(notas)
@@ -239,7 +237,6 @@ function Agregar({ onVolver }) {
       });
   };
 
-
   const empezarAsignado = (a) => {
     setModo('asignado');
     setAsigActiva(a);
@@ -247,25 +244,25 @@ function Agregar({ onVolver }) {
     setEnCursoAsig(true);
   };
 
-const setCantidadSeriesAsig = (idEj, val) => {
-  const n = Math.max(1, parseInt(val, 10) || 1);
-  setEjerciciosAsig(prev =>
-    prev.map(e => {
-      if (e.id !== idEj) return e;
-      let series = e.series;
+  const setCantidadSeriesAsig = (idEj, val) => {
+    const n = Math.max(1, parseInt(val, 10) || 1);
+    setEjerciciosAsig(prev =>
+      prev.map(e => {
+        if (e.id !== idEj) return e;
+        let series = e.series;
 
-      if (n > series.length) {
-        series = [
-          ...series,
-          ...Array.from({ length: n - series.length }, () => ({ peso: '', reps: '' })),
-        ];
-      } else if (n < series.length) {
-        series = series.slice(0, n);
-      }
-      return { ...e, series };
-    })
-  );
-};
+        if (n > series.length) {
+          series = [
+            ...series,
+            ...Array.from({ length: n - series.length }, () => ({ peso: '', reps: '' })),
+          ];
+        } else if (n < series.length) {
+          series = series.slice(0, n);
+        }
+        return { ...e, series };
+      })
+    );
+  };
 
   const setSerieValorAsig = (idEj, idx, campo, valor) => {
     setEjerciciosAsig((prev) =>
@@ -418,20 +415,19 @@ const setCantidadSeriesAsig = (idEj, val) => {
                         </div>
                         <button className="btn btn-outline" onClick={() => eliminarEjercicio(e.id)}>Eliminar</button>
                       </div>
-<div className="row gap align-center" style={{ marginTop: 6 }}>
-  <label className="muted">Cantidad de series</label>
-  <input
-    className="input tiny"
-    type="number"
-    min={1}
-    value={e.series.length}
-    onChange={(ev) => setCantidadSeriesPropio(e.id, ev.target.value)}
-    style={{ width: 90 }}
-    aria-label="Cantidad de series"
-    title="Elegí cuántas series vas a cargar para este ejercicio"
-  />
-</div>
-
+                      <div className="row gap align-center" style={{ marginTop: 6 }}>
+                        <label className="muted">Cantidad de series</label>
+                        <input
+                          className="input tiny"
+                          type="number"
+                          min={1}
+                          value={e.series.length}
+                          onChange={(ev) => setCantidadSeriesPropio(e.id, ev.target.value)}
+                          style={{ width: 90 }}
+                          aria-label="Cantidad de series"
+                          title="Elegí cuántas series vas a cargar para este ejercicio"
+                        />
+                      </div>
                       {renderListaSeries(e.series, (campo, idx, val) => setSerieValor(e.id, idx, campo, val))}
                     </li>
                   ))}
@@ -571,20 +567,19 @@ const setCantidadSeriesAsig = (idEj, val) => {
                           <small className="muted">{e.grupo || '—'}</small>
                         </div>
                       </div>
-    <div className="row gap align-center" style={{ marginTop: 6 }}>
-      <label className="muted">Cantidad de series</label>
-      <input
-        className="input tiny"
-        type="number"
-        min={1}
-        value={e.series.length}
-        onChange={(ev) => setCantidadSeriesAsig(e.id, ev.target.value)}
-        style={{ width: 90 }}
-        aria-label="Cantidad de series"
-        title="Elegí cuántas series vas a cargar para este ejercicio"
-      />
-    </div>
-
+                      <div className="row gap align-center" style={{ marginTop: 6 }}>
+                        <label className="muted">Cantidad de series</label>
+                        <input
+                          className="input tiny"
+                          type="number"
+                          min={1}
+                          value={e.series.length}
+                          onChange={(ev) => setCantidadSeriesAsig(e.id, ev.target.value)}
+                          style={{ width: 90 }}
+                          aria-label="Cantidad de series"
+                          title="Elegí cuántas series vas a cargar para este ejercicio"
+                        />
+                      </div>
                       {renderListaSeries(e.series, (campo, idx, val) =>
                         setSerieValorAsig(e.id, idx, campo, val)
                       )}
@@ -626,9 +621,6 @@ const setCantidadSeriesAsig = (idEj, val) => {
     </section>
   );
 }
-
-
-
 
 function Historial({ onVolver }) {
   const usuario = useMemo(() => JSON.parse(localStorage.getItem('usuario') || '{}'), []);
@@ -741,7 +733,6 @@ function TuEntrenador({ onVolver }) {
   const [nota, setNota] = useState('');
   const [notas, setNotas] = useState([]);
 
-  
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -888,10 +879,9 @@ function TuEntrenador({ onVolver }) {
           </div>
 
           <div className="row gap">
-  <button type="button" className="btn btn-primary" onClick={feedback}>Dar feedback</button>
-  <button type="button" className="btn btn-outline" onClick={baja}>Dar de baja entrenador</button>
-</div>
-
+            <button type="button" className="btn btn-primary" onClick={feedback}>Dar feedback</button>
+            <button type="button" className="btn btn-outline" onClick={baja}>Dar de baja entrenador</button>
+          </div>
 
           <div className="row" style={{ marginTop: 12 }}>
             <button type="button" className="btn link" onClick={onVolver}>← Volver</button>
@@ -945,7 +935,7 @@ function TuEntrenador({ onVolver }) {
   );
 }
 
-function Perfil({ onVolver }) {
+function Perfil({ onVolver, onLogout }) {
   const usuario = useMemo(() => {
     try {
       return JSON.parse(localStorage.getItem("usuario")) ?? {};
@@ -962,14 +952,21 @@ function Perfil({ onVolver }) {
   }, []);
 
   const actualizarPeso = async () => {
-    const nuevoPeso = prompt("Ingresa tu nuevo peso (kg):", usuario?.peso ?? "");
-    if (!nuevoPeso) return;
+    let inputPeso = prompt("Ingresa tu nuevo peso (kg). Puedes usar decimales:", usuario?.peso ?? "");
+    if (!inputPeso) return;
+
+    const nuevoPeso = inputPeso.replace(',', '.').trim();
+
+    if (isNaN(parseFloat(nuevoPeso))) {
+      alert("Por favor, ingresa un número válido.");
+      return;
+    }
 
     try {
       const res = await fetch(`${API_URL}/deportistas/${usuario.dni}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ peso: nuevoPeso }),
+        body: JSON.stringify({ peso: parseFloat(nuevoPeso) }),
       });
 
       const data = await res.json();
@@ -977,7 +974,7 @@ function Perfil({ onVolver }) {
       if (res.ok) {
         alert("Peso actualizado correctamente");
 
-        const actualizado = { ...usuario, peso: nuevoPeso };
+        const actualizado = { ...usuario, peso: parseFloat(nuevoPeso) };
         localStorage.setItem("usuario", JSON.stringify(actualizado));
 
         const nuevoHistorial = [...historial, parseFloat(nuevoPeso)];
@@ -1012,7 +1009,9 @@ function Perfil({ onVolver }) {
         alert("Cuenta eliminada correctamente");
         localStorage.removeItem("usuario");
         localStorage.removeItem("historialPesos");
-        window.location.reload();
+        
+        onLogout();
+        
       } else {
         const err = await deleteRes.json();
         alert(err.mensaje || "Error eliminando la cuenta");

@@ -1,4 +1,3 @@
-
 const { EntitySchema } = require('@mikro-orm/core');
 
 const Deportista = new EntitySchema({
@@ -13,7 +12,7 @@ const Deportista = new EntitySchema({
     contrasena: { type: 'string' },
     fecha_nacimiento: { type: 'date', nullable: true },
     altura: { type: 'number', nullable: true },
-    peso: { type: 'number', nullable: true },
+    peso: { type: 'float', nullable: true },
     telefono: { type: 'string', nullable: true },
 
     localidad: {
@@ -27,6 +26,7 @@ const Deportista = new EntitySchema({
       entity: 'Entrenamiento',
       mappedBy: 'deportista',
       nullable: true,
+      cascade: ['all'], 
     },
   },
 });

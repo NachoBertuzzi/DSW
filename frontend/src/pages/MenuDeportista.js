@@ -2,7 +2,14 @@ import React, { useState, useMemo, useEffect } from 'react';
 import SuccessCreated from './SuccessCreated';
 import { Entrenamientos, FallbackCoach, API_URL } from '../services/api';
 import './styles/MenuDeportista.css';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+  Tooltip
+} from 'recharts';
 
 function MenuDeportista({ onLogout }) {
   const [vista, setVista] = useState('home'); 
@@ -435,7 +442,7 @@ function Agregar({ onVolver }) {
               )}
 
               <div className="card-box" style={{ marginTop: 12 }}>
-                <div className="row gap wrap align-end">
+                <div className="row gap wrap align-start">
                   <select className="input" value={grupo} onChange={(e) => { setGrupo(e.target.value); setNombre(''); }}>
                     <option value="">— Seleccioná grupo muscular —</option>
                     {Object.keys(GRUPOS_EJERCICIOS).map((g) => (<option key={g} value={g}>{g}</option>))}
@@ -451,24 +458,26 @@ function Agregar({ onVolver }) {
                     </select>
                   )}
 
-                  <div className="field">
-                    <input
-                      className="input small"
-                      type="number"
-                      min={1}
-                      value={cantSeries === '' ? '' : String(cantSeries)}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === '') setCantSeries('');
-                        else {
-                          const n = parseInt(val, 10);
-                          if (!isNaN(n) && n > 0) setCantSeries(n);
-                        }
-                      }}
-                      placeholder="Cantidad de series (ej. 3)"
-                    />
-                    <small className="help">Indicá cuántas series hiciste para este ejercicio.</small>
-                  </div>
+                  <div className="series-wrap">
+  <input
+    className="input series-input"
+    type="number"
+    min={1}
+    value={cantSeries === '' ? '' : String(cantSeries)}
+    onChange={(e) => {
+      const val = e.target.value;
+      if (val === '') setCantSeries('');
+      else {
+        const n = parseInt(val, 10);
+        if (!isNaN(n) && n > 0) setCantSeries(n);
+      }
+    }}
+    placeholder="Series"
+  />
+  <small className="series-help">
+    Indicá cuántas series hiciste para este ejercicio.
+  </small>
+</div>
 
                   <button className="btn btn-primary" type="button" onClick={agregarEjercicio}>
                     Agregar
@@ -936,7 +945,7 @@ function TuEntrenador({ onVolver }) {
 }
 
 function Perfil({ onVolver, onLogout }) {
-  const usuario = useMemo(() => {
+  const [usuario, setUsuario] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("usuario")) ?? {};
     } catch {
@@ -944,12 +953,19 @@ function Perfil({ onVolver, onLogout }) {
     }
   }, []);
 
-  const [historial, setHistorial] = useState([]);
+  const [entrenamientos, setEntrenamientos] = useState([]);
+  const [ejercicioSeleccionado, setEjercicioSeleccionado] = useState('');
 
   useEffect(() => {
-    const guardado = JSON.parse(localStorage.getItem("historialPesos") || "[]");
-    setHistorial(guardado);
-  }, []);
+    const keyHist = `athlete:${usuario?.dni}:historial`;
+
+    try {
+      const guardados = JSON.parse(localStorage.getItem(keyHist) || '[]');
+      setEntrenamientos(guardados);
+    } catch {
+      setEntrenamientos([]);
+    }
+  }, [usuario?.dni]);
 
   const actualizarPeso = async () => {
     let inputPeso = prompt("Ingresa tu nuevo peso (kg). Puedes usar decimales:", usuario?.peso ?? "");
@@ -976,10 +992,7 @@ function Perfil({ onVolver, onLogout }) {
 
         const actualizado = { ...usuario, peso: parseFloat(nuevoPeso) };
         localStorage.setItem("usuario", JSON.stringify(actualizado));
-
-        const nuevoHistorial = [...historial, parseFloat(nuevoPeso)];
-        localStorage.setItem("historialPesos", JSON.stringify(nuevoHistorial));
-        setHistorial(nuevoHistorial);
+        setUsuario(actualizado);
       } else {
         alert(data.mensaje || "Error al actualizar el peso");
       }
@@ -989,6 +1002,39 @@ function Perfil({ onVolver, onLogout }) {
     }
   };
 
+    const ejerciciosDisponibles = [
+    ...new Set(
+      entrenamientos.flatMap(entrenamiento =>
+        (entrenamiento.ejercicios || [])
+          .filter(ejercicio => !ejercicio.eliminado)
+          .map(ejercicio => ejercicio.nombre)
+      )
+    )
+  ].sort();
+
+  const datosGrafico = entrenamientos
+    .map(entrenamiento => {
+      const ejercicio = (entrenamiento.ejercicios || []).find(
+        ej =>
+          !ej.eliminado &&
+          ej.nombre === ejercicioSeleccionado
+      );
+
+      if (!ejercicio) return null;
+
+      const pesos = (ejercicio.series || [])
+        .map(serie => parseFloat(serie.peso))
+        .filter(peso => Number.isFinite(peso));
+
+      if (pesos.length === 0) return null;
+
+      return {
+        fecha: entrenamiento.fechaEntrenamiento,
+        peso: Math.max(...pesos),
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
   const darBajaCuenta = async () => {
     if (!usuario?.dni) {
       alert("No se encontró información del usuario");
@@ -1009,9 +1055,7 @@ function Perfil({ onVolver, onLogout }) {
         alert("Cuenta eliminada correctamente");
         localStorage.removeItem("usuario");
         localStorage.removeItem("historialPesos");
-        
         onLogout();
-        
       } else {
         const err = await deleteRes.json();
         alert(err.mensaje || "Error eliminando la cuenta");
@@ -1021,8 +1065,6 @@ function Perfil({ onVolver, onLogout }) {
       alert("Error de conexión con el servidor");
     }
   };
-
-  const datosGrafico = historial.map((peso, i) => ({ id: i + 1, peso }));
 
   return (
     <section className="panel perfil-panel">
@@ -1041,28 +1083,66 @@ function Perfil({ onVolver, onLogout }) {
         </div>
       </div>
 
-      {historial.length > 1 ? (
+      
         <div className="grafico-box">
-          <h4 className="grafico-titulo">Progreso de tu peso</h4>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={datosGrafico}>
-              <XAxis dataKey="id" stroke="#ccc" />
-              <YAxis stroke="#ccc" />
-              <Line
-                type="monotone"
-                dataKey="peso"
-                stroke="#e63946"
-                strokeWidth={3}
-                dot={{ fill: "#fff" }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      ) : (
+  <h4 className="grafico-titulo">Progreso por ejercicio</h4>
+
+  {ejerciciosDisponibles.length === 0 ? (
+    <p className="grafico-placeholder">
+      Todavía no tenés ejercicios registrados en tu historial.
+    </p>
+  ) : (
+    <>
+      <div style={{ marginBottom: 16 }}>
+        <label className="muted" style={{ marginRight: 10 }}>
+          Ejercicio:
+        </label>
+
+        <select
+          className="input"
+          value={ejercicioSeleccionado}
+          onChange={(e) => setEjercicioSeleccionado(e.target.value)}
+        >
+          <option value="">— Seleccioná un ejercicio —</option>
+
+          {ejerciciosDisponibles.map(nombre => (
+            <option key={nombre} value={nombre}>
+              {nombre}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {!ejercicioSeleccionado ? (
         <p className="grafico-placeholder">
-          Aún no hay suficientes registros para mostrar el progreso.
+          Seleccioná un ejercicio para ver tu progreso.
         </p>
+      ) : datosGrafico.length < 2 ? (
+        <p className="grafico-placeholder">
+          Necesitás al menos 2 entrenamientos con este ejercicio para visualizar tu progreso.
+        </p>
+      ) : (
+        <ResponsiveContainer width="100%" height={250}>
+          <LineChart data={datosGrafico}>
+            <XAxis dataKey="fecha" stroke="#ccc" />
+            <YAxis stroke="#ccc" unit=" kg" />
+            <Tooltip
+              formatter={(value) => [`${value} kg`, 'Mejor peso']}
+            />
+            <Line
+              type="monotone"
+              dataKey="peso"
+              stroke="#e63946"
+              strokeWidth={3}
+              dot={{ fill: "#fff" }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
       )}
+    </>
+  )}
+</div>
+      
 
       <button type="button" className="btn btn-outline" onClick={darBajaCuenta}>
         Dar de baja la cuenta

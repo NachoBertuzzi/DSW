@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import SuccessCreated from './SuccessCreated';
+import CoachChat from '../components/CoachChat';
 import { Entrenamientos, FallbackCoach, API_URL } from '../services/api';
 import './styles/MenuDeportista.css';
 import {
@@ -47,6 +48,7 @@ function MenuDeportista({ onLogout }) {
       {vista === 'historial' && <Historial onVolver={() => setVista('home')} />}
       {vista === 'entrenador' && <TuEntrenador onVolver={() => setVista('home')} />}
       {vista === 'perfil' && <Perfil onVolver={() => setVista('home')} onLogout={onLogout} />}
+      <CoachChat />
     </div>
   );
 }

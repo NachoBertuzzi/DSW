@@ -57,12 +57,16 @@ cd backend
 
 npm install
 
-3. Crear base de datos y correr script de estructura (si aplica):
+3. Configurar variables de entorno
+
+Copiar `.env.example` como `.env` y completar `GEMINI_API_KEY` con una clave de Google AI Studio. Nunca subir `.env` al repositorio. El frontend no necesita conocer esta clave: el servidor la usa mediante `POST /api/ia/chat`.
+
+4. Crear base de datos y correr script de estructura (si aplica):
 
 CREATE DATABASE entrenamiento_db;
 -- Ejecutar script con tablas: deportista, entrenador, entrenamiento, localidad
 
-4. Configurar acceso a la base de datos
+5. Configurar acceso a la base de datos
 
 Editar db.js con tus credenciales de MySQL:
 
@@ -71,7 +75,7 @@ user: 'root',
 password: 'tu_contraseña',
 database: 'entrenamiento_db'
 
-5. Ejecutar servidor:
+6. Ejecutar servidor:
 
 node server.js
 

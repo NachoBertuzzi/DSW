@@ -1,4 +1,5 @@
 
+require('dotenv').config();
 require('reflect-metadata'); 
 const express = require('express');
 const cors = require('cors');
@@ -35,6 +36,7 @@ async function start() {
   app.use('/api/entrenamientos', require('./routes/entrenamiento.routes'));
   app.use('/login', require('./routes/login.routes'));
   app.use('/api/asignaciones-entrenamientos', require('./routes/asignacionEntrenamiento.routes'));
+  app.use('/api/ia', require('./routes/ia.routes'));
 
 
   

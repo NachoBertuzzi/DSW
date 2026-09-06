@@ -22,10 +22,11 @@ function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('tipo');
-    localStorage.removeItem('usuario');
-    setPantalla('login'); 
-  };
+  localStorage.removeItem('usuario');
+  localStorage.removeItem('tipo');
+  localStorage.removeItem('token');
+  setPantalla('login');
+};
 
   return (
     <div className="App" style={{ padding: 20 }}>

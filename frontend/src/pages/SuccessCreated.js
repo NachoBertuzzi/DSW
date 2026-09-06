@@ -10,7 +10,7 @@ export default function SuccessCreated({ autoCloseMs = 4500 }) {
       const data = JSON.parse(raw);
       if (data && typeof data === 'object') {
         setInfo(data);
-        // limpiar para que no se repita
+        
         localStorage.removeItem('justCreated');
       }
     } catch {}

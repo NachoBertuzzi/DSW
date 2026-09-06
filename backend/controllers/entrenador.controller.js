@@ -1,4 +1,5 @@
 const service = require('../services/entrenadorService.js');
+const jwt = require('jsonwebtoken');
 
 function sanitizeEntrenadorInput(req, _res, next) {
   const {
@@ -90,16 +91,9 @@ async function remove(req, res) {
 
 async function login(req, res) {
   try {
-    const {
-      usuario,
-      email,   
-      mail,    
-      contraseña,
-      contrasena,
-    } = req.body;
-
+    const { usuario, email, mail, contrasena, contraseña, password } = req.body || {};
     const userOrEmail = usuario ?? email ?? mail;
-    const pass = contraseña ?? contrasena;
+    const pass = contrasena ?? contraseña ?? password;
 
     if (!userOrEmail || !pass) {
       return res.status(400).json({ mensaje: 'Faltan credenciales' });
@@ -110,11 +104,16 @@ async function login(req, res) {
       return res.status(401).json({ mensaje: 'Credenciales incorrectas' });
     }
 
-    return res.json({ entrenador });
+    const token = jwt.sign(
+      { dni: entrenador.dni, rol: 'entrenador' }, 
+      'secreto_super_seguro', 
+      { expiresIn: '2h' }
+    );
+
+    return res.json({ entrenador, token });
   } catch (e) {
     console.error('Login entrenador:', e);
     return res.status(500).json({ mensaje: 'Error del servidor' });
   }
 }
-
 module.exports = { sanitizeEntrenadorInput, findAll, findOne, add, update, remove, login };

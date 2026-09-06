@@ -90,6 +90,10 @@ const LoginPage = ({ onLoginSuccess, onIrRegistro }) => {
 
       localStorage.setItem('tipo', tipo);
       localStorage.setItem('usuario', JSON.stringify(usuario));
+      
+      if (data?.token) {
+        localStorage.setItem('token', data.token); 
+      }
 
       onLoginSuccess?.({ tipo, usuario });
     } catch (err) {

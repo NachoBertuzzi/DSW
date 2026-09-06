@@ -101,7 +101,12 @@ function Agregar({ onVolver }) {
     (async () => {
       setLoadingAsignados(true);
       try {
-        const res = await fetch(`${API_URL}/asignaciones-entrenamientos/deportistas/${usuario.dni}`);
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/asignaciones-entrenamientos/deportistas/${usuario.dni}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         const json = await res.json().catch(() => ({}));
         const arr = Array.isArray(json?.data) ? json.data : [];
         setAsignados(arr);
@@ -199,10 +204,14 @@ function Agregar({ onVolver }) {
       await Entrenamientos.crear?.(payload);
     } catch {
       try {
+        const token = localStorage.getItem('token');
         const base = (import.meta?.env?.VITE_API_URL) || API_URL || 'http://localhost:3000/api';
         const r = await fetch(`${base}/entrenamientos`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify(payload),
         });
         if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -313,9 +322,13 @@ function Agregar({ onVolver }) {
     localStorage.setItem(keyHist, JSON.stringify([item, ...prev]));
 
     try {
+      const token = localStorage.getItem('token');
       await fetch(`${API_URL}/asignaciones-entrenamientos/${asigActiva.id}/estado`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ estado: 'completado' }),
       }).catch(() => {});
     } catch {}
@@ -461,25 +474,25 @@ function Agregar({ onVolver }) {
                   )}
 
                   <div className="series-wrap">
-  <input
-    className="input series-input"
-    type="number"
-    min={1}
-    value={cantSeries === '' ? '' : String(cantSeries)}
-    onChange={(e) => {
-      const val = e.target.value;
-      if (val === '') setCantSeries('');
-      else {
-        const n = parseInt(val, 10);
-        if (!isNaN(n) && n > 0) setCantSeries(n);
-      }
-    }}
-    placeholder="Series"
-  />
-  <small className="series-help">
-    Indicá cuántas series hiciste para este ejercicio.
-  </small>
-</div>
+                    <input
+                      className="input series-input"
+                      type="number"
+                      min={1}
+                      value={cantSeries === '' ? '' : String(cantSeries)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '') setCantSeries('');
+                        else {
+                          const n = parseInt(val, 10);
+                          if (!isNaN(n) && n > 0) setCantSeries(n);
+                        }
+                      }}
+                      placeholder="Series"
+                    />
+                    <small className="series-help">
+                      Indicá cuántas series hiciste para este ejercicio.
+                    </small>
+                  </div>
 
                   <button className="btn btn-primary" type="button" onClick={agregarEjercicio}>
                     Agregar
@@ -748,7 +761,12 @@ function TuEntrenador({ onVolver }) {
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${API_URL}/entrenadores`);
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/entrenadores`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         const json = await res.json().catch(() => ({}));
         const arr = Array.isArray(json) ? json : (Array.isArray(json?.data) ? json.data : []);
         if (arr.length) setLista(arr);
@@ -779,9 +797,13 @@ function TuEntrenador({ onVolver }) {
 
   const asignar = async (ent) => {
     try {
+      const token = localStorage.getItem('token');
       await fetch(`${API_URL}/deportistas/${usuario?.dni}/entrenador`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ entrenadorDni: ent.dni })
       }).catch(() => {});
     } catch {}
@@ -808,9 +830,13 @@ function TuEntrenador({ onVolver }) {
     if (!window.confirm('¿Seguro que querés dar de baja a tu entrenador?')) return;
 
     try {
+      const token = localStorage.getItem('token');
       await fetch(`${API_URL}/deportistas/${usuario?.dni}/entrenador`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ entrenadorDni: null })
       }).catch(() => {});
     } catch {}
@@ -981,9 +1007,13 @@ function Perfil({ onVolver, onLogout }) {
     }
 
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/deportistas/${usuario.dni}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({ peso: parseFloat(nuevoPeso) }),
       });
 
@@ -1004,7 +1034,7 @@ function Perfil({ onVolver, onLogout }) {
     }
   };
 
-    const ejerciciosDisponibles = [
+  const ejerciciosDisponibles = [
     ...new Set(
       entrenamientos.flatMap(entrenamiento =>
         (entrenamiento.ejercicios || [])
@@ -1037,6 +1067,7 @@ function Perfil({ onVolver, onLogout }) {
     })
     .filter(Boolean)
     .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
   const darBajaCuenta = async () => {
     if (!usuario?.dni) {
       alert("No se encontró información del usuario");
@@ -1047,9 +1078,13 @@ function Perfil({ onVolver, onLogout }) {
     if (!contrasena) return;
 
     try {
+      const token = localStorage.getItem('token');
       const deleteRes = await fetch(`${API_URL}/deportistas/eliminar`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({ dni: usuario.dni, contrasena }),
       });
 
@@ -1085,66 +1120,64 @@ function Perfil({ onVolver, onLogout }) {
         </div>
       </div>
 
-      
-        <div className="grafico-box">
-  <h4 className="grafico-titulo">Progreso por ejercicio</h4>
+      <div className="grafico-box">
+        <h4 className="grafico-titulo">Progreso por ejercicio</h4>
 
-  {ejerciciosDisponibles.length === 0 ? (
-    <p className="grafico-placeholder">
-      Todavía no tenés ejercicios registrados en tu historial.
-    </p>
-  ) : (
-    <>
-      <div style={{ marginBottom: 16 }}>
-        <label className="muted" style={{ marginRight: 10 }}>
-          Ejercicio:
-        </label>
+        {ejerciciosDisponibles.length === 0 ? (
+          <p className="grafico-placeholder">
+            Todavía no tenés ejercicios registrados en tu historial.
+          </p>
+        ) : (
+          <>
+            <div style={{ marginBottom: 16 }}>
+              <label className="muted" style={{ marginRight: 10 }}>
+                Ejercicio:
+              </label>
 
-        <select
-          className="input"
-          value={ejercicioSeleccionado}
-          onChange={(e) => setEjercicioSeleccionado(e.target.value)}
-        >
-          <option value="">— Seleccioná un ejercicio —</option>
+              <select
+                className="input"
+                value={ejercicioSeleccionado}
+                onChange={(e) => setEjercicioSeleccionado(e.target.value)}
+              >
+                <option value="">— Seleccioná un ejercicio —</option>
 
-          {ejerciciosDisponibles.map(nombre => (
-            <option key={nombre} value={nombre}>
-              {nombre}
-            </option>
-          ))}
-        </select>
+                {ejerciciosDisponibles.map(nombre => (
+                  <option key={nombre} value={nombre}>
+                    {nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {!ejercicioSeleccionado ? (
+              <p className="grafico-placeholder">
+                Seleccioná un ejercicio para ver tu progreso.
+              </p>
+            ) : datosGrafico.length < 2 ? (
+              <p className="grafico-placeholder">
+                Necesitás al menos 2 entrenamientos con este ejercicio para visualizar tu progreso.
+              </p>
+            ) : (
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={datosGrafico}>
+                  <XAxis dataKey="fecha" stroke="#ccc" />
+                  <YAxis stroke="#ccc" unit=" kg" />
+                  <Tooltip
+                    formatter={(value) => [`${value} kg`, 'Mejor peso']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="peso"
+                    stroke="#e63946"
+                    strokeWidth={3}
+                    dot={{ fill: "#fff" }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </>
+        )}
       </div>
-
-      {!ejercicioSeleccionado ? (
-        <p className="grafico-placeholder">
-          Seleccioná un ejercicio para ver tu progreso.
-        </p>
-      ) : datosGrafico.length < 2 ? (
-        <p className="grafico-placeholder">
-          Necesitás al menos 2 entrenamientos con este ejercicio para visualizar tu progreso.
-        </p>
-      ) : (
-        <ResponsiveContainer width="100%" height={250}>
-          <LineChart data={datosGrafico}>
-            <XAxis dataKey="fecha" stroke="#ccc" />
-            <YAxis stroke="#ccc" unit=" kg" />
-            <Tooltip
-              formatter={(value) => [`${value} kg`, 'Mejor peso']}
-            />
-            <Line
-              type="monotone"
-              dataKey="peso"
-              stroke="#e63946"
-              strokeWidth={3}
-              dot={{ fill: "#fff" }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      )}
-    </>
-  )}
-</div>
-      
 
       <button type="button" className="btn btn-outline" onClick={darBajaCuenta}>
         Dar de baja la cuenta

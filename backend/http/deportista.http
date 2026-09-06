@@ -20,7 +20,7 @@ Content-Type: application/json
   "telefono": "112233"
 }
 
-### actualizar (PUT)
+### actualizar
 PUT http://localhost:3000/api/deportistas/123
 Content-Type: application/json
 

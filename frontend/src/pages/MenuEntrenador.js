@@ -92,65 +92,72 @@ export function AsignarEntrenamiento({ onVolver }) {
 
   const eliminarEj = (id) => setEjercicios(p => p.filter(e => e.id !== id));
 
-const terminar = async () => {
-  if (!selId) return alert('Elegí un deportista');
-  if (ejercicios.length === 0) return alert('Agregá al menos un ejercicio');
-  if (!coach?.dni) return alert('No se encontró tu DNI de entrenador en la sesión');
+  const terminar = async () => {
+    if (!selId) return alert('Elegí un deportista');
+    if (ejercicios.length === 0) return alert('Agregá al menos un ejercicio');
+    if (!coach?.dni) return alert('No se encontró tu DNI de entrenador en la sesión');
 
-  const seleccionado = lista.find(d => String(d.id) === String(selId));
-  const deportistaDni = seleccionado?.dni || seleccionado?.id || null;
+    const seleccionado = lista.find(d => String(d.id) === String(selId));
+    const deportistaDni = seleccionado?.dni || seleccionado?.id || null;
 
-  if (!deportistaDni) return alert('No encuentro el DNI/ID del deportista seleccionado.');
+    if (!deportistaDni) return alert('No encuentro el DNI/ID del deportista seleccionado.');
 
-  const base = API_URL || 'http://localhost:3000/api';
+    const base = API_URL || 'http://localhost:3000/api';
+    const token = localStorage.getItem('token');
 
-  try {
-    setEnviando(true);
+    try {
+      setEnviando(true);
 
-    const r1 = await fetch(`${base}/entrenamientos`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fechaEntrenamiento: fecha,
-        ...(hora ? { horaEntrenamiento: hora } : {}),
-        deportista: { dni: String(deportistaDni) },
-      }),
-    });
-    if (!r1.ok) {
-      const txt = await r1.text().catch(() => '');
-      throw new Error(`No se pudo crear el entrenamiento. ${txt}`);
+      const r1 = await fetch(`${base}/entrenamientos`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          fechaEntrenamiento: fecha,
+          ...(hora ? { horaEntrenamiento: hora } : {}),
+          deportista: { dni: String(deportistaDni) },
+        }),
+      });
+      if (!r1.ok) {
+        const txt = await r1.text().catch(() => '');
+        throw new Error(`No se pudo crear el entrenamiento. ${txt}`);
+      }
+      const data1 = await r1.json().catch(() => ({}));
+      const entrenamientoId = data1?.data?.id ?? data1?.id; 
+      if (!entrenamientoId) {
+        throw new Error('El backend no devolvió id del entrenamiento.');
+      }
+
+      const r2 = await fetch(`${base}/asignaciones-entrenamientos`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          entrenadorDni: String(coach.dni),
+          deportistaDni: String(deportistaDni),
+          entrenamientoId: Number(entrenamientoId),
+          fecha, 
+          notas: ejercicios.map(e => `${e.grupo}: ${e.nombre}`).join(' | ') || undefined, 
+        }),
+      });
+      if (!r2.ok) {
+        const txt = await r2.text().catch(() => '');
+        throw new Error(`No se pudo crear la asignación. ${txt}`);
+      }
+
+      alert('Entrenamiento asignado con éxito');
+      onVolver();
+    } catch (e) {
+      console.error(e);
+      alert(e.message || 'No se pudo guardar en el backend');
+    } finally {
+      setEnviando(false);
     }
-    const data1 = await r1.json().catch(() => ({}));
-    const entrenamientoId = data1?.data?.id ?? data1?.id; 
-    if (!entrenamientoId) {
-      throw new Error('El backend no devolvió id del entrenamiento.');
-    }
-
-    const r2 = await fetch(`${base}/asignaciones-entrenamientos`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        entrenadorDni: String(coach.dni),
-        deportistaDni: String(deportistaDni),
-        entrenamientoId: Number(entrenamientoId),
-        fecha, 
-        notas: ejercicios.map(e => `${e.grupo}: ${e.nombre}`).join(' | ') || undefined, 
-      }),
-    });
-    if (!r2.ok) {
-      const txt = await r2.text().catch(() => '');
-      throw new Error(`No se pudo crear la asignación. ${txt}`);
-    }
-
-    alert('Entrenamiento asignado con éxito');
-    onVolver();
-  } catch (e) {
-    console.error(e);
-    alert(e.message || 'No se pudo guardar en el backend');
-  } finally {
-    setEnviando(false);
-  }
-};
+  };
 
 
   return (
@@ -241,7 +248,12 @@ function HistorialEntrenador({ onVolver }) {
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${API_URL}/asignaciones-entrenamientos/entrenadores/${coach.dni}`);
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/asignaciones-entrenamientos/entrenadores/${coach.dni}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         const json = await res.json().catch(() => ({}));
         const arr = Array.isArray(json?.data) ? json.data : [];
         setItems(arr);
@@ -374,8 +386,6 @@ function TusDeportistas({ onVolver }) {
   );
 }
 
-
-
 function Perfil({ onVolver, onLogout }) {
   const usuario = useMemo(() => {
     try {
@@ -393,9 +403,13 @@ function Perfil({ onVolver, onLogout }) {
     if (!contrasena) return;
 
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/entrenadores/${usuario.dni}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
         body: JSON.stringify({ contrasena }),
       });
       const data = await res.json().catch(()=>({}));
@@ -423,6 +437,7 @@ function Perfil({ onVolver, onLogout }) {
         }
         localStorage.removeItem("tipo");
         localStorage.removeItem("usuario");
+        localStorage.removeItem("token");
         window.location.reload();
       } else {
         alert(data.mensaje || "Error al eliminar la cuenta");

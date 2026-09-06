@@ -20,13 +20,12 @@ export default function EntrenamientoNuevo({ onVolver }) {
     if (!fecha || !hora) return alert('Completá fecha y hora');
     if (ejercicios.length === 0) return alert('Agregá al menos un ejercicio');
 
-    // Tu backend espera: fechaEntrenamiento, horaEntrenamiento y puede recibir deportista (dni).
-    // Como es "propio", NO mandamos entrenador.
+    
     const payload = {
-      fechaEntrenamiento: fecha,      // 'YYYY-MM-DD'
-      horaEntrenamiento: hora,        // 'HH:mm'
-      deportista: usuario?.dni,       // referencia por DNI (tu servicio lo soporta)
-      // Si querés guardar detalle de ejercicios, tendrás que extender tu entidad; por ahora mandamos básico.
+      fechaEntrenamiento: fecha,      
+      horaEntrenamiento: hora,        
+      deportista: usuario?.dni,       
+      
     };
 
     try {

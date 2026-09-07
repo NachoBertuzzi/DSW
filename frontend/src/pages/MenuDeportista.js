@@ -59,6 +59,7 @@ function Agregar({ onVolver }) {
   const [modo, setModo] = useState('propio');    // propio | asignado
 
   const [enCursoPropio, setEnCursoPropio] = useState(false);
+  const [inicioPropio, setInicioPropio] = useState(null);
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
   const [hora, setHora] = useState(() => new Date().toTimeString().slice(0, 5));
 
@@ -121,6 +122,7 @@ function Agregar({ onVolver }) {
 
   const nuevoEntrenamientoPropio = () => {
     setEnCursoPropio(true);
+    setInicioPropio(Date.now());
     setModo('propio');
     setFecha(new Date().toISOString().slice(0, 10));
     setHora(new Date().toTimeString().slice(0, 5));
@@ -200,8 +202,10 @@ function Agregar({ onVolver }) {
       deportista: { dni: String(usuario.dni) },
     };
 
+    let backendId = null;
     try {
-      await Entrenamientos.crear?.(payload);
+      const creado = await Entrenamientos.crear?.(payload);
+      backendId = creado?.data?.id ?? creado?.id ?? null;
     } catch {
       try {
         const token = localStorage.getItem('token');
@@ -215,6 +219,8 @@ function Agregar({ onVolver }) {
           body: JSON.stringify(payload),
         });
         if (!r.ok) throw new Error('HTTP ' + r.status);
+        const creado = await r.json().catch(() => ({}));
+        backendId = creado?.data?.id ?? creado?.id ?? null;
       } catch (e) {
         console.error(e);
         alert('No se pudo guardar en el backend');
@@ -226,10 +232,11 @@ function Agregar({ onVolver }) {
     const prev = JSON.parse(localStorage.getItem(keyHist) || '[]');
     const item = {
       idLocal: crypto.randomUUID(),
-      backendId: null,
+      backendId,
       fechaEntrenamiento: fecha,
       horaEntrenamiento: hora || null,
       entrenadorNombre: null,
+      duracionSegundos: inicioPropio ? Math.max(0, Math.round((Date.now() - inicioPropio) / 1000)) : null,
       ejercicios: ejercicios.map((e) => ({ ...e })),
       createdAt: new Date().toISOString(),
     };

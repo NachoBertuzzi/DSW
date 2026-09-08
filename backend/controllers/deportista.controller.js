@@ -2,7 +2,7 @@
 const service = require('../services/deportistaService.js');
 const localidadService = require('../services/localidadService.js');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const { createToken } = require('../middleware/auth.js');
 
 function sanitizeDeportistaInput(req, _res, next) {
   const {
@@ -143,11 +143,7 @@ async function login(req, res) {
       return res.status(401).json({ mensaje: 'Credenciales incorrectas' });
     }
 
-    const token = jwt.sign(
-      { dni: deportista.dni, rol: 'deportista' }, 
-      'secreto_super_seguro', 
-      { expiresIn: '2h' } // El token expirará en 2 horas
-    );
+const token = createToken(deportista, 'deportista');
 
     return res.json({ deportista, token });
   } catch (e) {

@@ -1,5 +1,5 @@
 const service = require('../services/entrenadorService.js');
-const jwt = require('jsonwebtoken');
+const { createToken } = require('../middleware/auth.js');
 
 function sanitizeEntrenadorInput(req, _res, next) {
   const {
@@ -104,11 +104,7 @@ async function login(req, res) {
       return res.status(401).json({ mensaje: 'Credenciales incorrectas' });
     }
 
-    const token = jwt.sign(
-      { dni: entrenador.dni, rol: 'entrenador' }, 
-      'secreto_super_seguro', 
-      { expiresIn: '2h' }
-    );
+const token = createToken(entrenador, 'entrenador');
 
     return res.json({ entrenador, token });
   } catch (e) {

@@ -52,11 +52,10 @@ module.exports = {
     const deportista = await _em.findOne(Deportista, { dni });
     if (!deportista) return null;
 
-    // 1. Limpiamos TODAS las dependencias en orden para evitar que MySQL bloquee la acción
     await _em.getConnection().execute('DELETE FROM asignaciones WHERE deportista_dni = ?', [dni]);
     await _em.getConnection().execute('DELETE FROM entrenamientos WHERE deportista_dni = ?', [dni]);
 
-    // 2. Ahora eliminamos al deportista
+
     await _em.removeAndFlush(deportista);
     
     return deportista;

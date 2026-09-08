@@ -31,7 +31,7 @@ module.exports = {
       const [entrenador, deportista, entrenamiento] = await Promise.all([
         manager.findOne('Entrenador', { dni: String(entrenadorDni) }),
         manager.findOne('Deportista', { dni: String(deportistaDni) }),
-        manager.findOne('Entrenamiento', { id: Number(entrenamientoId) }), // AJUSTAR si el PK difiere
+        manager.findOne('Entrenamiento', { id: Number(entrenamientoId) }), 
       ]);
 
       if (!entrenador) return res.status(404).json({ mensaje: `Entrenador con DNI ${entrenadorDni} no encontrado.` });

@@ -14,6 +14,7 @@ import {
 
 function MenuDeportista({ onLogout }) {
   const [vista, setVista] = useState('home'); 
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const usuario = useMemo(() => {
     try { return JSON.parse(localStorage.getItem('usuario')) ?? {}; } catch { return {}; }
   }, []);
@@ -27,11 +28,17 @@ function MenuDeportista({ onLogout }) {
 
       <div className="header-actions">
         <small>{usuario?.nombre ? `Hola, ${usuario.nombre}` : ''}</small>
-        <div className="dropdown-header">
-          <button type="button" className="hamburger-header">&#9776;</button>
+        <div className={`dropdown-header ${menuAbierto ? 'is-open' : ''}`}>
+          <button
+            type="button"
+            className="hamburger-header"
+            aria-expanded={menuAbierto}
+            aria-label="Abrir menú de usuario"
+            onClick={() => setMenuAbierto((abierto) => !abierto)}
+          >&#9776;</button>
           <div className="dropdown-content-header">
-            <button type="button" className="btn" onClick={() => setVista('perfil')}>Ver mi perfil</button>
-            <button type="button" className="btn btn-outline" onClick={onLogout}>Cerrar sesión</button>
+            <button type="button" className="btn" onClick={() => { setVista('perfil'); setMenuAbierto(false); }}>Ver mi perfil</button>
+            <button type="button" className="btn btn-outline" onClick={() => { setMenuAbierto(false); onLogout(); }}>Cerrar sesión</button>
           </div>
         </div>
       </div>
@@ -209,7 +216,7 @@ function Agregar({ onVolver }) {
     } catch {
       try {
         const token = localStorage.getItem('token');
-        const base = (import.meta?.env?.VITE_API_URL) || API_URL || 'http://localhost:3000/api';
+        const base = API_URL || 'http://localhost:3000/api';
         const r = await fetch(`${base}/entrenamientos`, {
           method: 'POST',
           headers: { 
@@ -858,9 +865,7 @@ function TuEntrenador({ onVolver }) {
     setModo('elegir');
   };
 
-  const feedback = () => {
-    alert('Feedback y puntaje: no implementado todavía.');
-  };
+  
 
   const enviarNota = () => {
     const t = nota.trim();
@@ -923,7 +928,6 @@ function TuEntrenador({ onVolver }) {
           </div>
 
           <div className="row gap">
-            <button type="button" className="btn btn-primary" onClick={feedback}>Dar feedback</button>
             <button type="button" className="btn btn-outline" onClick={baja}>Dar de baja entrenador</button>
           </div>
 

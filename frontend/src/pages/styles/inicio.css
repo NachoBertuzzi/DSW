@@ -7,6 +7,7 @@
   background-color: #0d1b2a;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: white;
+  padding: 24px 16px;
 }
 
 
@@ -17,21 +18,21 @@
 
 
 .inicio-logo {
-  width: 250px;
+  width: min(250px, 72vw);
   margin-bottom: 20px;
   animation: zoomIn 1s ease-out;
 }
 
 
 .inicio-title {
-  font-size: 2.5rem;
+  font-size: 2rem;
   margin-bottom: 20px;
   animation: slideInDown 1s ease-out;
 }
 
 
 .inicio-buttons button {
-  width: 200px;
+  width: 100%;
   padding: 12px;
   margin: 10px;
   border: none;
@@ -43,8 +44,42 @@
   color: white;
 }
 
+.inicio-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
 .inicio-buttons button:hover {
   background-color: #c1121f;
+}
+
+@media (min-width: 640px) {
+  .inicio-buttons {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .inicio-buttons button {
+    width: 200px;
+  }
+}
+
+@media (min-width: 768px) {
+  .inicio-title {
+    font-size: 2.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .inicio-container {
+    padding: 32px;
+  }
+
+  .inicio-logo {
+    width: 250px;
+  }
 }
 
 

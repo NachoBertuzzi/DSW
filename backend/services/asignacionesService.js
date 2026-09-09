@@ -24,7 +24,6 @@ function setEntrenadorDeportista(depDni, coachDniOrNull) {
   const dep = String(depDni);
   const oldCoach = data.porDeportista[dep] || null;
 
-  // sacar del entrenador anterior
   if (oldCoach && data.porEntrenador[oldCoach]) {
     data.porEntrenador[oldCoach] = data.porEntrenador[oldCoach].filter(d => String(d) !== dep);
     if (data.porEntrenador[oldCoach].length === 0) delete data.porEntrenador[oldCoach];

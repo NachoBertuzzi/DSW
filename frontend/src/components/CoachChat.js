@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { API_URL } from '../services/api';
 import coachAvatar from '../assets/CoreIA.png';
 import './CoachChat.css';
@@ -10,6 +10,17 @@ function CoachChat() {
   const [mensajes, setMensajes] = useState([
     { rol: 'asistente', texto: 'Hola. Soy tu asistente deportivo. ¿En qué te puedo ayudar hoy?' },
   ]);
+
+  useEffect(() => {
+    if (!abierto || !window.matchMedia('(max-width: 768px)').matches) return undefined;
+
+    const overflowOriginal = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = overflowOriginal;
+    };
+  }, [abierto]);
 
   const enviar = async (event) => {
     event.preventDefault();
@@ -23,7 +34,10 @@ function CoachChat() {
     try {
       const response = await fetch(`${API_URL}/ia/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+        },
         body: JSON.stringify({
           mensaje: consulta,
           historial: mensajes.slice(-8).map(({ rol, texto }) => ({ rol, texto })),
@@ -42,7 +56,19 @@ function CoachChat() {
   return (
     <div className="coach-chat">
       {abierto && (
-        <section className="coach-chat-panel" aria-label="Asistente deportivo">
+        <>
+          <button
+            type="button"
+            className="coach-chat-backdrop"
+            onClick={() => setAbierto(false)}
+            aria-label="Cerrar asistente"
+          />
+          <section
+            className="coach-chat-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Asistente deportivo"
+          >
           <header className="coach-chat-header">
             <img className="coach-chat-avatar" src={coachAvatar} alt="Asistente deportivo" />
             <div>
@@ -75,7 +101,8 @@ function CoachChat() {
             </div>
             <small className="coach-chat-disclaimer">Orientacion general. Ante dolor, enfermedad o dudas nutricionales, consulta a un profesional.</small>
           </form>
-        </section>
+          </section>
+        </>
       )}
 
       <button type="button" className="coach-chat-launcher" onClick={() => setAbierto((actual) => !actual)} aria-label={abierto ? 'Cerrar asistente' : 'Abrir asistente'}>

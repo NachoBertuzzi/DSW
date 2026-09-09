@@ -1,6 +1,7 @@
 const { Router } = require('express');
 
 const router = Router();
+const { verificarToken, requerirRol } = require('../middlewares/auth.middleware.js');
 const MAX_MESSAGE_LENGTH = 1200;
 
 function buildPrompt({ mensaje, historial }) {
@@ -20,7 +21,7 @@ ${contexto ? `Conversación previa:\n${contexto}` : 'No hay conversación previa
 Indica una recomendación segura y realista. Responde normalmente en 3 a 6 párrafos breves o una lista corta. No uses emojis, hashtags, títulos con #, separadores, introducciones largas ni frases de relleno. Si pide comida post entrenamiento, ofrece 2 o 3 opciones generales y una explicación breve, sin presentarlas como prescripción médica. Si pide entrenamiento, incluye solo lo necesario: calentamiento, ejercicios principales con series y repeticiones o tiempo, descansos y una vuelta a la calma. Adapta la propuesta al tiempo y objetivo mencionados en la conversación. No diagnostiques lesiones ni reemplaces a un profesional. Si falta información importante, haz una sola pregunta breve, pero ofrece igualmente una propuesta inicial útil. Continúa la conversación teniendo en cuenta lo que ya se habló.`;
 }
 
-router.post('/chat', async (req, res) => {
+router.post('/chat', verificarToken, requerirRol('deportista', 'entrenador'), async (req, res) => {
   const { mensaje, historial } = req.body || {};
 
   if (typeof mensaje !== 'string' || !mensaje.trim()) {

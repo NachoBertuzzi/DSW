@@ -7,23 +7,26 @@
   background-color: #0d1b2a; 
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: white;
+  padding: 24px 16px;
+  align-items: flex-start;
 }
 
 
 .login-box {
   background-color: #1b263b;
-  padding: 30px 40px;
+  padding: 24px 20px;
   border-radius: 12px;
   box-shadow: 0px 8px 20px rgba(0,0,0,0.5);
-  width: 350px;
-  max-width: 90%;
+  width: 100%;
+  max-width: 420px;
+  margin-top: 8vh;
   text-align: center;
   animation: boxAppear 0.8s ease-out;
 }
 
 
 .login-logo {
-  width: 150px; 
+  width: min(150px, 48vw);
   margin-bottom: 15px;
   animation: fadeInScale 1s ease-out;
 }
@@ -76,6 +79,34 @@
   margin-top: 15px;
   font-size: 0.9rem;
   color: crimson;
+}
+
+@media (min-width: 640px) {
+  .login-container {
+    padding: 32px 24px;
+    align-items: center;
+  }
+
+  .login-box {
+    padding: 28px 32px;
+    margin-top: 0;
+  }
+
+  .login-logo {
+    width: 150px;
+  }
+}
+
+@media (min-width: 768px) {
+  .login-box {
+    width: 350px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .login-box {
+    padding: 30px 40px;
+  }
 }
 
 

@@ -106,7 +106,7 @@ async function login(req, res) {
 
     const token = jwt.sign(
       { dni: entrenador.dni, rol: 'entrenador' }, 
-      'secreto_super_seguro', 
+      process.env.JWT_SECRET || 'secreto_super_seguro',
       { expiresIn: '2h' }
     );
 

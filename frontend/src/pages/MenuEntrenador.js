@@ -5,6 +5,7 @@ import './styles/MenuEntrenador.css';
 
 function MenuEntrenador({ onLogout }) {
   const [vista, setVista] = useState('home'); 
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const usuario = useMemo(() => {
     try { return JSON.parse(localStorage.getItem('usuario')) ?? {}; } catch { return {}; }
   }, []);
@@ -17,11 +18,17 @@ function MenuEntrenador({ onLogout }) {
         <h2>Menú principal</h2>
         <div className="header-actions">
           <small>{usuario?.nombre ? `Hola, ${usuario.nombre}` : ''}</small>
-          <div className="dropdown-header">
-            <button className="hamburger-header">☰</button>
+          <div className={`dropdown-header ${menuAbierto ? 'is-open' : ''}`}>
+            <button
+              type="button"
+              className="hamburger-header"
+              aria-expanded={menuAbierto}
+              aria-label="Abrir menú de usuario"
+              onClick={() => setMenuAbierto((abierto) => !abierto)}
+            >☰</button>
             <div className="dropdown-content-header">
-              <button onClick={() => setVista('perfil')}>Tu Perfil</button>
-              <button onClick={onLogout}>Cerrar sesión</button>
+              <button onClick={() => { setVista('perfil'); setMenuAbierto(false); }}>Tu Perfil</button>
+              <button onClick={() => { setMenuAbierto(false); onLogout(); }}>Cerrar sesión</button>
             </div>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import 'reflect-metadata'; 
+import 'dotenv/config';
 import {MikroORM} from "@mikro-orm/mysql";
 import { SqlHighlighter } from '@mikro-orm/sql-highlighter';
 import { dirname, join } from 'node:path';
@@ -10,6 +11,9 @@ const dbPort = process.env.DB_PORT || '3306';
 const dbName = process.env.DB_NAME || 'entrenamiento_db';
 const dbUser = process.env.DB_USER || 'dsw';
 const dbPassword = process.env.DB_PASSWORD || 'dsw123';
+const driverOptions = process.env.DB_SSL_MODE === 'REQUIRED'
+  ? { connection: { ssl: { rejectUnauthorized: false } } }
+  : undefined;
 
 export const orm = await MikroORM.init({
   entities: [entitiesPath],
@@ -18,6 +22,7 @@ export const orm = await MikroORM.init({
     port: Number(dbPort),
     user: dbUser,
     password: dbPassword,
+    driverOptions,
     highlighter: new SqlHighlighter(),
     debug: true,
     schemaGenerator: {  

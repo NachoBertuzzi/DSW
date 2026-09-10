@@ -540,7 +540,6 @@ function Perfil({ onVolver, onLogout }) {
             localStorage.removeItem(`coach:${coachDni}:deportistas`);
             for (const key of Object.keys(localStorage)) {
               if (!key.startsWith('athlete:') || !key.endsWith(':coach')) continue;
-              const depDni = key.replace(/^athlete:/, '').replace(/:coach$/, '');
               const actual = JSON.parse(localStorage.getItem(key) || 'null');
               if (actual && String(actual.dni) === String(coachDni)) {
                 localStorage.removeItem(key);

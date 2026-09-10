@@ -5,7 +5,6 @@ import MenuDeportista from './pages/MenuDeportista';
 import MenuEntrenador from './pages/MenuEntrenador';
 import './App.css';
 import './pages/styles/inicio.css';
-import logo from './assets/logo.png';
 
 function App() {
   const [pantalla, setPantalla] = useState('login'); 

@@ -116,8 +116,8 @@ export function AsignarEntrenamiento({ onVolver }) {
     if (ejercicios.length === 0) return alert('Agregá al menos un ejercicio');
     if (!coach?.dni) return alert('No se encontró tu DNI de entrenador en la sesión');
 
-    const seleccionado = lista.find(d => String(d.id) === String(selId));
-    const deportistaDni = seleccionado?.dni || seleccionado?.id || null;
+    const seleccionado = lista.find(d => String(d.dni || d.id) === String(selId));
+    const deportistaDni = seleccionado?.dni || seleccionado?.id || selId || null;
 
     if (!deportistaDni) return alert('No encuentro el DNI/ID del deportista seleccionado.');
 
@@ -199,8 +199,8 @@ export function AsignarEntrenamiento({ onVolver }) {
         <select className="input" value={selId} onChange={e => setSelId(e.target.value)}>
           <option value="">— Elegí un deportista —</option>
           {visibles.map(d => (
-            <option key={d.id} value={d.id}>
-              {d.nombre || d.username || d.id}
+            <option key={d.dni || d.id} value={d.dni || d.id}>
+              {d.nombre || d.username || d.dni || d.id}
             </option>
           ))}
         </select>
@@ -540,7 +540,7 @@ function TusDeportistas({ onVolver }) {
           {visibles.map(d => {
             const ultima = notasPorDni[String(d.dni || d.id)];
             return (
-              <li key={d.id} className="item">
+              <li key={d.dni || d.id} className="item">
                 <div>
                   <strong>{d.nombre || d.username}</strong>
                   {d.username && <div><small className="muted">@{d.username}</small></div>}
@@ -551,7 +551,7 @@ function TusDeportistas({ onVolver }) {
                     </div>
                   )}
                 </div>
-                <button className="btn btn-outline" onClick={() => baja(d.id)}>Dar de baja</button>
+                <button className="btn btn-outline" onClick={() => baja(d.dni || d.id)}>Dar de baja</button>
               </li>
             );
           })}

@@ -13,9 +13,10 @@ let initialization;
 const allowedOrigins = [
   'http://localhost:3001',
   'http://127.0.0.1:3001',
+  'https://dsw-rho.vercel.app',
   ...(process.env.FRONTEND_URL || '')
     .split(',')
-    .map((origin) => origin.trim())
+    .map((origin) => origin.trim().replace(/\/$/, ''))
     .filter(Boolean),
 ];
 

@@ -1019,6 +1019,31 @@ function Perfil({ onVolver, onLogout }) {
 
   const [entrenamientos, setEntrenamientos] = useState([]);
   const [ejercicioSeleccionado, setEjercicioSeleccionado] = useState('');
+  const usuarioDni = usuario?.dni;
+
+  useEffect(() => {
+    if (!usuarioDni) return;
+    (async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/deportistas/${usuarioDni}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        const remoto = json?.data || null;
+        if (!remoto) return;
+        setUsuario((actual) => {
+          const actualizado = { ...actual, ...remoto };
+          delete actualizado.contrasena;
+          localStorage.setItem('usuario', JSON.stringify(actualizado));
+          return actualizado;
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    })();
+  }, [usuarioDni]);
 
   useEffect(() => {
     (async () => {

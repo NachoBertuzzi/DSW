@@ -1,0 +1,9 @@
+{
+  "env": {
+    "REACT_APP_API_URL": "https://dsw-4ub5.onrender.com/api",
+    "REACT_APP_API_BASE": "https://dsw-4ub5.onrender.com/api"
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

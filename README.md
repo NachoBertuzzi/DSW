@@ -176,3 +176,13 @@ Error de base de datos: revisar host, puerto, nombre, usuario, contraseña y `DB
 - [Documentacion de la API](docs/API.md)
 - [Propuesta del proyecto](proposal.md)
 - [Repositorio](https://github.com/NachoBertuzzi/DSW)
+
+## Video demostrativo
+
+https://drive.google.com/drive/folders/1voRq5uMFvZ5-NOgqwRDzmVSFHSrCRlyS?usp=drive_link
+
+## Modelo de datos
+
+https://drive.google.com/drive/folders/1voRq5uMFvZ5-NOgqwRDzmVSFHSrCRlyS?usp=drive_link
+
+

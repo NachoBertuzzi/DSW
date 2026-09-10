@@ -14,8 +14,11 @@ exports.putEntrenadorDeportista = async (req, res) => {
       return res.status(400).json({ mensaje: 'entrenadorDni debe ser string o null' });
     }
     const manager = em();
-    const deportista = await manager.findOne('Deportista', { dni: String(depDni) });
+    const deportista = await manager.findOne('Deportista', { dni: String(depDni) }, { populate: ['entrenador'] });
     if (!deportista) return res.status(404).json({ mensaje: 'Deportista no encontrado' });
+    if (req.user?.rol === 'entrenador' && String(deportista.entrenador?.dni) !== String(req.user.dni)) {
+      return res.status(403).json({ mensaje: 'El deportista no está asignado a este entrenador' });
+    }
     deportista.entrenador = entrenadorDni
       ? await manager.findOne('Entrenador', { dni: String(entrenadorDni) })
       : null;

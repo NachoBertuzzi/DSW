@@ -310,7 +310,8 @@ function HistorialEntrenador({ onVolver }) {
             const fecha = String(ent?.fechaEntrenamiento || '').slice(0, 10);
             const hora = ent?.horaEntrenamiento || '';
             const detalle = detallesLocales.get(String(ent.id)) ||
-              detallesLocalesPorFecha.get(`${ent?.deportista?.dni}|${fecha}|${hora}`);
+              detallesLocalesPorFecha.get(`${ent?.deportista?.dni}|${fecha}|${hora}`) ||
+              (Array.isArray(ent?.ejercicios) ? { ...ent, ejercicios: ent.ejercicios } : null);
             return asignacion ? { ...asignacion, detalle } : {
               id: `entrenamiento-${ent.id}`,
               entrenamiento: ent,

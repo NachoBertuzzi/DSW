@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Entrenamientos, FallbackCoach, API_URL } from '../services/api';
 import SuccessCreated from './SuccessCreated';
 import './styles/MenuEntrenador.css';
@@ -73,8 +73,20 @@ export function AsignarEntrenamiento({ onVolver }) {
     Abdominales: ["Crunch","Elevación piernas","Plancha","Plancha lateral","Crunch polea","Ab wheel","Elevación rodillas","Crunch oblicuo","Mountain climbers","Russian twists"]
   };
 
-  const cargar = () => setLista(FallbackCoach.getLista(coach.dni) || []);
-  useEffect(cargar, [coach.dni]);
+  const cargar = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/entrenadores/${coach.dni}/deportistas`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json().catch(() => ({}));
+      setLista(Array.isArray(json?.data) ? json.data : []);
+    } catch (error) {
+      console.error(error);
+      setLista([]);
+    }
+  }, [coach.dni]);
+  useEffect(() => { cargar(); }, [cargar]);
 
   const refrescarLista = () => cargar();
 
@@ -434,20 +446,64 @@ function TusDeportistas({ onVolver }) {
   const coach = JSON.parse(localStorage.getItem('usuario') || '{}');
   const [lista, setLista] = useState([]);
   const [q, setQ] = useState('');
+  const [notasPorDni, setNotasPorDni] = useState({});
 
-  const cargar = () => setLista(FallbackCoach.getLista(coach.dni) || []);
-  useEffect(cargar, [coach.dni]);
+  const cargar = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/entrenadores/${coach.dni}/deportistas`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json().catch(() => ({}));
+      setLista(Array.isArray(json?.data) ? json.data : []);
+    } catch (error) {
+      console.error(error);
+      setLista([]);
+    }
+  }, [coach.dni]);
+  useEffect(() => { cargar(); }, [cargar]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/notas/entrenadores/${coach.dni}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json().catch(() => ({}));
+        const agrupadas = {};
+        (json?.data || []).forEach((nota) => {
+          const dni = String(nota?.deportista?.dni || '');
+          if (dni && !agrupadas[dni]) agrupadas[dni] = nota;
+        });
+        setNotasPorDni(agrupadas);
+      } catch (error) {
+        console.error(error);
+      }
+    })();
+  }, [coach.dni]);
 
   const fmt = (iso) => {
     try { const d = new Date(iso); return d.toLocaleDateString() + ' ' + d.toLocaleTimeString().slice(0,5); }
     catch { return ''; }
   };
 
-  const baja = (id) => {
+  const baja = async (id) => {
     if (!window.confirm('¿Dar de baja a este deportista?')) return;
 
     const dep = (lista || []).find(d => String(d.id) === String(id) || String(d.dni) === String(id));
-    FallbackCoach.desvincularDeportista(coach.dni, dep?.dni || id);
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`${API_URL}/deportistas/${dep?.dni || id}/entrenador`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ entrenadorDni: null }),
+      });
+    } catch (error) {
+      console.error(error);
+      alert('No se pudo desvincular al deportista');
+      return;
+    }
     cargar();
   };
 
@@ -481,7 +537,7 @@ function TusDeportistas({ onVolver }) {
       ) : (
         <ul className="list">
           {visibles.map(d => {
-            const ultima = FallbackCoach.getUltimaNota(coach.dni, d.dni || d.id);
+            const ultima = notasPorDni[String(d.dni || d.id)];
             return (
               <li key={d.id} className="item">
                 <div>

@@ -4,6 +4,9 @@ function sanitizeEntrenamientoInput(req, _res, next) {
   const {
     fechaEntrenamiento,
     horaEntrenamiento,
+    ejercicios,
+    duracionSegundos,
+    estado,
     deportista,   
     entrenador,  
   } = req.body;
@@ -11,6 +14,9 @@ function sanitizeEntrenamientoInput(req, _res, next) {
   req.body.sanitizedInput = {
     fechaEntrenamiento,
     horaEntrenamiento,
+    ejercicios,
+    duracionSegundos,
+    estado,
     deportista,
     entrenador,
   };

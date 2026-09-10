@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const ctrl = require('../controllers/asignaciones.controller');
-router.put('/deportistas/:dni/entrenador', ctrl.putEntrenadorDeportista);
-router.get('/entrenadores/:dni/deportistas', ctrl.getDeportistasDeEntrenador);
+const ctrl = require('../controllers/asignacionesController');
+const { verificarToken, requerirRol } = require('../middlewares/auth.middleware.js');
+router.put('/deportistas/:dni/entrenador', verificarToken, requerirRol('deportista'), ctrl.putEntrenadorDeportista);
+router.get('/deportistas/:dni/entrenador', verificarToken, requerirRol('deportista'), ctrl.getEntrenadorDeportista);
+router.get('/entrenadores/:dni/deportistas', verificarToken, requerirRol('entrenador'), ctrl.getDeportistasDeEntrenador);
 
 module.exports = router;

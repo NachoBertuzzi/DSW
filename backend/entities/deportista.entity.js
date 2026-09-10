@@ -14,6 +14,11 @@ const Deportista = new EntitySchema({
     altura: { type: 'number', nullable: true },
     peso: { type: 'float', nullable: true },
     telefono: { type: 'string', nullable: true },
+    entrenador: {
+      kind: 'm:1',
+      entity: 'Entrenador',
+      nullable: true,
+    },
 
     localidad: {
       kind: 'm:1',

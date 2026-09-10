@@ -52,6 +52,8 @@ async function initialize() {
     app.use('/api/entrenamientos', require('./routes/entrenamiento.routes'));
     app.use('/login', require('./routes/login.routes'));
     app.use('/api/asignaciones-entrenamientos', require('./routes/asignacionEntrenamiento.routes'));
+    app.use('/api', require('./routes/asignaciones.routes'));
+    app.use('/api/notas', require('./routes/nota.routes'));
     app.use('/api/ia', require('./routes/ia.routes'));
 
 

@@ -206,48 +206,20 @@ function Agregar({ onVolver }) {
     const payload = {
       fechaEntrenamiento: fecha,
       horaEntrenamiento: (hora && /^\d{2}:\d{2}$/.test(hora)) ? hora : undefined,
+      ejercicios: ejercicios.map((e) => ({ ...e })),
+      duracionSegundos: inicioPropio ? Math.max(0, Math.round((Date.now() - inicioPropio) / 1000)) : null,
+      estado: 'completado',
       deportista: { dni: String(usuario.dni) },
     };
 
-    let backendId = null;
     try {
-      const creado = await Entrenamientos.crear?.(payload);
-      backendId = creado?.data?.id ?? creado?.id ?? null;
-    } catch {
-      try {
-        const token = localStorage.getItem('token');
-        const base = API_URL || 'http://localhost:3000/api';
-        const r = await fetch(`${base}/entrenamientos`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(payload),
-        });
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        const creado = await r.json().catch(() => ({}));
-        backendId = creado?.data?.id ?? creado?.id ?? null;
-      } catch (e) {
-        console.error(e);
-        alert('No se pudo guardar en el backend');
-        return;
-      }
+      await Entrenamientos.crear(payload);
+    } catch (e) {
+      console.error(e);
+      alert('No se pudo guardar en el backend');
+      return;
     }
 
-    const keyHist = `athlete:${usuario?.dni}:historial`;
-    const prev = JSON.parse(localStorage.getItem(keyHist) || '[]');
-    const item = {
-      idLocal: crypto.randomUUID(),
-      backendId,
-      fechaEntrenamiento: fecha,
-      horaEntrenamiento: hora || null,
-      entrenadorNombre: null,
-      duracionSegundos: inicioPropio ? Math.max(0, Math.round((Date.now() - inicioPropio) / 1000)) : null,
-      ejercicios: ejercicios.map((e) => ({ ...e })),
-      createdAt: new Date().toISOString(),
-    };
-    localStorage.setItem(keyHist, JSON.stringify([item, ...prev]));
     setOkModal(true);
   };
 
@@ -317,9 +289,6 @@ function Agregar({ onVolver }) {
     if (!enCursoAsig || !asigActiva) return;
     if (ejerciciosAsig.length === 0) return alert('No hay ejercicios para cargar');
 
-    const keyHist = `athlete:${usuario?.dni}:historial`;
-    const prev = JSON.parse(localStorage.getItem(keyHist) || '[]');
-
     const fechaUi = asigActiva?.entrenamiento?.fechaEntrenamiento || asigActiva?.fecha || new Date().toISOString().slice(0,10);
     const horaUi  = asigActiva?.entrenamiento?.horaEntrenamiento || null;
 
@@ -331,18 +300,27 @@ function Agregar({ onVolver }) {
       horaEntrenamiento: horaUi,
       entrenadorNombre: asigActiva?.entrenador?.nombre || asigActiva?.entrenador?.dni || null,
       ejercicios: ejerciciosAsig.map((e) => ({ ...e })),
+      duracionSegundos: null,
+      estado: 'completado',
       createdAt: new Date().toISOString(),
     };
-    localStorage.setItem(keyHist, JSON.stringify([item, ...prev]));
 
     try {
       const token = localStorage.getItem('token');
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
+      if (asigActiva?.entrenamiento?.id) {
+        await fetch(`${API_URL}/entrenamientos/${asigActiva.entrenamiento.id}`, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({ ejercicios: item.ejercicios, estado: 'completado' }),
+        });
+      }
       await fetch(`${API_URL}/asignaciones-entrenamientos/${asigActiva.id}/estado`, {
         method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers,
         body: JSON.stringify({ estado: 'completado' }),
       }).catch(() => {});
     } catch {}
@@ -667,25 +645,40 @@ function Historial({ onVolver }) {
   const [q, setQ] = useState('');
 
   useEffect(() => {
-    const keyHist = `athlete:${usuario?.dni}:historial`;
-    const local = JSON.parse(localStorage.getItem(keyHist) || '[]');
-
-    const ordenado = [...local].sort(
-      (a, b) =>
-        new Date(`${b.fechaEntrenamiento}T${b.horaEntrenamiento || '00:00'}`) -
-        new Date(`${a.fechaEntrenamiento}T${a.horaEntrenamiento || '00:00'}`)
-    );
-
-    setItems(ordenado);
-    setLoading(false);
+    (async () => {
+      try {
+        const data = await Entrenamientos.listarTodos();
+        const remotos = (data?.data || [])
+          .filter((ent) => String(ent?.deportista?.dni) === String(usuario?.dni))
+          .map((ent) => ({
+            ...ent,
+            idLocal: `backend-${ent.id}`,
+            backendId: ent.id,
+            ejercicios: ent.ejercicios || [],
+          }));
+        const ordenado = remotos.sort((a, b) =>
+          new Date(`${b.fechaEntrenamiento}T${b.horaEntrenamiento || '00:00'}`) -
+          new Date(`${a.fechaEntrenamiento}T${a.horaEntrenamiento || '00:00'}`)
+        );
+        setItems(ordenado);
+      } catch (error) {
+        console.error(error);
+        setItems([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [usuario?.dni]);
 
-  const borrar = (it) => {
+  const borrar = async (it) => {
     if (!window.confirm('¿Eliminar este entrenamiento del historial?')) return;
-    const keyHist = `athlete:${usuario?.dni}:historial`;
-    const rest = items.filter(x => x.idLocal !== it.idLocal);
-    localStorage.setItem(keyHist, JSON.stringify(rest));
-    setItems(rest);
+    try {
+      await Entrenamientos.eliminar(it.backendId || it.id);
+      setItems(items.filter(x => x.idLocal !== it.idLocal));
+    } catch (error) {
+      console.error(error);
+      alert('No se pudo eliminar el entrenamiento');
+    }
   };
 
   const filtrados = items.filter(it =>
@@ -794,19 +787,41 @@ function TuEntrenador({ onVolver }) {
   }, []);
 
   useEffect(() => {
-    if (!coach?.dni || !usuario?.dni) return;
-    try {
-      const arr = FallbackCoach.getLista(coach.dni) || [];
-      const existe = arr.some(d => String(d.dni) === String(usuario.dni));
-      if (!existe) {
-        FallbackCoach.addDeportista(coach.dni, {
-          dni: usuario.dni,
-          username: usuario.usuario || usuario.username || null,
-          nombre: usuario.nombre || null,
+    if (!usuario?.dni) return;
+    (async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/deportistas/${usuario.dni}/entrenador`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
+        if (!res.ok) return;
+        const json = await res.json();
+        const remoto = json?.data || null;
+        setCoach(remoto);
+        setModo(remoto ? 'ver' : 'elegir');
+        if (remoto) localStorage.setItem(KEY_COACH, JSON.stringify(remoto));
+        else localStorage.removeItem(KEY_COACH);
+      } catch (error) {
+        console.error(error);
       }
-      setNotas(FallbackCoach.getNotas(coach.dni, usuario.dni));
-    } catch {}
+    })();
+  }, [KEY_COACH, usuario?.dni]);
+
+  useEffect(() => {
+    if (!coach?.dni || !usuario?.dni) return;
+    (async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/notas/deportistas/${usuario.dni}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json().catch(() => ({}));
+        setNotas(Array.isArray(json?.data) ? json.data : []);
+      } catch (error) {
+        console.error(error);
+        setNotas([]);
+      }
+    })();
   }, [coach?.dni, usuario?.dni, usuario?.nombre, usuario?.username, usuario?.usuario]);
 
   const asignar = async (ent) => {
@@ -836,7 +851,7 @@ function TuEntrenador({ onVolver }) {
     localStorage.setItem(KEY_COACH, JSON.stringify(ent));
     setCoach(ent);
     setModo('ver');
-    setNotas(FallbackCoach.getNotas(ent.dni, usuario.dni));
+    setNotas([]);
     alert('Entrenador asignado');
   };
 
@@ -867,15 +882,25 @@ function TuEntrenador({ onVolver }) {
 
   
 
-  const enviarNota = () => {
+  const enviarNota = async () => {
     const t = nota.trim();
     if (!t) return alert('Escribí una nota');
     if (!coach?.dni || !usuario?.dni) return;
 
     try {
-      FallbackCoach.setNota(coach.dni, usuario.dni, t);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/notas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ entrenadorDni: coach.dni, deportistaDni: usuario.dni, texto: t }),
+      });
+      if (!res.ok) throw new Error('No se pudo guardar la nota');
       setNota('');
-      setNotas(FallbackCoach.getNotas(coach.dni, usuario.dni));
+      const actualizadas = await fetch(`${API_URL}/notas/deportistas/${usuario.dni}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await actualizadas.json().catch(() => ({}));
+      setNotas(Array.isArray(json?.data) ? json.data : []);
       alert('Nota enviada a tu entrenador');
     } catch (e) {
       console.error(e);
@@ -996,14 +1021,17 @@ function Perfil({ onVolver, onLogout }) {
   const [ejercicioSeleccionado, setEjercicioSeleccionado] = useState('');
 
   useEffect(() => {
-    const keyHist = `athlete:${usuario?.dni}:historial`;
-
-    try {
-      const guardados = JSON.parse(localStorage.getItem(keyHist) || '[]');
-      setEntrenamientos(guardados);
-    } catch {
-      setEntrenamientos([]);
-    }
+    (async () => {
+      try {
+        const data = await Entrenamientos.listarTodos();
+        setEntrenamientos((data?.data || [])
+          .filter((ent) => String(ent?.deportista?.dni) === String(usuario?.dni))
+          .map((ent) => ({ ...ent, ejercicios: ent.ejercicios || [] })));
+      } catch (error) {
+        console.error(error);
+        setEntrenamientos([]);
+      }
+    })();
   }, [usuario?.dni]);
 
   const actualizarPeso = async () => {

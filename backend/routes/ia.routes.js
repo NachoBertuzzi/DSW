@@ -13,12 +13,12 @@ function buildPrompt({ mensaje, historial }) {
       .join('\n')
     : '';
 
-  return `Eres un asistente de entrenamiento para una aplicación deportiva. Responde en español con un tono humano, cercano y directo. Sé útil sin extenderte de más.
+  return `Eres un asistente de entrenamiento para una aplicación deportiva. Responde en español con un tono humano, cercano y directo. Cuando el usuario pida una rutina, entrega una propuesta completa y práctica, no un resumen.
 
 El usuario pide: ${mensaje}
 ${contexto ? `Conversación previa:\n${contexto}` : 'No hay conversación previa.'}
 
-Indica una recomendación segura y realista. Responde normalmente en 3 a 6 párrafos breves o una lista corta. No uses emojis, hashtags, títulos con #, separadores, introducciones largas ni frases de relleno. Si pide comida post entrenamiento, ofrece 2 o 3 opciones generales y una explicación breve, sin presentarlas como prescripción médica. Si pide entrenamiento, incluye solo lo necesario: calentamiento, ejercicios principales con series y repeticiones o tiempo, descansos y una vuelta a la calma. Adapta la propuesta al tiempo y objetivo mencionados en la conversación. No diagnostiques lesiones ni reemplaces a un profesional. Si falta información importante, haz una sola pregunta breve, pero ofrece igualmente una propuesta inicial útil. Continúa la conversación teniendo en cuenta lo que ya se habló.`;
+Indica una recomendación segura y realista. No uses emojis, hashtags, títulos con #, separadores, introducciones largas ni frases de relleno. Si pide comida post entrenamiento, ofrece 2 o 3 opciones generales y una explicación breve, sin presentarlas como prescripción médica. Si pide una rutina, incluye: objetivo, duración estimada, calentamiento, ejercicios principales en orden con series, repeticiones o tiempo, descanso entre series, indicaciones técnicas breves, vuelta a la calma y una alternativa si no dispone del equipamiento necesario. Adapta el volumen, la intensidad, el tiempo y el objetivo mencionados en la conversación. No diagnostiques lesiones ni reemplaces a un profesional. Si falta información importante, haz una sola pregunta breve, pero ofrece igualmente una propuesta inicial útil. Continúa la conversación teniendo en cuenta lo que ya se habló.`;
 }
 
 router.post('/chat', verificarToken, requerirRol('deportista', 'entrenador'), async (req, res) => {
@@ -45,7 +45,7 @@ router.post('/chat', verificarToken, requerirRol('deportista', 'entrenador'), as
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: buildPrompt({ mensaje: mensaje.trim(), historial }) }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1200 },
+        generationConfig: { temperature: 0.7, maxOutputTokens: 2400 },
       }),
     });
     const data = await response.json();

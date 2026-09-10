@@ -46,9 +46,9 @@ const RegistroPage = ({ onVolver }) => {
       return;
     }
 
-    const urlBase =
-  process.env.REACT_APP_API_URL ||
-  'http://localhost:3000/api';
+    const urlBase = process.env.NODE_ENV === 'production'
+      ? 'https://dsw-4ub5.onrender.com/api'
+      : (process.env.REACT_APP_API_URL || 'http://localhost:3000/api');
     const urlRegistro =
       regTipo === 'deportista'
         ? `${urlBase}/deportistas`

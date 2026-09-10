@@ -10,7 +10,7 @@ const dbHost = process.env.DB_HOST || '127.0.0.1';
 const dbPort = process.env.DB_PORT || '3306';
 const dbName = process.env.DB_NAME || 'entrenamiento_db';
 const dbUser = process.env.DB_USER || 'dsw';
-const dbPassword = process.env.DB_PASSWORD || 'dsw123';
+const dbPassword = process.env.DB_PASSWORD;
 const driverOptions = process.env.DB_SSL_MODE === 'REQUIRED'
   ? { connection: { ssl: { rejectUnauthorized: false } } }
   : undefined;

@@ -8,6 +8,8 @@ export default function EntrenamientoNuevo({ onVolver }) {
   const [ejercicios, setEjercicios] = useState([]);
   const [nombre, setNombre] = useState('');
   const [grupo, setGrupo] = useState('');
+  const [guardando, setGuardando] = useState(false);
+  const [mensaje, setMensaje] = useState('');
 
   const agregar = () => {
     if (!nombre.trim()) return;
@@ -17,6 +19,7 @@ export default function EntrenamientoNuevo({ onVolver }) {
   const eliminar = (id) => setEjercicios((p) => p.filter((e) => e.id !== id));
 
   const terminar = async () => {
+    if (guardando) return;
     if (!fecha || !hora) return alert('Completá fecha y hora');
     if (ejercicios.length === 0) return alert('Agregá al menos un ejercicio');
 
@@ -28,13 +31,17 @@ export default function EntrenamientoNuevo({ onVolver }) {
       
     };
 
+    setMensaje('');
+    setGuardando(true);
     try {
       await Entrenamientos.crear(payload);
-      alert('Entrenamiento guardado');
+      setMensaje('Entrenamiento guardado correctamente.');
       onVolver();
     } catch (e) {
       console.error(e);
-      alert('No se pudo guardar en el backend');
+      setMensaje('No se pudo guardar el entrenamiento.');
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -64,9 +71,12 @@ export default function EntrenamientoNuevo({ onVolver }) {
       </ul>
 
       <div style={{ display:'flex', gap:8 }}>
-        <button onClick={terminar}>Terminar</button>
-        <button onClick={onVolver}>Cancelar</button>
+        <button onClick={terminar} disabled={guardando}>
+          {guardando ? 'Guardando...' : 'Terminar'}
+        </button>
+        <button onClick={onVolver} disabled={guardando}>Cancelar</button>
       </div>
+      {mensaje && <p role="status">{mensaje}</p>}
     </section>
   );
 }

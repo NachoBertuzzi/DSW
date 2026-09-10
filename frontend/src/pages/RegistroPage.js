@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './styles/RegistroPage.css';
 import logo from '../assets/logo.png';
+import { API_URL } from '../services/api';
 
 const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -27,6 +28,7 @@ const RegistroPage = ({ onVolver }) => {
   const [regEspecialidad, setRegEspecialidad] = useState('');
 
   const [mensajeRegistro, setMensajeRegistro] = useState('');
+  const [registrando, setRegistrando] = useState(false);
 
   const [successInfo, setSuccessInfo] = useState(null); 
 
@@ -46,13 +48,10 @@ const RegistroPage = ({ onVolver }) => {
       return;
     }
 
-    const urlBase = process.env.NODE_ENV === 'production'
-      ? 'https://dsw-4ub5.onrender.com/api'
-      : (process.env.REACT_APP_API_URL || 'http://localhost:3000/api');
     const urlRegistro =
       regTipo === 'deportista'
-        ? `${urlBase}/deportistas`
-        : `${urlBase}/entrenadores`;
+        ? `${API_URL}/deportistas`
+        : `${API_URL}/entrenadores`;
 
     let payload = {
       usuario: regUsuario,
@@ -76,6 +75,8 @@ const RegistroPage = ({ onVolver }) => {
     } else {
       payload = { ...payload, especialidad: regEspecialidad };
     }
+
+    setRegistrando(true);
 
     try {
       const res = await fetch(urlRegistro, {
@@ -103,6 +104,8 @@ const RegistroPage = ({ onVolver }) => {
     } catch (error) {
       setMensajeRegistro('Error de conexión con el servidor');
       console.error(error);
+    } finally {
+      setRegistrando(false);
     }
   };
 
@@ -332,8 +335,8 @@ const RegistroPage = ({ onVolver }) => {
                   Volver
                 </button>
               )}
-              <button type="submit">
-                {step === 3 ? 'Registrarse' : 'Siguiente'}
+              <button type="submit" disabled={step === 3 && registrando}>
+                {step === 3 && registrando ? 'Registrando...' : step === 3 ? 'Registrarse' : 'Siguiente'}
               </button>
             </div>
           </form>

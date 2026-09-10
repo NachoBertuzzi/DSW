@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import SuccessCreated from './SuccessCreated';
 import CoachChat from '../components/CoachChat';
+import { Back, Card } from '../components/MenuComponents';
 import { Entrenamientos, FallbackCoach, API_URL } from '../services/api';
 import './styles/MenuDeportista.css';
 import {
@@ -94,6 +95,8 @@ function Agregar({ onVolver }) {
   const [enCursoAsig, setEnCursoAsig] = useState(false);
   const [asigActiva, setAsigActiva] = useState(null);        
   const [ejerciciosAsig, setEjerciciosAsig] = useState([]);  
+  const [guardandoEntrenamiento, setGuardandoEntrenamiento] = useState(false);
+  const [mensajeEntrenamiento, setMensajeEntrenamiento] = useState('');
 
   const clampNonNeg = (val) => {
     const n = Number(val);
@@ -198,6 +201,7 @@ function Agregar({ onVolver }) {
   };
 
   const terminarPropio = async () => {
+    if (guardandoEntrenamiento) return;
     if (!enCursoPropio) return;
     if (!fecha) return alert('Completá la fecha');
     if (!usuario?.dni) return alert('No se encontró tu DNI');
@@ -212,14 +216,19 @@ function Agregar({ onVolver }) {
       deportista: { dni: String(usuario.dni) },
     };
 
+    setMensajeEntrenamiento('');
+    setGuardandoEntrenamiento(true);
     try {
       await Entrenamientos.crear(payload);
     } catch (e) {
       console.error(e);
-      alert('No se pudo guardar en el backend');
+      setMensajeEntrenamiento('No se pudo guardar el entrenamiento.');
+      setGuardandoEntrenamiento(false);
       return;
     }
 
+    setGuardandoEntrenamiento(false);
+    setMensajeEntrenamiento('Entrenamiento guardado correctamente.');
     setOkModal(true);
   };
 
@@ -286,6 +295,7 @@ function Agregar({ onVolver }) {
   };
 
   const terminarAsignado = async () => {
+    if (guardandoEntrenamiento) return;
     if (!enCursoAsig || !asigActiva) return;
     if (ejerciciosAsig.length === 0) return alert('No hay ejercicios para cargar');
 
@@ -305,6 +315,8 @@ function Agregar({ onVolver }) {
       createdAt: new Date().toISOString(),
     };
 
+    setMensajeEntrenamiento('');
+    setGuardandoEntrenamiento(true);
     try {
       const token = localStorage.getItem('token');
       const headers = {
@@ -312,20 +324,27 @@ function Agregar({ onVolver }) {
         'Authorization': `Bearer ${token}`
       };
       if (asigActiva?.entrenamiento?.id) {
-        await fetch(`${API_URL}/entrenamientos/${asigActiva.entrenamiento.id}`, {
+        const response = await fetch(`${API_URL}/entrenamientos/${asigActiva.entrenamiento.id}`, {
           method: 'PATCH',
           headers,
           body: JSON.stringify({ ejercicios: item.ejercicios, estado: 'completado' }),
         });
+        if (!response.ok) throw new Error('No se pudo actualizar el entrenamiento.');
       }
-      await fetch(`${API_URL}/asignaciones-entrenamientos/${asigActiva.id}/estado`, {
+      const response = await fetch(`${API_URL}/asignaciones-entrenamientos/${asigActiva.id}/estado`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify({ estado: 'completado' }),
-      }).catch(() => {});
-    } catch {}
+      });
+      if (!response.ok) throw new Error('No se pudo actualizar la asignación.');
+    } catch (error) {
+      setGuardandoEntrenamiento(false);
+      setMensajeEntrenamiento(error.message || 'No se pudo guardar el entrenamiento.');
+      return;
+    }
 
-    alert('¡Entrenamiento asignado registrado!');
+    setGuardandoEntrenamiento(false);
+    setMensajeEntrenamiento('Entrenamiento asignado registrado correctamente.');
     setEnCursoAsig(false);
     setAsigActiva(null);
     setEjerciciosAsig([]);
@@ -493,11 +512,12 @@ function Agregar({ onVolver }) {
               </div>
 
               <div className="row gap" style={{ marginTop: 12 }}>
-                <button className="btn btn-primary" disabled={ejercicios.length === 0} onClick={terminarPropio}>
-                  Terminar entrenamiento
+                <button className="btn btn-primary" disabled={ejercicios.length === 0 || guardandoEntrenamiento} onClick={terminarPropio}>
+                  {guardandoEntrenamiento ? 'Guardando...' : 'Terminar entrenamiento'}
                 </button>
                 <button className="btn btn-outline" onClick={() => setEnCursoPropio(false)}>Cancelar</button>
               </div>
+              {mensajeEntrenamiento && <p className="muted" role="status">{mensajeEntrenamiento}</p>}
             </>
           )}
         </>
@@ -605,9 +625,10 @@ function Agregar({ onVolver }) {
               )}
 
               <div className="row gap" style={{ marginTop: 12 }}>
-                <button className="btn btn-primary" onClick={terminarAsignado}>
-                  Terminar entrenamiento
+                <button className="btn btn-primary" disabled={guardandoEntrenamiento} onClick={terminarAsignado}>
+                  {guardandoEntrenamiento ? 'Guardando...' : 'Terminar entrenamiento'}
                 </button>
+                {mensajeEntrenamiento && <p className="muted" role="status">{mensajeEntrenamiento}</p>}
                 <button className="btn btn-outline" onClick={() => { setEnCursoAsig(false); setAsigActiva(null); setEjerciciosAsig([]); }}>
                   Volver
                 </button>
@@ -643,6 +664,8 @@ function Historial({ onVolver }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
+  const [borrandoId, setBorrandoId] = useState(null);
+  const [mensaje, setMensaje] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -672,12 +695,18 @@ function Historial({ onVolver }) {
 
   const borrar = async (it) => {
     if (!window.confirm('¿Eliminar este entrenamiento del historial?')) return;
+    if (borrandoId) return;
+    setMensaje('');
+    setBorrandoId(it.idLocal);
     try {
       await Entrenamientos.eliminar(it.backendId || it.id);
-      setItems(items.filter(x => x.idLocal !== it.idLocal));
+      setItems(actuales => actuales.filter(x => x.idLocal !== it.idLocal));
+      setMensaje('Entrenamiento eliminado correctamente.');
     } catch (error) {
       console.error(error);
-      alert('No se pudo eliminar el entrenamiento');
+      setMensaje('No se pudo eliminar el entrenamiento.');
+    } finally {
+      setBorrandoId(null);
     }
   };
 
@@ -703,7 +732,9 @@ function Historial({ onVolver }) {
                     {it.entrenadorNombre && <small className="muted">Entrenador: {it.entrenadorNombre}</small>}
                   </div>
                   <div className="row" style={{ gap: 8 }}>
-                    <button className="btn btn-outline" onClick={() => borrar(it)}>Borrar</button>
+                    <button className="btn btn-outline" disabled={borrandoId === it.idLocal} onClick={() => borrar(it)}>
+                      {borrandoId === it.idLocal ? 'Borrando...' : 'Borrar'}
+                    </button>
                   </div>
                 </div>
 
@@ -741,6 +772,7 @@ function Historial({ onVolver }) {
             ))}
           </ul>
       }
+          {mensaje && <p className="muted" role="status">{mensaje}</p>}
     </section>
   );
 }
@@ -763,6 +795,8 @@ function TuEntrenador({ onVolver }) {
 
   const [nota, setNota] = useState('');
   const [notas, setNotas] = useState([]);
+  const [accion, setAccion] = useState('');
+  const [mensajeAccion, setMensajeAccion] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -825,17 +859,25 @@ function TuEntrenador({ onVolver }) {
   }, [coach?.dni, usuario?.dni, usuario?.nombre, usuario?.username, usuario?.usuario]);
 
   const asignar = async (ent) => {
+    if (accion) return;
+    setAccion('asignar');
+    setMensajeAccion('');
     try {
       const token = localStorage.getItem('token');
-      await fetch(`${API_URL}/deportistas/${usuario?.dni}/entrenador`, {
+      const res = await fetch(`${API_URL}/deportistas/${usuario?.dni}/entrenador`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ entrenadorDni: ent.dni })
-      }).catch(() => {});
-    } catch {}
+      });
+      if (!res.ok) throw new Error('No se pudo asignar el entrenador.');
+    } catch (error) {
+      setMensajeAccion(error.message || 'No se pudo asignar el entrenador.');
+      setAccion('');
+      return;
+    }
 
     if (coach?.dni) {
       try { FallbackCoach.quitarPorDni(coach.dni, usuario?.dni); } catch {}
@@ -852,23 +894,32 @@ function TuEntrenador({ onVolver }) {
     setCoach(ent);
     setModo('ver');
     setNotas([]);
-    alert('Entrenador asignado');
+    setAccion('');
+    setMensajeAccion('Entrenador asignado correctamente.');
   };
 
   const baja = async () => {
     if (!window.confirm('¿Seguro que querés dar de baja a tu entrenador?')) return;
+    if (accion) return;
+    setAccion('baja');
+    setMensajeAccion('');
 
     try {
       const token = localStorage.getItem('token');
-      await fetch(`${API_URL}/deportistas/${usuario?.dni}/entrenador`, {
+      const res = await fetch(`${API_URL}/deportistas/${usuario?.dni}/entrenador`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ entrenadorDni: null })
-      }).catch(() => {});
-    } catch {}
+      });
+      if (!res.ok) throw new Error('No se pudo desvincular el entrenador.');
+    } catch (error) {
+      setMensajeAccion(error.message || 'No se pudo desvincular el entrenador.');
+      setAccion('');
+      return;
+    }
 
     if (coach?.dni) {
       try { FallbackCoach.quitarPorDni(coach.dni, usuario?.dni); } catch {}
@@ -878,6 +929,8 @@ function TuEntrenador({ onVolver }) {
     setCoach(null);
     setNotas([]);
     setModo('elegir');
+    setAccion('');
+    setMensajeAccion('Entrenador desvinculado correctamente.');
   };
 
   
@@ -886,7 +939,10 @@ function TuEntrenador({ onVolver }) {
     const t = nota.trim();
     if (!t) return alert('Escribí una nota');
     if (!coach?.dni || !usuario?.dni) return;
+    if (accion) return;
 
+    setAccion('nota');
+    setMensajeAccion('');
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/notas`, {
@@ -899,12 +955,15 @@ function TuEntrenador({ onVolver }) {
       const actualizadas = await fetch(`${API_URL}/notas/deportistas/${usuario.dni}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!actualizadas.ok) throw new Error('La nota se guardó, pero no se pudo actualizar la lista.');
       const json = await actualizadas.json().catch(() => ({}));
       setNotas(Array.isArray(json?.data) ? json.data : []);
-      alert('Nota enviada a tu entrenador');
+      setMensajeAccion('Nota enviada correctamente a tu entrenador.');
     } catch (e) {
       console.error(e);
-      alert('No se pudo guardar la nota');
+      setMensajeAccion(e.message || 'No se pudo guardar la nota.');
+    } finally {
+      setAccion('');
     }
   };
 
@@ -916,6 +975,7 @@ function TuEntrenador({ onVolver }) {
     <section className="panel">
       <Back onClick={onVolver} />
       <h3>Tu entrenador</h3>
+      {mensajeAccion && <p className="muted" role="status">{mensajeAccion}</p>}
 
       {coach && modo === 'ver' ? (
         <>
@@ -935,7 +995,9 @@ function TuEntrenador({ onVolver }) {
               onChange={(e)=>setNota(e.target.value)}
             />
             <div className="row gap" style={{ marginTop: 8 }}>
-              <button type="button" className="btn btn-primary" onClick={enviarNota}>Enviar nota</button>
+              <button type="button" className="btn btn-primary" disabled={accion === 'nota'} onClick={enviarNota}>
+                {accion === 'nota' ? 'Enviando...' : 'Enviar nota'}
+              </button>
             </div>
             {notas?.length > 0 && (
               <>
@@ -953,7 +1015,9 @@ function TuEntrenador({ onVolver }) {
           </div>
 
           <div className="row gap">
-            <button type="button" className="btn btn-outline" onClick={baja}>Dar de baja entrenador</button>
+            <button type="button" className="btn btn-outline" disabled={accion === 'baja'} onClick={baja}>
+              {accion === 'baja' ? 'Desvinculando...' : 'Dar de baja entrenador'}
+            </button>
           </div>
 
           <div className="row" style={{ marginTop: 12 }}>
@@ -987,7 +1051,9 @@ function TuEntrenador({ onVolver }) {
                       <strong>{e.nombre || '-'} {e.apellido || ''}</strong>
                       <div><small className="muted">DNI/ID: {e.dni || e.id || '—'}</small></div>
                     </div>
-                    <button className="btn btn-primary" onClick={() => asignar(e)}>Elegir</button>
+                    <button className="btn btn-primary" disabled={accion === 'asignar'} onClick={() => asignar(e)}>
+                      {accion === 'asignar' ? 'Asignando...' : 'Elegir'}
+                    </button>
                   </div>
                   <div>
                     <small className="muted">
@@ -1019,6 +1085,8 @@ function Perfil({ onVolver, onLogout }) {
 
   const [entrenamientos, setEntrenamientos] = useState([]);
   const [ejercicioSeleccionado, setEjercicioSeleccionado] = useState('');
+  const [accion, setAccion] = useState('');
+  const [mensaje, setMensaje] = useState('');
   const usuarioDni = usuario?.dni;
 
   useEffect(() => {
@@ -1060,6 +1128,7 @@ function Perfil({ onVolver, onLogout }) {
   }, [usuario?.dni]);
 
   const actualizarPeso = async () => {
+    if (accion) return;
     let inputPeso = prompt("Ingresa tu nuevo peso (kg). Puedes usar decimales:", usuario?.peso ?? "");
     if (!inputPeso) return;
 
@@ -1070,6 +1139,8 @@ function Perfil({ onVolver, onLogout }) {
       return;
     }
 
+    setAccion('peso');
+    setMensaje('');
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/deportistas/${usuario.dni}`, {
@@ -1084,17 +1155,18 @@ function Perfil({ onVolver, onLogout }) {
       const data = await res.json();
 
       if (res.ok) {
-        alert("Peso actualizado correctamente");
-
         const actualizado = { ...usuario, peso: parseFloat(nuevoPeso) };
         localStorage.setItem("usuario", JSON.stringify(actualizado));
         setUsuario(actualizado);
+        setMensaje("Peso actualizado correctamente.");
       } else {
-        alert(data.mensaje || "Error al actualizar el peso");
+        setMensaje(data.mensaje || "Error al actualizar el peso.");
       }
     } catch (err) {
       console.error(err);
-      alert("Error al conectar con el servidor");
+      setMensaje("Error al conectar con el servidor.");
+    } finally {
+      setAccion('');
     }
   };
 
@@ -1133,6 +1205,7 @@ function Perfil({ onVolver, onLogout }) {
     .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
   const darBajaCuenta = async () => {
+    if (accion) return;
     if (!usuario?.dni) {
       alert("No se encontró información del usuario");
       return;
@@ -1141,6 +1214,8 @@ function Perfil({ onVolver, onLogout }) {
     const contrasena = prompt("Ingresa tu contraseña para confirmar la baja de tu cuenta:");
     if (!contrasena) return;
 
+    setAccion('baja');
+    setMensaje('');
     try {
       const token = localStorage.getItem('token');
       const deleteRes = await fetch(`${API_URL}/deportistas/eliminar`, {
@@ -1153,17 +1228,18 @@ function Perfil({ onVolver, onLogout }) {
       });
 
       if (deleteRes.ok) {
-        alert("Cuenta eliminada correctamente");
         localStorage.removeItem("usuario");
         localStorage.removeItem("historialPesos");
         onLogout();
       } else {
         const err = await deleteRes.json();
-        alert(err.mensaje || "Error eliminando la cuenta");
+        setMensaje(err.mensaje || "Error eliminando la cuenta.");
       }
     } catch (e) {
       console.error(e);
-      alert("Error de conexión con el servidor");
+      setMensaje("Error de conexión con el servidor.");
+    } finally {
+      setAccion('');
     }
   };
 
@@ -1178,8 +1254,8 @@ function Perfil({ onVolver, onLogout }) {
 
         <div className="perfil-peso">
           <p><strong>Peso actual:</strong> {usuario?.peso ?? "-"}</p>
-          <button type="button" className="btn btn-sm btn-primary" onClick={actualizarPeso}>
-            Actualizar
+          <button type="button" className="btn btn-sm btn-primary" disabled={accion === 'peso'} onClick={actualizarPeso}>
+            {accion === 'peso' ? 'Actualizando...' : 'Actualizar'}
           </button>
         </div>
       </div>
@@ -1243,28 +1319,12 @@ function Perfil({ onVolver, onLogout }) {
         )}
       </div>
 
-      <button type="button" className="btn btn-outline" onClick={darBajaCuenta}>
-        Dar de baja la cuenta
+      <button type="button" className="btn btn-outline" disabled={accion === 'baja'} onClick={darBajaCuenta}>
+        {accion === 'baja' ? 'Eliminando...' : 'Dar de baja la cuenta'}
       </button>
+      {mensaje && <p className="muted" role="status">{mensaje}</p>}
     </section>
   );
-}
-
-function Card({ title, desc, onClick }) {
-  return (
-    <button
-      type="button"
-      className="menu-card"
-      onClick={(e) => { e.stopPropagation(); onClick && onClick(); }}
-    >
-      <div className="card-title">{title}</div>
-      <div className="card-desc">{desc}</div>
-    </button>
-  );
-}
-
-function Back({ onClick }) {
-  return <button className="btn link" onClick={onClick}>← Volver</button>;
 }
 
 export default MenuDeportista;

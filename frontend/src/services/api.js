@@ -1,8 +1,4 @@
-const API_URL = process.env.NODE_ENV === 'production'
-  ? 'https://dsw-4ub5.onrender.com/api'
-  : (process.env.REACT_APP_API_URL ||
-    process.env.REACT_APP_API_BASE ||
-    'http://localhost:3000/api');
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
 
 async function api(path, { method = 'GET', body } = {}) {
   const token = localStorage.getItem('token');

@@ -1,62 +1,40 @@
 import React, { useState } from 'react';
 import './styles/login.css';
 import logo from '../assets/logo.png';
+import { API_URL } from '../services/api';
 
-const API_BASE = process.env.NODE_ENV === 'production'
-  ? 'https://dsw-4ub5.onrender.com/api'
-  : (process.env.REACT_APP_API_BASE ||
-    process.env.REACT_APP_API_URL ||
-    'http://localhost:3000/api');
+function decodeToken(token) {
+  const payload = token.split('.')[1];
+  const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+  const json = decodeURIComponent(
+    atob(base64)
+      .split('')
+      .map((char) => `%${`00${char.charCodeAt(0).toString(16)}`.slice(-2)}`)
+      .join(''),
+  );
+  return JSON.parse(json);
+}
 
 async function tryLogin(url, email, pass) {
-  const variantes = [
-    { usuario: email, contrasena: pass },
-    { email, password: pass },
-    { username: email, password: pass },
-    { usuario: email, contraseña: pass },
-    { mail: email, contrasena: pass },
-  ];
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ usuario: email, contrasena: pass }),
+  });
 
-  let ultima401 = null;
-  let ultima400Faltan = null;
+  const data = await res.json().catch(() => ({}));
 
-  for (const body of variantes) {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-
-    if (res.status === 401) { ultima401 = res; continue; }
-
-    if (res.status === 400) {
-      const err = await res.json().catch(() => ({}));
-      const msg = (err?.mensaje || '').toLowerCase();
-      if (msg.includes('faltan credenciales')) { ultima400Faltan = err; continue; }
-      throw new Error(err?.mensaje || 'Solicitud inválida');
-    }
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err?.mensaje || 'Error del servidor');
-    }
-
-    const data = await res.json().catch(() => {
-      throw new Error('Respuesta inválida del servidor');
-    });
-    return data;
+  if (res.status === 401) {
+    const error = new Error(data?.mensaje || 'Credenciales no válidas');
+    error.kind = 'bad-credentials';
+    throw error;
   }
 
-  if (ultima401) {
-    const err = await ultima401.json().catch(() => ({}));
-    const e = new Error(err?.mensaje || 'Credenciales no válidas');
-    e.kind = 'bad-credentials';
-    throw e;
+  if (!res.ok) {
+    throw new Error(data?.mensaje || 'Error del servidor');
   }
-  if (ultima400Faltan) {
-    throw new Error(ultima400Faltan?.mensaje || 'Faltan credenciales');
-  }
-  throw new Error('No se pudo iniciar sesión');
+
+  return data;
 }
 
 const LoginPage = ({ onLoginSuccess, onIrRegistro }) => {
@@ -75,15 +53,14 @@ const LoginPage = ({ onLoginSuccess, onIrRegistro }) => {
       let data;
 
       try {
-        data = await tryLogin(`${API_BASE}/deportistas/login`, loginEmail, loginPassword);
-      } catch (_e1) {
+        data = await tryLogin(`${API_URL}/deportistas/login`, loginEmail, loginPassword);
+      } catch (errorDeportista) {
+        if (errorDeportista.kind !== 'bad-credentials') throw errorDeportista;
         tipo = 'entrenador';
-        data = await tryLogin(`${API_BASE}/entrenadores/login`, loginEmail, loginPassword);
+        data = await tryLogin(`${API_URL}/entrenadores/login`, loginEmail, loginPassword);
       }
 
-      const bruto =
-        data?.deportista || data?.entrenador || data?.user || data?.usuario || data || {};
-      const usuario = (bruto && typeof bruto === 'object') ? { ...bruto } : {};
+      const usuario = decodeToken(data.token);
 
       if (!usuario.email && typeof loginEmail === 'string') {
         usuario.email = loginEmail;
@@ -92,9 +69,7 @@ const LoginPage = ({ onLoginSuccess, onIrRegistro }) => {
       localStorage.setItem('tipo', tipo);
       localStorage.setItem('usuario', JSON.stringify(usuario));
       
-      if (data?.token) {
-        localStorage.setItem('token', data.token); 
-      }
+      localStorage.setItem('token', data.token);
 
       onLoginSuccess?.({ tipo, usuario });
     } catch (err) {

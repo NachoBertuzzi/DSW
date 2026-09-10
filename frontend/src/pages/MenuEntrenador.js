@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Entrenamientos, FallbackCoach, API_URL } from '../services/api';
 import SuccessCreated from './SuccessCreated';
+import { Back, Card } from '../components/MenuComponents';
 import './styles/MenuEntrenador.css';
 
 function MenuEntrenador({ onLogout }) {
@@ -62,6 +63,7 @@ export function AsignarEntrenamiento({ onVolver }) {
   const [grupo, setGrupo] = useState('');
   const [nombre, setNombre] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [cargandoLista, setCargandoLista] = useState(true);
 
   const GRUPOS_EJERCICIOS = {
     Pecho: ["Press de banca","Press inclinado","Aperturas con mancuernas","Fondos","Pullover","Pec deck","Press declinado","Flexiones","Press máquina","Cruce de cables"],
@@ -74,6 +76,7 @@ export function AsignarEntrenamiento({ onVolver }) {
   };
 
   const cargar = useCallback(async () => {
+    setCargandoLista(true);
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/entrenadores/${coach.dni}/deportistas`, {
@@ -84,6 +87,8 @@ export function AsignarEntrenamiento({ onVolver }) {
     } catch (error) {
       console.error(error);
       setLista([]);
+    } finally {
+      setCargandoLista(false);
     }
   }, [coach.dni]);
   useEffect(() => { cargar(); }, [cargar]);
@@ -121,13 +126,12 @@ export function AsignarEntrenamiento({ onVolver }) {
 
     if (!deportistaDni) return alert('No encuentro el DNI/ID del deportista seleccionado.');
 
-    const base = API_URL || 'http://localhost:3000/api';
     const token = localStorage.getItem('token');
 
     try {
       setEnviando(true);
 
-      const r1 = await fetch(`${base}/entrenamientos`, {
+      const r1 = await fetch(`${API_URL}/entrenamientos`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -149,7 +153,7 @@ export function AsignarEntrenamiento({ onVolver }) {
         throw new Error('El backend no devolvió id del entrenamiento.');
       }
 
-      const r2 = await fetch(`${base}/asignaciones-entrenamientos`, {
+      const r2 = await fetch(`${API_URL}/asignaciones-entrenamientos`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -192,11 +196,13 @@ export function AsignarEntrenamiento({ onVolver }) {
           onChange={e => setQ(e.target.value)}
           style={{ minWidth: 240 }}
         />
-        <button className="btn btn-outline" onClick={refrescarLista}>Actualizar lista</button>
+        <button className="btn btn-outline" disabled={cargandoLista} onClick={refrescarLista}>
+          {cargandoLista ? 'Cargando...' : 'Actualizar lista'}
+        </button>
       </div>
 
       <div className="row gap wrap">
-        <select className="input" value={selId} onChange={e => setSelId(e.target.value)}>
+        <select className="input" value={selId} onChange={e => setSelId(e.target.value)} disabled={cargandoLista}>
           <option value="">— Elegí un deportista —</option>
           {visibles.map(d => (
             <option key={d.dni || d.id} value={d.dni || d.id}>
@@ -448,8 +454,12 @@ function TusDeportistas({ onVolver }) {
   const [lista, setLista] = useState([]);
   const [q, setQ] = useState('');
   const [notasPorDni, setNotasPorDni] = useState({});
+  const [cargando, setCargando] = useState(true);
+  const [bajandoId, setBajandoId] = useState(null);
+  const [mensaje, setMensaje] = useState('');
 
   const cargar = useCallback(async () => {
+    setCargando(true);
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/entrenadores/${coach.dni}/deportistas`, {
@@ -460,6 +470,8 @@ function TusDeportistas({ onVolver }) {
     } catch (error) {
       console.error(error);
       setLista([]);
+    } finally {
+      setCargando(false);
     }
   }, [coach.dni]);
   useEffect(() => { cargar(); }, [cargar]);
@@ -491,19 +503,26 @@ function TusDeportistas({ onVolver }) {
 
   const baja = async (id) => {
     if (!window.confirm('¿Dar de baja a este deportista?')) return;
+    if (bajandoId) return;
 
     const dep = (lista || []).find(d => String(d.id) === String(id) || String(d.dni) === String(id));
+    setBajandoId(id);
+    setMensaje('');
     try {
       const token = localStorage.getItem('token');
-      await fetch(`${API_URL}/deportistas/${dep?.dni || id}/entrenador`, {
+      const res = await fetch(`${API_URL}/deportistas/${dep?.dni || id}/entrenador`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ entrenadorDni: null }),
       });
+      if (!res.ok) throw new Error('No se pudo desvincular al deportista.');
+      setMensaje('Deportista desvinculado correctamente.');
     } catch (error) {
       console.error(error);
-      alert('No se pudo desvincular al deportista');
+      setMensaje(error.message || 'No se pudo desvincular al deportista.');
       return;
+    } finally {
+      setBajandoId(null);
     }
     cargar();
   };
@@ -533,7 +552,9 @@ function TusDeportistas({ onVolver }) {
         />
       </div>
 
-      {visibles.length === 0 ? (
+      {cargando ? (
+        <p className="muted">Cargando deportistas...</p>
+      ) : visibles.length === 0 ? (
         <p className="muted">No hay deportistas para mostrar.</p>
       ) : (
         <ul className="list">
@@ -551,12 +572,15 @@ function TusDeportistas({ onVolver }) {
                     </div>
                   )}
                 </div>
-                <button className="btn btn-outline" onClick={() => baja(d.dni || d.id)}>Dar de baja</button>
+                <button className="btn btn-outline" disabled={bajandoId === (d.dni || d.id)} onClick={() => baja(d.dni || d.id)}>
+                  {bajandoId === (d.dni || d.id) ? 'Desvinculando...' : 'Dar de baja'}
+                </button>
               </li>
             );
           })}
         </ul>
       )}
+      {mensaje && <p className="muted" role="status">{mensaje}</p>}
     </section>
   );
 }
@@ -569,14 +593,19 @@ function Perfil({ onVolver, onLogout }) {
       return {};
     }
   }, []);
+  const [eliminando, setEliminando] = useState(false);
+  const [mensaje, setMensaje] = useState('');
 
   const eliminarCuenta = async () => {
+    if (eliminando) return;
     const confirmacion = window.confirm("¿Seguro que querés eliminar tu cuenta? Esta acción no se puede deshacer.");
     if (!confirmacion) return;
 
     const contrasena = prompt("Por seguridad, ingresá tu contraseña:");
     if (!contrasena) return;
 
+    setEliminando(true);
+    setMensaje('');
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/entrenadores/${usuario.dni}`, {
@@ -589,8 +618,6 @@ function Perfil({ onVolver, onLogout }) {
       });
       const data = await res.json().catch(()=>({}));
       if (res.ok) {
-        alert("Cuenta eliminada correctamente.");
-
         try {
           const coachDni = usuario?.dni;
           if (coachDni) {
@@ -614,11 +641,13 @@ function Perfil({ onVolver, onLogout }) {
         localStorage.removeItem("token");
         window.location.reload();
       } else {
-        alert(data.mensaje || "Error al eliminar la cuenta");
+        setMensaje(data.mensaje || "Error al eliminar la cuenta.");
       }
     } catch (err) {
       console.error(err);
-      alert("Error de conexión con el servidor");
+      setMensaje("Error de conexión con el servidor.");
+    } finally {
+      setEliminando(false);
     }
   };
 
@@ -632,19 +661,12 @@ function Perfil({ onVolver, onLogout }) {
         <p><strong>Email:</strong> {usuario?.email || "-"}</p>
       </div>
 
-      <button className="btn btn-outline" onClick={eliminarCuenta}>Dar de baja cuenta</button>
+      <button className="btn btn-outline" disabled={eliminando} onClick={eliminarCuenta}>
+        {eliminando ? 'Eliminando...' : 'Dar de baja cuenta'}
+      </button>
+      {mensaje && <p className="muted" role="status">{mensaje}</p>}
     </section>
   );
 }
-
-function Card({ title, desc, onClick }) {
-  return (
-    <button className="menu-card" onClick={onClick}>
-      <div className="card-title">{title}</div>
-      <div className="card-desc">{desc}</div>
-    </button>
-  );
-}
-function Back({ onClick }) { return <button className="btn link" onClick={onClick}>← Volver</button>; }
 
 export default MenuEntrenador;

@@ -105,12 +105,12 @@ async function login(req, res) {
     }
 
     const token = jwt.sign(
-      { dni: entrenador.dni, rol: 'entrenador' }, 
+      { ...entrenador, rol: 'entrenador' },
       process.env.JWT_SECRET || 'secreto_super_seguro',
       { expiresIn: '2h' }
     );
 
-    return res.json({ entrenador, token });
+    return res.json({ token });
   } catch (e) {
     console.error('Login entrenador:', e);
     return res.status(500).json({ mensaje: 'Error del servidor' });

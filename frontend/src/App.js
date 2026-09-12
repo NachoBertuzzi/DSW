@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import LoginPage from './pages/Login';
 import RegistroPage from './pages/RegistroPage';
 import MenuDeportista from './pages/MenuDeportista';
@@ -6,48 +7,70 @@ import MenuEntrenador from './pages/MenuEntrenador';
 import './App.css';
 import './pages/styles/inicio.css';
 
-function App() {
-  const [pantalla, setPantalla] = useState('login'); 
+function RutaProtegida({ tipo, children }) {
+  return localStorage.getItem('tipo') === tipo
+    ? children
+    : <Navigate to="/login" replace />;
+}
 
-  useEffect(() => {
-    const tipo = localStorage.getItem('tipo');
-    if (tipo === 'deportista') setPantalla('menu-deportista');
-    if (tipo === 'entrenador') setPantalla('menu-entrenador');
-  }, []);
+function RutasDeLaApp() {
+  const navigate = useNavigate();
 
   const handleLoginSuccess = ({ tipo }) => {
-    if (tipo === 'deportista') setPantalla('menu-deportista');
-    if (tipo === 'entrenador') setPantalla('menu-entrenador');
+    navigate(tipo === 'deportista' ? '/deportista' : '/entrenador');
   };
 
   const handleLogout = () => {
-  localStorage.removeItem('usuario');
-  localStorage.removeItem('tipo');
-  localStorage.removeItem('token');
-  setPantalla('login');
-};
+    localStorage.removeItem('usuario');
+    localStorage.removeItem('tipo');
+    localStorage.removeItem('token');
+    navigate('/login', { replace: true });
+  };
 
   return (
     <div className="App" style={{ padding: 20 }}>
-      {pantalla === 'login' && (
-        <LoginPage
-          onIrRegistro={() => setPantalla('registro')} 
-          onLoginSuccess={handleLoginSuccess}
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route
+          path="/login"
+          element={
+            <LoginPage
+              onIrRegistro={() => navigate('/registro')}
+              onLoginSuccess={handleLoginSuccess}
+            />
+          }
         />
-      )}
-
-      {pantalla === 'registro' && (
-        <RegistroPage onVolver={() => setPantalla('login')} /> 
-      )}
-
-      {pantalla === 'menu-deportista' && (
-        <MenuDeportista onLogout={handleLogout} />
-      )}
-
-      {pantalla === 'menu-entrenador' && (
-        <MenuEntrenador onLogout={handleLogout} />
-      )}
+        <Route
+          path="/registro"
+          element={<RegistroPage onVolver={() => navigate('/login')} />}
+        />
+        <Route
+          path="/deportista"
+          element={
+            <RutaProtegida tipo="deportista">
+              <MenuDeportista onLogout={handleLogout} />
+            </RutaProtegida>
+          }
+        />
+        <Route
+          path="/entrenador"
+          element={
+            <RutaProtegida tipo="entrenador">
+              <MenuEntrenador onLogout={handleLogout} />
+            </RutaProtegida>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <RutasDeLaApp />
+    </BrowserRouter>
   );
 }
 

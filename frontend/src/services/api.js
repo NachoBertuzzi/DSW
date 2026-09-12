@@ -20,6 +20,7 @@ async function api(path, { method = 'GET', body } = {}) {
 export const Entrenamientos = {
   crear: (payload) => api('/entrenamientos', { method: 'POST', body: payload }),
   listarTodos: () => api('/entrenamientos'),
+  actualizar: (id, payload) => api(`/entrenamientos/${id}`, { method: 'PATCH', body: payload }),
   eliminar: (id) => api(`/entrenamientos/${id}`, { method: 'DELETE' }), 
 };
 

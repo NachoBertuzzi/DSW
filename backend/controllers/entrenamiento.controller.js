@@ -42,8 +42,17 @@ async function add(req, res) {
   res.status(201).send({ message: 'Entrenamiento creado', data: created });
 }
 async function update(req, res) {
+  const entrenamiento = await service.getById({ id: req.params.id });
+  if (!entrenamiento) return res.status(404).send({ message: 'Entrenamiento no encontrado' });
+
+  if (
+    req.user?.rol === 'deportista' &&
+    String(entrenamiento.deportista?.dni) !== String(req.user.dni)
+  ) {
+    return res.status(403).send({ message: 'Solo podés modificar tus propios entrenamientos' });
+  }
+
   const updated = await service.update(req.params.id, req.body.sanitizedInput);
-  if (!updated) return res.status(404).send({ message: 'Entrenamiento no encontrado' });
   res.status(200).send({ message: 'Entrenamiento actualizado', data: updated });
 }
 async function remove(req, res) {

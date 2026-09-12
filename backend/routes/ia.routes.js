@@ -3,6 +3,24 @@ const { Router } = require('express');
 const router = Router();
 const { verificarToken, requerirRol } = require('../middlewares/auth.middleware.js');
 const MAX_MESSAGE_LENGTH = 1200;
+const MENSAJE_FUERA_DE_TEMA = 'Solo puedo darte recomendaciones de entrenamiento físico y bienestar deportivo.';
+
+function esConsultaDeportiva(mensaje, historial = []) {
+  const consulta = String(mensaje)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  if (/torta|receta|cocina|dubai|viaje|pelicula|politica|programar|codigo/.test(consulta)) return false;
+
+  const texto = [mensaje, ...historial.map((item) => item?.texto || '')]
+    .join(' ')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  return /entren|ejerc|rutina|fuerza|muscul|cardio|correr|gimnas|serie|repet|peso|descanso|calent|estir|movilidad|deport|fitness|dolor|lesion|nutric|proteina|comida post/.test(texto);
+}
 
 function buildPrompt({ mensaje, historial }) {
   const contexto = Array.isArray(historial)
@@ -30,6 +48,10 @@ router.post('/chat', verificarToken, requerirRol('deportista', 'entrenador'), as
 
   if (mensaje.length > MAX_MESSAGE_LENGTH) {
     return res.status(400).json({ ok: false, mensaje: 'La consulta es demasiado larga.' });
+  }
+
+  if (!esConsultaDeportiva(mensaje, Array.isArray(historial) ? historial : [])) {
+    return res.json({ ok: true, respuesta: MENSAJE_FUERA_DE_TEMA });
   }
 
   if (!process.env.GEMINI_API_KEY) {

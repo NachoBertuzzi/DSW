@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { API_URL } from '../../services/api';
-import { Back } from '../../components/MenuComponents';
+import Back from '../../components/Back';
 import '../styles/MenuEntrenador.css';
 
 function Perfil({ onVolver, onLogout }) {

@@ -10,6 +10,5 @@ router.post('/', ctrl.sanitizeEntrenadorInput, ctrl.add);
 router.put('/:dni', verificarToken, requerirRol('entrenador'), requerirPropioDni, ctrl.sanitizeEntrenadorInput, ctrl.update);
 router.patch('/:dni', verificarToken, requerirRol('entrenador'), requerirPropioDni, ctrl.sanitizeEntrenadorInput, ctrl.update);
 router.delete('/:dni', verificarToken, requerirRol('entrenador'), requerirPropioDni, ctrl.remove);
-router.post('/login', ctrl.login);
 
 module.exports = router;

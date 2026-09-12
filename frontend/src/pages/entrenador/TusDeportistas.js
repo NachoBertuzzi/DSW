@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { API_URL } from '../../services/api';
-import { Back } from '../../components/MenuComponents';
+import Back from '../../components/Back';
 import '../styles/MenuEntrenador.css';
 
 function TusDeportistas({ onVolver }) {
@@ -9,21 +9,25 @@ function TusDeportistas({ onVolver }) {
   const [q, setQ] = useState('');
   const [notasPorDni, setNotasPorDni] = useState({});
   const [cargando, setCargando] = useState(true);
+  const [errorCarga, setErrorCarga] = useState('');
   const [bajandoId, setBajandoId] = useState(null);
   const [mensaje, setMensaje] = useState('');
 
   const cargar = useCallback(async () => {
     setCargando(true);
     try {
+      setErrorCarga('');
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/entrenadores/${coach.dni}/deportistas`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!res.ok) throw new Error('No se pudo cargar la lista de deportistas.');
       const json = await res.json().catch(() => ({}));
       setLista(Array.isArray(json?.data) ? json.data : []);
     } catch (error) {
       console.error(error);
       setLista([]);
+      setErrorCarga('No se pudo cargar la lista de deportistas.');
     } finally {
       setCargando(false);
     }
@@ -33,10 +37,12 @@ function TusDeportistas({ onVolver }) {
   useEffect(() => {
     (async () => {
       try {
+        setErrorCarga('');
         const token = localStorage.getItem('token');
         const res = await fetch(`${API_URL}/notas/entrenadores/${coach.dni}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        if (!res.ok) throw new Error('No se pudieron cargar las notas de los deportistas.');
         const json = await res.json().catch(() => ({}));
         const agrupadas = {};
         (json?.data || []).forEach((nota) => {
@@ -46,6 +52,7 @@ function TusDeportistas({ onVolver }) {
         setNotasPorDni(agrupadas);
       } catch (error) {
         console.error(error);
+        setErrorCarga('No se pudieron cargar las notas de los deportistas.');
       }
     })();
   }, [coach.dni]);
@@ -95,6 +102,11 @@ function TusDeportistas({ onVolver }) {
     <section className="panel">
       <Back onClick={onVolver} />
       <h3>Tus deportistas</h3>
+      {errorCarga && (
+        <p className="error-message" role="alert">
+          {errorCarga}
+        </p>
+      )}
 
       <div className="row gap wrap" style={{ marginBottom: 12 }}>
         <input

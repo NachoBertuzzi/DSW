@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Back } from '../../components/MenuComponents';
+import Back from '../../components/Back';
 import { FallbackCoach, API_URL } from '../../services/api';
 import '../styles/MenuDeportista.css';
 
@@ -17,6 +17,7 @@ function TuEntrenador({ onVolver }) {
   const [lista, setLista] = useState([]);
   const [qEsp, setQEsp] = useState('');
   const [loading, setLoading] = useState(true);
+  const [errorCarga, setErrorCarga] = useState('');
   const [modo, setModo] = useState(coach ? 'ver' : 'elegir'); 
 
   const [nota, setNota] = useState('');
@@ -28,17 +29,21 @@ function TuEntrenador({ onVolver }) {
     (async () => {
       setLoading(true);
       try {
+        setErrorCarga('');
         const token = localStorage.getItem('token');
         const res = await fetch(`${API_URL}/entrenadores`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
+        if (!res.ok) throw new Error('No se pudo cargar la lista de entrenadores.');
         const json = await res.json().catch(() => ({}));
         const arr = Array.isArray(json) ? json : (Array.isArray(json?.data) ? json.data : []);
         if (arr.length) setLista(arr);
         else setLista((FallbackCoach?.getTodos && FallbackCoach.getTodos()) || []);
-      } catch {
+      } catch (error) {
+        console.error(error);
+        setErrorCarga('No se pudo cargar la lista de entrenadores.');
         setLista((FallbackCoach?.getTodos && FallbackCoach.getTodos()) || []);
       } finally {
         setLoading(false);
@@ -50,11 +55,12 @@ function TuEntrenador({ onVolver }) {
     if (!usuario?.dni) return;
     (async () => {
       try {
+        setErrorCarga('');
         const token = localStorage.getItem('token');
         const res = await fetch(`${API_URL}/deportistas/${usuario.dni}/entrenador`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!res.ok) return;
+        if (!res.ok) throw new Error('No se pudo cargar tu entrenador asignado.');
         const json = await res.json();
         const remoto = json?.data || null;
         setCoach(remoto);
@@ -63,6 +69,7 @@ function TuEntrenador({ onVolver }) {
         else localStorage.removeItem(KEY_COACH);
       } catch (error) {
         console.error(error);
+        setErrorCarga('No se pudo cargar tu entrenador asignado.');
       }
     })();
   }, [KEY_COACH, usuario?.dni]);
@@ -71,15 +78,18 @@ function TuEntrenador({ onVolver }) {
     if (!coach?.dni || !usuario?.dni) return;
     (async () => {
       try {
+        setErrorCarga('');
         const token = localStorage.getItem('token');
         const res = await fetch(`${API_URL}/notas/deportistas/${usuario.dni}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        if (!res.ok) throw new Error('No se pudieron cargar tus notas.');
         const json = await res.json().catch(() => ({}));
         setNotas(Array.isArray(json?.data) ? json.data : []);
       } catch (error) {
         console.error(error);
         setNotas([]);
+        setErrorCarga('No se pudieron cargar tus notas.');
       }
     })();
   }, [coach?.dni, usuario?.dni, usuario?.nombre, usuario?.username, usuario?.usuario]);
@@ -201,6 +211,11 @@ function TuEntrenador({ onVolver }) {
     <section className="panel">
       <Back onClick={onVolver} />
       <h3>Tu entrenador</h3>
+      {errorCarga && (
+        <p className="error-message" role="alert">
+          {errorCarga}
+        </p>
+      )}
       {mensajeAccion && <p className="muted" role="status">{mensajeAccion}</p>}
 
       {coach && modo === 'ver' ? (

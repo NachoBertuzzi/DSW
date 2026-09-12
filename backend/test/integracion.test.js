@@ -73,7 +73,7 @@ describe('Integración del flujo de asignaciones de entrenamiento', () => {
     expect(entrenadorRes.body).toHaveProperty('data.dni', entrenador.dni);
 
     const entrenadorLoginRes = await request(app)
-      .post('/api/entrenadores/login')
+      .post('/login')
       .send({ usuario: entrenador.usuario, contrasena: entrenador.contrasena });
     expect(entrenadorLoginRes.status).toBe(200);
     entrenadorToken = entrenadorLoginRes.body.token;
@@ -86,7 +86,7 @@ describe('Integración del flujo de asignaciones de entrenamiento', () => {
     expect(deportistaRes.body).toHaveProperty('data.dni', deportista.dni);
 
     const loginRes = await request(app)
-      .post('/api/deportistas/login')
+      .post('/login')
       .send({ usuario: deportista.usuario, contrasena: deportista.contrasena });
 
     expect(loginRes.status).toBe(200);

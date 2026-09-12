@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function Card({ title, desc, onClick, className = '' }) {
+function Card({ title, desc, onClick, className = '' }) {
   return (
     <button
       type="button"
@@ -16,10 +16,4 @@ export function Card({ title, desc, onClick, className = '' }) {
   );
 }
 
-export function Back({ onClick, children = '\u2190 Volver' }) {
-  return (
-    <button type="button" className="btn link" onClick={onClick}>
-      {children}
-    </button>
-  );
-}
+export default Card;

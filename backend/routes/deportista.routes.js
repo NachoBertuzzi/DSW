@@ -7,7 +7,6 @@ const router = Router();
 router.get('/', verificarToken, requerirRol('deportista', 'entrenador'), ctrl.findAll);
 router.get('/:dni', verificarToken, requerirRol('deportista', 'entrenador'), ctrl.findOne);
 router.post('/', ctrl.sanitizeDeportistaInput, ctrl.add);
-router.post('/login', ctrl.login);
 router.put('/:dni', verificarToken, requerirRol('deportista'), requerirPropioDni, ctrl.sanitizeDeportistaInput, ctrl.update);
 router.delete('/:dni', verificarToken, requerirRol('deportista'), requerirPropioDni, ctrl.remove);
 router.post('/eliminar', verificarToken, requerirRol('deportista'), ctrl.remove);

@@ -1,16 +1,15 @@
 import React, { useState, useMemo } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import SuccessCreated from './SuccessCreated';
 import CoachChat from '../components/CoachChat';
-import { Card } from '../components/MenuComponents';
-import Agregar from './deportista/Agregar';
-import Historial from './deportista/Historial';
-import TuEntrenador from './deportista/TuEntrenador';
-import Perfil from './deportista/Perfil';
+import Card from '../components/Card';
 import './styles/MenuDeportista.css';
 
 function MenuDeportista({ onLogout }) {
-	const [vista, setVista] = useState('home');
 	const [menuAbierto, setMenuAbierto] = useState(false);
+	const navigate = useNavigate();
+	const location = useLocation();
+	const esInicio = location.pathname === '/deportista';
 	const usuario = useMemo(() => {
 		try { return JSON.parse(localStorage.getItem('usuario')) ?? {}; } catch { return {}; }
 	}, []);
@@ -27,24 +26,19 @@ function MenuDeportista({ onLogout }) {
 				<div className={`dropdown-header ${menuAbierto ? 'is-open' : ''}`}>
 					<button type="button" className="hamburger-header" aria-expanded={menuAbierto} aria-label="Abrir menú de usuario" onClick={() => setMenuAbierto((abierto) => !abierto)}>&#9776;</button>
 					<div className="dropdown-content-header">
-						<button type="button" className="btn" onClick={() => { setVista('perfil'); setMenuAbierto(false); }}>Ver mi perfil</button>
+						<button type="button" className="btn" onClick={() => { navigate('/deportista/perfil'); setMenuAbierto(false); }}>Ver mi perfil</button>
 						<button type="button" className="btn btn-outline" onClick={() => { setMenuAbierto(false); onLogout(); }}>Cerrar sesión</button>
 					</div>
 				</div>
 			</div>
 
-			{vista === 'home' && (
+			{esInicio ? (
 				<div className="menu-grid">
-					<Card title="Agregar entrenamiento" desc="Crear entrenamiento (propio o asignado)" onClick={() => setVista('agregar')} />
-					<Card title="Historial de entrenamientos" desc="Ver entrenamientos anteriores" onClick={() => setVista('historial')} />
-					<Card title="Tu entrenador" desc="Ver/Agregar/Cambiar entrenador" onClick={() => setVista('entrenador')} />
+					<Card title="Agregar entrenamiento" desc="Crear entrenamiento (propio o asignado)" onClick={() => navigate('/deportista/agregar')} />
+					<Card title="Historial de entrenamientos" desc="Ver entrenamientos anteriores" onClick={() => navigate('/deportista/historial')} />
+					<Card title="Tu entrenador" desc="Ver/Agregar/Cambiar entrenador" onClick={() => navigate('/deportista/entrenador')} />
 				</div>
-			)}
-
-			{vista === 'agregar' && <Agregar onVolver={() => setVista('home')} />}
-			{vista === 'historial' && <Historial onVolver={() => setVista('home')} />}
-			{vista === 'entrenador' && <TuEntrenador onVolver={() => setVista('home')} />}
-			{vista === 'perfil' && <Perfil onVolver={() => setVista('home')} onLogout={onLogout} />}
+			) : <Outlet />}
 			<CoachChat />
 		</div>
 	);

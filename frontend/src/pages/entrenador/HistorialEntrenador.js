@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Entrenamientos, FallbackCoach, API_URL } from '../../services/api';
-import { Back } from '../../components/MenuComponents';
+import Back from '../../components/Back';
 import '../styles/MenuEntrenador.css';
 
 function HistorialEntrenador({ onVolver }) {

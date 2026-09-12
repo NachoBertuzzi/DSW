@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Back } from '../../components/MenuComponents';
+import Back from '../../components/Back';
 import { Entrenamientos } from '../../services/api';
 import '../styles/MenuDeportista.css';
 
@@ -7,17 +7,20 @@ function Historial({ onVolver }) {
   const usuario = useMemo(() => JSON.parse(localStorage.getItem('usuario') || '{}'), []);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorCarga, setErrorCarga] = useState('');
   const [q, setQ] = useState('');
   const [borrandoId, setBorrandoId] = useState(null);
   const [mensaje, setMensaje] = useState('');
   const [editandoId, setEditandoId] = useState(null);
   const [editFecha, setEditFecha] = useState('');
   const [editHora, setEditHora] = useState('');
+  const [editEjercicios, setEditEjercicios] = useState([]);
   const [guardandoEdicion, setGuardandoEdicion] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
+        setErrorCarga('');
         const data = await Entrenamientos.listarTodos();
         const remotos = (data?.data || [])
           .filter((ent) => String(ent?.deportista?.dni) === String(usuario?.dni))
@@ -35,6 +38,7 @@ function Historial({ onVolver }) {
       } catch (error) {
         console.error(error);
         setItems([]);
+        setErrorCarga('No se pudo cargar el historial de entrenamientos.');
       } finally {
         setLoading(false);
       }
@@ -62,7 +66,45 @@ function Historial({ onVolver }) {
     setEditandoId(it.idLocal);
     setEditFecha(it.fechaEntrenamiento || '');
     setEditHora(it.horaEntrenamiento || '');
+    setEditEjercicios((it.ejercicios || []).map((ejercicio) => ({
+      ...ejercicio,
+      series: (ejercicio.series || []).map((serie) => ({ ...serie })),
+    })));
     setMensaje('');
+  };
+
+  const cambiarEjercicio = (index, campo, valor) => {
+    setEditEjercicios((prev) => prev.map((ejercicio, i) =>
+      i === index ? { ...ejercicio, [campo]: valor } : ejercicio
+    ));
+  };
+
+  const cambiarSerie = (ejercicioIndex, serieIndex, campo, valor) => {
+    setEditEjercicios((prev) => prev.map((ejercicio, i) => {
+      if (i !== ejercicioIndex) return ejercicio;
+      return {
+        ...ejercicio,
+        series: (ejercicio.series || []).map((serie, j) =>
+          j === serieIndex ? { ...serie, [campo]: valor } : serie
+        ),
+      };
+    }));
+  };
+
+  const agregarSerie = (ejercicioIndex) => {
+    setEditEjercicios((prev) => prev.map((ejercicio, i) =>
+      i === ejercicioIndex
+        ? { ...ejercicio, series: [...(ejercicio.series || []), { peso: '', reps: '' }] }
+        : ejercicio
+    ));
+  };
+
+  const quitarSerie = (ejercicioIndex, serieIndex) => {
+    setEditEjercicios((prev) => prev.map((ejercicio, i) =>
+      i === ejercicioIndex
+        ? { ...ejercicio, series: (ejercicio.series || []).filter((_, j) => j !== serieIndex) }
+        : ejercicio
+    ));
   };
 
   const guardarEdicion = async (it) => {
@@ -73,7 +115,7 @@ function Historial({ onVolver }) {
       const actualizado = await Entrenamientos.actualizar(it.backendId || it.id, {
         fechaEntrenamiento: editFecha,
         horaEntrenamiento: editHora || undefined,
-        ejercicios: it.ejercicios || [],
+        ejercicios: editEjercicios,
       });
       const nuevo = actualizado?.data || { ...it, fechaEntrenamiento: editFecha, horaEntrenamiento: editHora };
       setItems((actuales) => actuales.map((item) => item.idLocal === it.idLocal
@@ -101,6 +143,7 @@ function Historial({ onVolver }) {
       <input className="input" placeholder="Buscar…" value={q} onChange={e => setQ(e.target.value)} />
 
       {loading ? <p className="muted">Cargando…</p> :
+        errorCarga ? <p className="error-message" role="alert">{errorCarga}</p> :
         filtrados.length === 0 ? <p className="muted">No hay entrenamientos guardados.</p> :
           <ul className="list">
             {filtrados.map(it => (
@@ -108,9 +151,53 @@ function Historial({ onVolver }) {
                 <div className="item-head">
                   <div>
                       {editandoId === it.idLocal ? (
-                        <div className="row gap">
-                          <input className="input" type="date" value={editFecha} onChange={(event) => setEditFecha(event.target.value)} aria-label="Fecha del entrenamiento" />
-                          <input className="input" type="time" value={editHora} onChange={(event) => setEditHora(event.target.value)} aria-label="Hora del entrenamiento" />
+                        <div>
+                          <div className="row gap">
+                            <input className="input" type="date" value={editFecha} onChange={(event) => setEditFecha(event.target.value)} aria-label="Fecha del entrenamiento" />
+                            <input className="input" type="time" value={editHora} onChange={(event) => setEditHora(event.target.value)} aria-label="Hora del entrenamiento" />
+                          </div>
+                          {editEjercicios.map((ejercicio, ejercicioIndex) => (
+                            <div key={ejercicio.id || ejercicioIndex} className="card-box" style={{ marginTop: 8 }}>
+                              <input
+                                className="input"
+                                type="text"
+                                value={ejercicio.nombre || ''}
+                                onChange={(event) => cambiarEjercicio(ejercicioIndex, 'nombre', event.target.value)}
+                                placeholder="Ejercicio"
+                                aria-label={`Ejercicio ${ejercicioIndex + 1}`}
+                              />
+                              <small className="muted">Series: {ejercicio.series?.length || 0}</small>
+                              {(ejercicio.series || []).map((serie, serieIndex) => (
+                                <div key={serieIndex} className="row gap" style={{ marginTop: 6 }}>
+                                  <input
+                                    className="input"
+                                    type="number"
+                                    min="0"
+                                    step="0.1"
+                                    value={serie.peso ?? ''}
+                                    onChange={(event) => cambiarSerie(ejercicioIndex, serieIndex, 'peso', event.target.value)}
+                                    placeholder="Peso (kg)"
+                                    aria-label={`Peso serie ${serieIndex + 1}`}
+                                  />
+                                  <input
+                                    className="input"
+                                    type="number"
+                                    min="1"
+                                    value={serie.reps ?? ''}
+                                    onChange={(event) => cambiarSerie(ejercicioIndex, serieIndex, 'reps', event.target.value)}
+                                    placeholder="Repeticiones"
+                                    aria-label={`Repeticiones serie ${serieIndex + 1}`}
+                                  />
+                                  <button type="button" className="btn btn-outline" onClick={() => quitarSerie(ejercicioIndex, serieIndex)}>
+                                    Quitar serie
+                                  </button>
+                                </div>
+                              ))}
+                              <button type="button" className="btn btn-outline" style={{ marginTop: 6 }} onClick={() => agregarSerie(ejercicioIndex)}>
+                                Agregar serie
+                              </button>
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <strong>{it.fechaEntrenamiento} {it.horaEntrenamiento || ''}</strong>

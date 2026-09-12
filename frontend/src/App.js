@@ -4,6 +4,14 @@ import LoginPage from './pages/Login';
 import RegistroPage from './pages/RegistroPage';
 import MenuDeportista from './pages/MenuDeportista';
 import MenuEntrenador from './pages/MenuEntrenador';
+import Agregar from './pages/deportista/Agregar';
+import Historial from './pages/deportista/Historial';
+import TuEntrenador from './pages/deportista/TuEntrenador';
+import PerfilDeportista from './pages/deportista/Perfil';
+import AsignarEntrenamiento from './pages/entrenador/AsignarEntrenamiento';
+import HistorialEntrenador from './pages/entrenador/HistorialEntrenador';
+import TusDeportistas from './pages/entrenador/TusDeportistas';
+import PerfilEntrenador from './pages/entrenador/Perfil';
 import './App.css';
 import './pages/styles/inicio.css';
 
@@ -51,7 +59,12 @@ function RutasDeLaApp() {
               <MenuDeportista onLogout={handleLogout} />
             </RutaProtegida>
           }
-        />
+        >
+          <Route path="agregar" element={<Agregar onVolver={() => navigate('/deportista')} />} />
+          <Route path="historial" element={<Historial onVolver={() => navigate('/deportista')} />} />
+          <Route path="entrenador" element={<TuEntrenador onVolver={() => navigate('/deportista')} />} />
+          <Route path="perfil" element={<PerfilDeportista onVolver={() => navigate('/deportista')} onLogout={handleLogout} />} />
+        </Route>
         <Route
           path="/entrenador"
           element={
@@ -59,7 +72,12 @@ function RutasDeLaApp() {
               <MenuEntrenador onLogout={handleLogout} />
             </RutaProtegida>
           }
-        />
+        >
+          <Route path="asignar" element={<AsignarEntrenamiento onVolver={() => navigate('/entrenador')} />} />
+          <Route path="historial" element={<HistorialEntrenador onVolver={() => navigate('/entrenador')} />} />
+          <Route path="deportistas" element={<TusDeportistas onVolver={() => navigate('/entrenador')} />} />
+          <Route path="perfil" element={<PerfilEntrenador onVolver={() => navigate('/entrenador')} onLogout={handleLogout} />} />
+        </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

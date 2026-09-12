@@ -27,7 +27,7 @@ describe('Peticiones funcionales de deportistas', () => {
     expect(createRes.status).toBe(201);
 
     const loginRes = await request(app)
-      .post('/api/deportistas/login')
+      .post('/login')
       .send({ usuario: deportista.usuario, contrasena: deportista.contrasena });
     expect(loginRes.status).toBe(200);
     token = loginRes.body.token;

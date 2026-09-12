@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Back } from '../../components/MenuComponents';
+import Back from '../../components/Back';
 import { Entrenamientos, API_URL } from '../../services/api';
 import '../styles/MenuDeportista.css';
 

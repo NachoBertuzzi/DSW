@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './styles/login.css';
 import logo from '../assets/logo.png';
-import { API_URL } from '../services/api';
+import { BASE_URL } from '../services/api';
 
 function decodeToken(token) {
   const payload = token.split('.')[1];
@@ -15,27 +15,6 @@ function decodeToken(token) {
   return JSON.parse(json);
 }
 
-async function tryLogin(url, email, pass) {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ usuario: email, contrasena: pass }),
-  });
-
-  const data = await res.json().catch(() => ({}));
-
-  if (res.status === 401) {
-    const error = new Error(data?.mensaje || 'Credenciales no válidas');
-    error.kind = 'bad-credentials';
-    throw error;
-  }
-
-  if (!res.ok) {
-    throw new Error(data?.mensaje || 'Error del servidor');
-  }
-
-  return data;
-}
 
 const LoginPage = ({ onLoginSuccess, onIrRegistro }) => {
   const [loginEmail, setLoginEmail] = useState('');
@@ -45,19 +24,28 @@ const LoginPage = ({ onLoginSuccess, onIrRegistro }) => {
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
+
     setMensajeLogin('');
     setCargando(true);
 
     try {
-      let tipo = 'deportista';
-      let data;
+      const res = await fetch(`${BASE_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          usuario: loginEmail,
+          contrasena: loginPassword,
+        }),
+      });
 
-      try {
-        data = await tryLogin(`${API_URL}/deportistas/login`, loginEmail, loginPassword);
-      } catch (errorDeportista) {
-        if (errorDeportista.kind !== 'bad-credentials') throw errorDeportista;
-        tipo = 'entrenador';
-        data = await tryLogin(`${API_URL}/entrenadores/login`, loginEmail, loginPassword);
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(
+          data?.mensaje || 'Error al iniciar sesión'
+        );
       }
 
       const usuario = decodeToken(data.token);
@@ -66,15 +54,25 @@ const LoginPage = ({ onLoginSuccess, onIrRegistro }) => {
         usuario.email = loginEmail;
       }
 
+      const tipo = usuario.rol;
+
       localStorage.setItem('tipo', tipo);
-      localStorage.setItem('usuario', JSON.stringify(usuario));
-      
+      localStorage.setItem(
+        'usuario',
+        JSON.stringify(usuario)
+      );
       localStorage.setItem('token', data.token);
 
-      onLoginSuccess?.({ tipo, usuario });
+      onLoginSuccess?.({
+        tipo,
+        usuario,
+      });
     } catch (err) {
       console.error(err);
-      setMensajeLogin(err.message || 'Error al iniciar sesión');
+
+      setMensajeLogin(
+        err.message || 'Error al iniciar sesión'
+      );
     } finally {
       setCargando(false);
     }

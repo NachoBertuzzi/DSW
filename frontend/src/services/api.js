@@ -1,4 +1,6 @@
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+export const BASE_URL =
+  process.env.REACT_APP_API_URL || 'http://localhost:3000';
+export const API_URL = `${BASE_URL}/api`;
 
 async function api(path, { method = 'GET', body } = {}) {
   const token = localStorage.getItem('token');
@@ -168,5 +170,3 @@ export const FallbackCoach = {
     return notas.length ? notas[notas.length - 1] : null;
   },
 };
-
-export { API_URL };

@@ -34,7 +34,7 @@ describe('Peticiones funcionales de entrenamientos', () => {
     expect(deportistaRes.status).toBe(201);
 
     const loginRes = await request(app)
-      .post('/api/deportistas/login')
+      .post('/login')
       .send({ usuario: deportista.usuario, contrasena: deportista.contrasena });
     expect(loginRes.status).toBe(200);
     deportistaToken = loginRes.body.token;
@@ -45,7 +45,7 @@ describe('Peticiones funcionales de entrenamientos', () => {
     expect(entrenadorRes.status).toBe(201);
 
     const entrenadorLoginRes = await request(app)
-      .post('/api/entrenadores/login')
+      .post('/login')
       .send({ usuario: entrenador.usuario, contrasena: entrenador.contrasena });
     expect(entrenadorLoginRes.status).toBe(200);
     entrenadorToken = entrenadorLoginRes.body.token;

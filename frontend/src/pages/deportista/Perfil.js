@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Back } from '../../components/MenuComponents';
+import Back from '../../components/Back';
 import { Entrenamientos, API_URL } from '../../services/api';
 import '../styles/MenuDeportista.css';
 import {
@@ -24,20 +24,28 @@ function Perfil({ onVolver, onLogout }) {
   const [ejercicioSeleccionado, setEjercicioSeleccionado] = useState('');
   const [accion, setAccion] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const [errorCarga, setErrorCarga] = useState('');
   const usuarioDni = usuario?.dni;
 
   useEffect(() => {
     if (!usuarioDni) return;
     (async () => {
       try {
+        setErrorCarga('');
         const token = localStorage.getItem('token');
         const res = await fetch(`${API_URL}/deportistas/${usuarioDni}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!res.ok) return;
+        if (!res.ok) {
+          setErrorCarga('No se pudo cargar la información del perfil.');
+          return;
+        }
         const json = await res.json();
         const remoto = json?.data || null;
-        if (!remoto) return;
+        if (!remoto) {
+          setErrorCarga('No se pudo cargar la información del perfil.');
+          return;
+        }
         setUsuario((actual) => {
           const actualizado = { ...actual, ...remoto };
           delete actualizado.contrasena;
@@ -46,6 +54,7 @@ function Perfil({ onVolver, onLogout }) {
         });
       } catch (error) {
         console.error(error);
+        setErrorCarga('No se pudo cargar la información del perfil.');
       }
     })();
   }, [usuarioDni]);
@@ -53,6 +62,7 @@ function Perfil({ onVolver, onLogout }) {
   useEffect(() => {
     (async () => {
       try {
+        setErrorCarga('');
         const data = await Entrenamientos.listarTodos();
         setEntrenamientos((data?.data || [])
           .filter((ent) => String(ent?.deportista?.dni) === String(usuario?.dni))
@@ -60,6 +70,7 @@ function Perfil({ onVolver, onLogout }) {
       } catch (error) {
         console.error(error);
         setEntrenamientos([]);
+        setErrorCarga('No se pudo cargar la información del perfil.');
       }
     })();
   }, [usuario?.dni]);
@@ -184,6 +195,11 @@ function Perfil({ onVolver, onLogout }) {
     <section className="panel perfil-panel">
       <Back onClick={onVolver} />
       <h3 className="perfil-titulo">Tu Perfil</h3>
+      {errorCarga && (
+        <p className="error-message" role="alert">
+          {errorCarga}
+        </p>
+      )}
 
       <div className="perfil-card">
         <p><strong>Nombre:</strong> {usuario?.nombre ?? "-"}</p>

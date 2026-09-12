@@ -25,7 +25,7 @@ describe('Peticiones funcionales de entrenadores', () => {
     expect(createRes.status).toBe(201);
 
     const loginRes = await request(app)
-      .post('/api/entrenadores/login')
+      .post('/login')
       .send({ usuario: entrenador.usuario, contrasena: entrenador.contrasena });
     expect(loginRes.status).toBe(200);
     token = loginRes.body.token;

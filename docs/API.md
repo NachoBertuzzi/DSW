@@ -28,14 +28,41 @@ Las rutas protegidas esperan este header:
 Authorization: Bearer <token>
 ```
 
-El token se obtiene mediante el login de un deportista o entrenador. La duración configurada es de dos horas.
+El token se obtiene mediante el endpoint único `POST /api/auth/login`. El rol y los datos del usuario se encuentran en el JWT. La duración configurada es de dos horas.
 
 ### Roles disponibles
 
 - `deportista`: puede consultar recursos, crear sus entrenamientos, consultar sus asignaciones y cambiar el estado de una asignación.
 - `entrenador`: puede consultar recursos, crear y administrar entrenamientos, crear y eliminar asignaciones y administrar localidades.
 
-El registro y los dos endpoints específicos de login son públicos. Las operaciones restantes requieren JWT y, según la operación, uno de los roles anteriores. Las modificaciones y eliminaciones de cuentas están limitadas al DNI del usuario autenticado.
+El registro y el endpoint de login son públicos. Las operaciones restantes requieren JWT y, según la operación, uno de los roles anteriores. Las modificaciones y eliminaciones de cuentas están limitadas al DNI del usuario autenticado.
+
+## Iniciar sesión
+
+**POST** `/api/auth/login`
+
+Autentica una cuenta de deportista o entrenador mediante usuario o email. El backend resuelve el rol y lo incluye en el JWT.
+
+### Body
+
+```json
+{
+  "usuario": "juanp",
+  "contrasena": "123456"
+}
+```
+
+### Respuesta exitosa
+
+`200 OK`
+
+```json
+{
+  "token": "<jwt>"
+}
+```
+
+Las credenciales inválidas responden siempre `401` con el mensaje `Credenciales incorrectas`.
 
 ## Respuestas y errores
 
@@ -191,49 +218,6 @@ Los campos de localidad son opcionales. Si se envía `localidadCodPostal` y no e
 
 - `400`: el DNI ya existe.
 - `500`: error de conexión o persistencia.
-
-## Iniciar sesión como deportista
-
-**POST** `/api/deportistas/login`
-
-Autentica un deportista mediante usuario o email.
-
-### Autenticación
-
-No requiere token.
-
-### Body
-
-```json
-{
-  "usuario": "juanp",
-  "contrasena": "123456"
-}
-```
-
-También se aceptan `email`, `mail`, `password` o `contraseña` como nombres alternativos según el cliente.
-
-### Respuesta exitosa
-
-`200 OK`
-
-```json
-{
-  "deportista": {
-    "dni": "12345678",
-    "nombre": "Juan",
-    "usuario": "juanp",
-    "email": "juan@email.com"
-  },
-  "token": "eyJhbGciOiJIUzI1NiIs..."
-}
-```
-
-### Posibles errores
-
-- `400`: `Faltan credenciales`.
-- `401`: `Credenciales incorrectas`.
-- `500`: error del servidor.
 
 ## Actualizar deportista
 
@@ -484,41 +468,6 @@ También se acepta `mail` como alternativa a `email`.
 ### Posibles errores
 
 - `500`: error de persistencia o datos incompatibles con la base.
-
-## Iniciar sesión como entrenador
-
-**POST** `/api/entrenadores/login`
-
-Autentica un entrenador mediante usuario o email.
-
-### Autenticación
-
-No requiere token.
-
-### Body
-
-```json
-{
-  "usuario": "anag",
-  "contrasena": "123456"
-}
-```
-
-### Respuesta exitosa
-
-`200 OK`
-
-```json
-{
-  "entrenador": {
-    "dni": "87654321",
-    "nombre": "Ana",
-    "usuario": "anag",
-    "email": "ana@email.com"
-  },
-  "token": "eyJhbGciOiJIUzI1NiIs..."
-}
-```
 
 ### Posibles errores
 

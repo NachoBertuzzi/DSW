@@ -19,9 +19,19 @@ const entrenador = {
   email: `coach.entrenamiento.${suffix}@example.com`,
   contrasena: 'test-pass-123',
 };
+const otroDeportista = {
+  dni: `TEST-DEP-OTRO-${suffix}`,
+  nombre: 'Otro deportista',
+  apellido: 'Funcional',
+  usuario: `otro.deportista.entrenamiento.${suffix}`,
+  email: `otro.deportista.entrenamiento.${suffix}@example.com`,
+  contrasena: 'test-pass-123',
+};
 
 let entrenamientoId;
+let otroEntrenamientoId;
 let deportistaToken;
+let otroDeportistaToken;
 let entrenadorToken;
 
 describe('Peticiones funcionales de entrenamientos', () => {
@@ -34,7 +44,7 @@ describe('Peticiones funcionales de entrenamientos', () => {
     expect(deportistaRes.status).toBe(201);
 
     const loginRes = await request(app)
-      .post('/login')
+      .post('/api/auth/login')
       .send({ usuario: deportista.usuario, contrasena: deportista.contrasena });
     expect(loginRes.status).toBe(200);
     deportistaToken = loginRes.body.token;
@@ -45,10 +55,27 @@ describe('Peticiones funcionales de entrenamientos', () => {
     expect(entrenadorRes.status).toBe(201);
 
     const entrenadorLoginRes = await request(app)
-      .post('/login')
+      .post('/api/auth/login')
       .send({ usuario: entrenador.usuario, contrasena: entrenador.contrasena });
     expect(entrenadorLoginRes.status).toBe(200);
     entrenadorToken = entrenadorLoginRes.body.token;
+
+    const otroDeportistaRes = await request(app)
+      .post('/api/deportistas')
+      .send(otroDeportista);
+    expect(otroDeportistaRes.status).toBe(201);
+
+    const otroLoginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ usuario: otroDeportista.usuario, contrasena: otroDeportista.contrasena });
+    expect(otroLoginRes.status).toBe(200);
+    otroDeportistaToken = otroLoginRes.body.token;
+
+    const vincularRes = await request(app)
+      .put(`/api/deportistas/${deportista.dni}/entrenador`)
+      .set('Authorization', `Bearer ${deportistaToken}`)
+      .send({ entrenadorDni: entrenador.dni });
+    expect(vincularRes.status).toBe(200);
   });
 
   afterAll(async () => {
@@ -56,6 +83,11 @@ describe('Peticiones funcionales de entrenamientos', () => {
       await request(app)
         .delete(`/api/entrenamientos/${entrenamientoId}`)
         .set('Authorization', `Bearer ${entrenadorToken}`);
+    }
+    if (otroEntrenamientoId) {
+      await request(app)
+        .delete(`/api/entrenamientos/${otroEntrenamientoId}`)
+        .set('Authorization', `Bearer ${otroDeportistaToken}`);
     }
     await request(app)
       .delete(`/api/deportistas/${deportista.dni}`)
@@ -65,6 +97,10 @@ describe('Peticiones funcionales de entrenamientos', () => {
       .delete(`/api/entrenadores/${entrenador.dni}`)
       .set('Authorization', `Bearer ${entrenadorToken}`)
       .send({ contrasena: entrenador.contrasena });
+    await request(app)
+      .delete(`/api/deportistas/${otroDeportista.dni}`)
+      .set('Authorization', `Bearer ${otroDeportistaToken}`)
+      .send({ dni: otroDeportista.dni, contrasena: otroDeportista.contrasena });
   });
 
   it('GET /api/entrenamientos devuelve una colección', async () => {
@@ -102,6 +138,35 @@ describe('Peticiones funcionales de entrenamientos', () => {
     expect(res.body).toHaveProperty('data.id', entrenamientoId);
     expect(res.body.data.deportista).toHaveProperty('dni', deportista.dni);
     expect(res.body.data.entrenador).toHaveProperty('dni', entrenador.dni);
+  });
+
+  it('rechaza el acceso de un deportista al entrenamiento de otro', async () => {
+    const createRes = await request(app)
+      .post('/api/entrenamientos')
+      .set('Authorization', `Bearer ${otroDeportistaToken}`)
+      .send({
+        fechaEntrenamiento: '2026-09-10',
+        horaEntrenamiento: '10:00',
+      });
+
+    expect(createRes.status).toBe(201);
+    otroEntrenamientoId = createRes.body.data.id;
+
+    const getRes = await request(app)
+      .get(`/api/entrenamientos/${otroEntrenamientoId}`)
+      .set('Authorization', `Bearer ${deportistaToken}`);
+    expect(getRes.status).toBe(403);
+
+    const updateRes = await request(app)
+      .patch(`/api/entrenamientos/${otroEntrenamientoId}`)
+      .set('Authorization', `Bearer ${deportistaToken}`)
+      .send({ horaEntrenamiento: '11:00' });
+    expect(updateRes.status).toBe(403);
+
+    const deleteRes = await request(app)
+      .delete(`/api/entrenamientos/${otroEntrenamientoId}`)
+      .set('Authorization', `Bearer ${deportistaToken}`);
+    expect(deleteRes.status).toBe(403);
   });
 
   it('PUT /api/entrenamientos/:id actualiza el horario', async () => {

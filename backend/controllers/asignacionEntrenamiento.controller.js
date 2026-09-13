@@ -57,7 +57,8 @@ module.exports = {
 
       return res.status(201).json({ data: asig });
     } catch (err) {
-      return res.status(err.status || 500).json({ mensaje: 'Error al crear la asignación.', detalle: err.message });
+      console.error('Error al crear la asignación:', err);
+      return res.status(err.status || 500).json({ mensaje: 'Error al crear la asignación.' });
     }
   },
 
@@ -73,7 +74,8 @@ module.exports = {
       );
       return res.json({ data: asigs });
     } catch (err) {
-      return res.status(500).json({ mensaje: 'Error al listar asignaciones por entrenador.', detalle: err.message });
+      console.error('Error al listar asignaciones por entrenador:', err);
+      return res.status(500).json({ mensaje: 'Error al listar asignaciones por entrenador.' });
     }
   },
 
@@ -89,7 +91,8 @@ module.exports = {
       );
       return res.json({ data: asigs });
     } catch (err) {
-      return res.status(500).json({ mensaje: 'Error al listar asignaciones por deportista.', detalle: err.message });
+      console.error('Error al listar asignaciones por deportista:', err);
+      return res.status(500).json({ mensaje: 'Error al listar asignaciones por deportista.' });
     }
   },
 
@@ -102,7 +105,8 @@ module.exports = {
       if (!asig) return res.status(404).json({ mensaje: `Asignación con id ${id} no encontrada.` });
       return res.json({ data: asig });
     } catch (err) {
-      return res.status(500).json({ mensaje: 'Error al obtener la asignación.', detalle: err.message });
+      console.error('Error al obtener la asignación:', err);
+      return res.status(500).json({ mensaje: 'Error al obtener la asignación.' });
     }
   },
 
@@ -123,7 +127,8 @@ module.exports = {
       await manager.populate(asig, ['entrenador', 'deportista', 'entrenamiento']);
       return res.json({ data: asig });
     } catch (err) {
-      return res.status(500).json({ mensaje: 'Error al actualizar el estado.', detalle: err.message });
+      console.error('Error al actualizar el estado:', err);
+      return res.status(500).json({ mensaje: 'Error al actualizar el estado.' });
     }
   },
 
@@ -137,7 +142,8 @@ module.exports = {
       await manager.removeAndFlush(asig);
       return res.status(204).send();
     } catch (err) {
-      return res.status(500).json({ mensaje: 'Error al eliminar la asignación.', detalle: err.message });
+      console.error('Error al eliminar la asignación:', err);
+      return res.status(500).json({ mensaje: 'Error al eliminar la asignación.' });
     }
   },
 };

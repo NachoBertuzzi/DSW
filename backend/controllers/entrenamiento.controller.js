@@ -28,36 +28,50 @@ function sanitizeEntrenamientoInput(req, _res, next) {
   next();
 }
 
-async function findAll(_req, res) {
-  res.json({ data: await service.getAll() });
+async function findAll(req, res) {
+  res.json({ data: await service.getAll(req.user) });
 }
 async function findOne(req, res) {
   const id = req.params.id;
   const item = await service.getById({ id });
   if (!item) return res.status(404).send({ message: 'Entrenamiento no encontrado' });
+  if (!(await service.canAccess(item, req.user))) {
+    return res.status(403).send({ message: 'No tenés permisos sobre este entrenamiento' });
+  }
   res.json({ data: item });
 }
 async function add(req, res) {
-  const created = await service.create(req.body.sanitizedInput);
+  const input = await service.prepareCreate(req.body.sanitizedInput, req.user);
+  if (!input) {
+    return res.status(403).send({ message: 'No tenés permisos para crear este entrenamiento' });
+  }
+
+  const created = await service.create(input);
   res.status(201).send({ message: 'Entrenamiento creado', data: created });
 }
 async function update(req, res) {
   const entrenamiento = await service.getById({ id: req.params.id });
   if (!entrenamiento) return res.status(404).send({ message: 'Entrenamiento no encontrado' });
 
-  if (
-    req.user?.rol === 'deportista' &&
-    String(entrenamiento.deportista?.dni) !== String(req.user.dni)
-  ) {
-    return res.status(403).send({ message: 'Solo podés modificar tus propios entrenamientos' });
+  if (!(await service.canAccess(entrenamiento, req.user))) {
+    return res.status(403).send({ message: 'No tenés permisos sobre este entrenamiento' });
   }
 
-  const updated = await service.update(req.params.id, req.body.sanitizedInput);
+  const input = { ...req.body.sanitizedInput };
+  delete input.deportista;
+  delete input.entrenador;
+
+  const updated = await service.update(req.params.id, input);
   res.status(200).send({ message: 'Entrenamiento actualizado', data: updated });
 }
 async function remove(req, res) {
-  const deleted = await service.remove({ id: req.params.id });
-  if (!deleted) return res.status(404).send({ message: 'Entrenamiento no encontrado' });
+  const entrenamiento = await service.getById({ id: req.params.id });
+  if (!entrenamiento) return res.status(404).send({ message: 'Entrenamiento no encontrado' });
+  if (!(await service.canAccess(entrenamiento, req.user))) {
+    return res.status(403).send({ message: 'No tenés permisos sobre este entrenamiento' });
+  }
+
+  await service.remove({ id: req.params.id });
   res.status(200).send({ message: 'Entrenamiento eliminado' });
 }
 

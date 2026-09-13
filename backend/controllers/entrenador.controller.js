@@ -1,5 +1,5 @@
 const service = require('../services/entrenadorService.js');
-const jwt = require('jsonwebtoken');
+const { createToken } = require('../middlewares/auth.middleware.js');
 
 function sanitizeEntrenadorInput(req, _res, next) {
   const {
@@ -66,12 +66,10 @@ async function remove(req, res) {
     }
 
     const entrenador = await service.getById({ dni });
-    if (!entrenador) {
-      return res.status(404).json({ mensaje: 'Entrenador no encontrado' });
-    }
+    if (!entrenador) return res.status(404).json({ mensaje: 'Entrenador no encontrado' });
 
-    const guardada = entrenador.contrasena ?? entrenador['contraseña'];
-    if (String(contrasena) !== String(guardada)) {
+    const passwordValida = await service.verifyPassword(dni, contrasena);
+    if (!passwordValida) {
       return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
     }
 
@@ -79,11 +77,7 @@ async function remove(req, res) {
     return res.status(200).json({ mensaje: 'Cuenta eliminada correctamente' });
   } catch (err) {
     console.error('Error al eliminar cuenta:', err);
-    const detalle = err?.message || 'Error interno del servidor';
-    return res.status(500).json({
-      mensaje: 'Error interno del servidor',
-      detalle,
-    });
+    return res.status(500).json({ mensaje: 'Error interno del servidor' });
   }
 }
 
@@ -104,11 +98,7 @@ async function login(req, res) {
       return res.status(401).json({ mensaje: 'Credenciales incorrectas' });
     }
 
-    const token = jwt.sign(
-      { ...entrenador, rol: 'entrenador' },
-      process.env.JWT_SECRET || 'secreto_super_seguro',
-      { expiresIn: '2h' }
-    );
+    const token = createToken(entrenador, 'entrenador');
 
     return res.json({ token });
   } catch (e) {

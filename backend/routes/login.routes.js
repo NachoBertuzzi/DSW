@@ -1,7 +1,7 @@
 const { Router } = require('express');
-const jwt = require('jsonwebtoken');
 const deportistaService = require('../services/deportistaService');
 const entrenadorService = require('../services/entrenadorService');
+const { createToken } = require('../middlewares/auth.middleware');
 
 const router = Router();
 
@@ -39,14 +39,7 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      {
-        ...usuarioEncontrado,
-        rol,
-      },
-      process.env.JWT_SECRET || 'secreto_super_seguro',
-      { expiresIn: '2h' },
-    );
+    const token = createToken(usuarioEncontrado, rol);
 
     return res.json({ token });
   } catch (error) {

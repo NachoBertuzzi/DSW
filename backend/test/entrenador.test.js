@@ -25,10 +25,15 @@ describe('Peticiones funcionales de entrenadores', () => {
     expect(createRes.status).toBe(201);
 
     const loginRes = await request(app)
-      .post('/login')
+      .post('/api/auth/login')
       .send({ usuario: entrenador.usuario, contrasena: entrenador.contrasena });
     expect(loginRes.status).toBe(200);
     token = loginRes.body.token;
+
+    const loginInvalidoRes = await request(app)
+      .post('/api/auth/login')
+      .send({ usuario: entrenador.usuario, contrasena: 'contraseña-incorrecta' });
+    expect(loginInvalidoRes.status).toBe(401);
   });
 
   afterAll(async () => {
@@ -55,6 +60,7 @@ describe('Peticiones funcionales de entrenadores', () => {
     expect(res.status).toBe(201);
     expect(res.body).toHaveProperty('data.dni', entrenador.dni);
     expect(res.body.data).toHaveProperty('email', entrenador.email);
+    expect(res.body.data).not.toHaveProperty('contrasena');
   });
 
   it('GET /api/entrenadores/:dni devuelve el entrenador creado', async () => {
@@ -64,6 +70,7 @@ describe('Peticiones funcionales de entrenadores', () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('data.dni', entrenador.dni);
+    expect(res.body.data).not.toHaveProperty('contrasena');
   });
 
   it('PUT /api/entrenadores/:dni actualiza el entrenador', async () => {
@@ -79,6 +86,7 @@ describe('Peticiones funcionales de entrenadores', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('data.apellido', 'Actualizado');
     expect(res.body.data).toHaveProperty('especialidad', 'Movilidad');
+    expect(res.body.data).not.toHaveProperty('contrasena');
   });
 
   it('DELETE /api/entrenadores/:dni elimina el entrenador con contraseña', async () => {

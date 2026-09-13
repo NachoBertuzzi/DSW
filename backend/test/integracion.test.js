@@ -73,9 +73,10 @@ describe('Integración del flujo de asignaciones de entrenamiento', () => {
     expect(entrenadorRes.body).toHaveProperty('data.dni', entrenador.dni);
 
     const entrenadorLoginRes = await request(app)
-      .post('/login')
+      .post('/api/auth/login')
       .send({ usuario: entrenador.usuario, contrasena: entrenador.contrasena });
     expect(entrenadorLoginRes.status).toBe(200);
+    expect(Object.keys(entrenadorLoginRes.body)).toEqual(['token']);
     entrenadorToken = entrenadorLoginRes.body.token;
 
     const deportistaRes = await request(app)
@@ -86,12 +87,19 @@ describe('Integración del flujo de asignaciones de entrenamiento', () => {
     expect(deportistaRes.body).toHaveProperty('data.dni', deportista.dni);
 
     const loginRes = await request(app)
-      .post('/login')
+      .post('/api/auth/login')
       .send({ usuario: deportista.usuario, contrasena: deportista.contrasena });
 
     expect(loginRes.status).toBe(200);
     expect(loginRes.body).toHaveProperty('token');
+    expect(Object.keys(loginRes.body)).toEqual(['token']);
     deportistaToken = loginRes.body.token;
+
+    const vincularRes = await request(app)
+      .put(`/api/deportistas/${deportista.dni}/entrenador`)
+      .set('Authorization', `Bearer ${deportistaToken}`)
+      .send({ entrenadorDni: entrenador.dni });
+    expect(vincularRes.status).toBe(200);
 
     const entrenamientoRes = await request(app)
       .post('/api/entrenamientos')

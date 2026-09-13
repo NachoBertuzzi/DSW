@@ -50,7 +50,8 @@ async function initialize() {
     app.use('/api/entrenadores', require('./routes/entrenador.routes'));
     app.use('/api/deportistas', require('./routes/deportista.routes'));
     app.use('/api/entrenamientos', require('./routes/entrenamiento.routes'));
-    app.use('/login', require('./routes/login.routes'));
+    const loginRoutes = require('./routes/login.routes');
+    app.use('/api/auth/login', loginRoutes);
     app.use('/api/asignaciones-entrenamientos', require('./routes/asignacionEntrenamiento.routes'));
     app.use('/api', require('./routes/asignaciones.routes'));
     app.use('/api/notas', require('./routes/nota.routes'));

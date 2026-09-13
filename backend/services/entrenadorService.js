@@ -4,6 +4,22 @@ const { Deportista } = require('../entities/deportista.entity');
 const { Entrenamiento } = require('../entities/entrenamiento.entity');
 const { Asignacion } = require('../entities/asignacion.entity');
 const { Nota } = require('../entities/nota.entity');
+const bcrypt = require('bcrypt');
+
+const isBcrypt = (value) => typeof value === 'string' && /^\$2[aby]\$/.test(value);
+
+function toPublic(entrenador) {
+  if (!entrenador) return entrenador;
+  const plain = wrap(entrenador).toObject();
+  delete plain.contrasena;
+  delete plain['contraseña'];
+  return plain;
+}
+
+async function hashPassword(password) {
+  if (!password || isBcrypt(password)) return password;
+  return bcrypt.hash(String(password), 10);
+}
 
 function em() {
   const _em = RequestContext.getEntityManager();
@@ -13,32 +29,39 @@ function em() {
 
 module.exports = {
   async getAll() {
-    return em().find(Entrenador, {}, {
-      fields: ['dni', 'nombre', 'apellido', 'usuario', 'email', 'contrasena', 'tel', 'especialidad'],
+    const entrenadores = await em().find(Entrenador, {}, {
+      fields: ['dni', 'nombre', 'apellido', 'usuario', 'email', 'tel', 'especialidad'],
       orderBy: { dni: 'asc' },
     });
+    return entrenadores.map(toPublic);
   },
 
   async getById({ dni }) {
-    return em().findOne(Entrenador, { dni });
+    return toPublic(await em().findOne(Entrenador, { dni }, {
+      fields: ['dni', 'nombre', 'apellido', 'usuario', 'email', 'tel', 'especialidad'],
+    }));
   },
 
   async create(data) {
     const _em = em();
     const exists = await _em.findOne(Entrenador, { dni: data.dni });
-    if (exists) return exists;
-    const ent = _em.create(Entrenador, data);
+    if (exists) return toPublic(exists);
+    const input = { ...data };
+    if (input.contrasena) input.contrasena = await hashPassword(input.contrasena);
+    const ent = _em.create(Entrenador, input);
     await _em.persistAndFlush(ent);
-    return ent;
+    return toPublic(ent);
   },
 
   async update(dni, data) {
     const _em = em();
     const ent = await _em.findOne(Entrenador, { dni });
     if (!ent) return undefined;
-    _em.assign(ent, data);
+    const input = { ...data };
+    if (input.contrasena) input.contrasena = await hashPassword(input.contrasena);
+    _em.assign(ent, input);
     await _em.persistAndFlush(ent);
-    return ent;
+    return toPublic(ent);
   },
 
   async remove({ dni }) {
@@ -72,13 +95,18 @@ module.exports = {
     if (!e) return null;
 
     const guardado = e.contrasena ?? e['contraseña'];
-    const ok = contraseñaPlano === guardado; 
+    if (!isBcrypt(guardado)) return null;
+    const ok = await bcrypt.compare(String(contraseñaPlano), guardado);
 
     if (!ok) return null;
 
-    const plano = wrap(e).toObject();
-    delete plano.contrasena;
-    delete plano['contraseña'];
-    return plano;
+    return toPublic(e);
+  },
+
+  async verifyPassword(dni, password) {
+    const entrenador = await em().findOne(Entrenador, { dni });
+    const guardado = entrenador?.contrasena ?? entrenador?.['contraseña'];
+    if (!guardado || !isBcrypt(guardado)) return false;
+    return bcrypt.compare(String(password), guardado);
   },
 };

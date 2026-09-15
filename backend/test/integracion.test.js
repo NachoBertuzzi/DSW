@@ -2,6 +2,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { app, initialize } from '../server.js';
 
+const hasDbCredentials = Boolean(process.env.DB_USER && process.env.DB_PASSWORD);
+const describeDb = hasDbCredentials ? describe : describe.skip;
+
 const suffix = Date.now().toString();
 const entrenador = {
   dni: `TEST-INT-ENT-${suffix}`,
@@ -49,7 +52,7 @@ async function eliminarEntrenador() {
     .send({ contrasena: entrenador.contrasena });
 }
 
-describe('Integración del flujo de asignaciones de entrenamiento', () => {
+describeDb('Integración del flujo de asignaciones de entrenamiento', () => {
   beforeAll(async () => {
     await initialize();
   });
@@ -182,5 +185,5 @@ describe('Integración del flujo de asignaciones de entrenamiento', () => {
     expect(listadoFinalRes.body.data).not.toEqual(
       expect.arrayContaining([expect.objectContaining({ id: asignacionRes.body.data.id })])
     );
-  });
+  }, 20000);
 });

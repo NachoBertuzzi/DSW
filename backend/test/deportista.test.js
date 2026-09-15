@@ -2,6 +2,9 @@ import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { app, initialize } from '../server.js';
 
+const hasDbCredentials = Boolean(process.env.DB_USER && process.env.DB_PASSWORD);
+const describeDb = hasDbCredentials ? describe : describe.skip;
+
 const suffix = Date.now().toString();
 const deportista = {
   dni: `TEST-DEP-${suffix}`,
@@ -17,7 +20,7 @@ const deportista = {
 
 let token;
 
-describe('Peticiones funcionales de deportistas', () => {
+describeDb('Peticiones funcionales de deportistas', () => {
   beforeAll(async () => {
     await initialize();
 

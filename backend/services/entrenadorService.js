@@ -88,17 +88,27 @@ module.exports = {
   },
 
   async login(usuarioOrEmail, contraseñaPlano) {
+    const needle = String(usuarioOrEmail).trim();
     const e = await em().findOne(
       Entrenador,
-      { $or: [{ usuario: usuarioOrEmail }, { email: usuarioOrEmail }] }
+      { $or: [{ usuario: needle }, { email: needle }] }
     );
     if (!e) return null;
 
     const guardado = e.contrasena ?? e['contraseña'];
-    if (!isBcrypt(guardado)) return null;
-    const ok = await bcrypt.compare(String(contraseñaPlano), guardado);
+    if (!guardado) return null;
+
+    const password = String(contraseñaPlano);
+    const ok = isBcrypt(guardado)
+      ? await bcrypt.compare(password, guardado)
+      : password === String(guardado);
 
     if (!ok) return null;
+
+    if (!isBcrypt(guardado)) {
+      e.contrasena = await bcrypt.hash(password, 10);
+      await em().persistAndFlush(e);
+    }
 
     return toPublic(e);
   },
